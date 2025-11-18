@@ -227,6 +227,10 @@
 		},
 		"maxLimits": {
 			"description": "Automatycznie składaj zapytania do tych limitów przed poproszeniem o zgodę na kontynuowanie."
+		},
+		"toolUse": {
+			"label": "Tool use",
+			"description": "Automatically approve tool calls without requiring confirmation"
 		}
 	},
 	"providers": {

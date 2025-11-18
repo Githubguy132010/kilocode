@@ -24,6 +24,7 @@ describe("AutoApproveToggle", () => {
 		alwaysAllowMcp: false,
 		alwaysAllowModeSwitch: true,
 		alwaysAllowSubtasks: false,
+		alwaysAllowToolUse: false,
 		alwaysAllowExecute: true,
 		alwaysAllowFollowupQuestions: false,
 		alwaysAllowUpdateTodoList: true,

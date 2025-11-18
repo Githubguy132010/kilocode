@@ -32,6 +32,7 @@ const AutoApproveMenu = ({ style }: AutoApproveMenuProps) => {
 		setAlwaysAllowMcp,
 		setAlwaysAllowModeSwitch,
 		setAlwaysAllowSubtasks,
+		setAlwaysAllowToolUse,
 		setAlwaysApproveResubmit,
 		setAlwaysAllowFollowupQuestions,
 		setAlwaysAllowUpdateTodoList,
@@ -81,6 +82,9 @@ const AutoApproveMenu = ({ style }: AutoApproveMenuProps) => {
 				case "alwaysAllowSubtasks":
 					setAlwaysAllowSubtasks(value)
 					break
+				case "alwaysAllowToolUse":
+					setAlwaysAllowToolUse(value)
+					break
 				case "alwaysApproveResubmit":
 					setAlwaysApproveResubmit(value)
 					break
@@ -122,6 +126,7 @@ const AutoApproveMenu = ({ style }: AutoApproveMenuProps) => {
 			setAlwaysAllowMcp,
 			setAlwaysAllowModeSwitch,
 			setAlwaysAllowSubtasks,
+			setAlwaysAllowToolUse,
 			setAlwaysApproveResubmit,
 			setAlwaysAllowFollowupQuestions,
 			setAlwaysAllowUpdateTodoList,

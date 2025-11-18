@@ -227,6 +227,10 @@
 		},
 		"maxLimits": {
 			"description": "Anfragen bis zu diesen Grenzwerten automatisch stellen, bevor um Genehmigung zur Fortsetzung gebeten wird."
+		},
+		"toolUse": {
+			"label": "Tool use",
+			"description": "Automatically approve tool calls without requiring confirmation"
 		}
 	},
 	"providers": {

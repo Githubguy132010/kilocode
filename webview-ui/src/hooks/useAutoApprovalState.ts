@@ -8,6 +8,7 @@ interface AutoApprovalToggles {
 	alwaysAllowMcp?: boolean
 	alwaysAllowModeSwitch?: boolean
 	alwaysAllowSubtasks?: boolean
+	alwaysAllowToolUse?: boolean
 	alwaysApproveResubmit?: boolean
 	alwaysAllowFollowupQuestions?: boolean
 	alwaysAllowUpdateTodoList?: boolean

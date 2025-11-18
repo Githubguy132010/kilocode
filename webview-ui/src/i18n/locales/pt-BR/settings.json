@@ -227,6 +227,10 @@
 		},
 		"maxLimits": {
 			"description": "Fazer solicitações automaticamente até estes limites antes de pedir aprovação para continuar."
+		},
+		"toolUse": {
+			"label": "Tool use",
+			"description": "Automatically approve tool calls without requiring confirmation"
 		}
 	},
 	"providers": {

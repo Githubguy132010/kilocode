@@ -236,7 +236,11 @@
 		},
 		"toggleAriaLabel": "Přepnout automatické schválení",
 		"disabledAriaLabel": "Automatické schválení zakázáno - nejprve vyberte možnosti",
-		"selectOptionsFirst": "Vyberte alespoň jednu možnost níže pro povolení automatického schválení"
+		"selectOptionsFirst": "Vyberte alespoň jednu možnost níže pro povolení automatického schválení",
+		"toolUse": {
+			"label": "Tool use",
+			"description": "Automatically approve tool calls without requiring confirmation"
+		}
 	},
 	"providers": {
 		"providerDocumentation": "Dokumentace {{provider}}",
@@ -327,9 +331,6 @@
 		"minimaxBaseUrl": "Vstupní bod MiniMax",
 		"zaiEntrypoint": "Vstupní bod Z AI",
 		"zaiEntrypointDescription": "Vyberte prosím vhodný vstupní bod API podle vaší polohy. Pokud jste v Číně, vyberte open.bigmodel.cn. Jinak vyberte api.z.ai.",
-		"minimaxApiKey": "Klíč API MiniMax",
-		"getMiniMaxApiKey": "Získat klíč API MiniMax",
-		"minimaxBaseUrl": "Vstupní bod MiniMax",
 		"geminiApiKey": "Klíč API Gemini",
 		"getGroqApiKey": "Získat klíč API Groq",
 		"groqApiKey": "Klíč API Groq",

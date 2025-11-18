@@ -227,6 +227,10 @@
 		},
 		"maxLimits": {
 			"description": "Автоматически выполнять запросы до указанных лимитов, прежде чем запрашивать разрешение на продолжение."
+		},
+		"toolUse": {
+			"label": "Tool use",
+			"description": "Automatically approve tool calls without requiring confirmation"
 		}
 	},
 	"providers": {

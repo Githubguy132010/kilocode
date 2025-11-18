@@ -65,6 +65,7 @@ export interface WebviewMessage {
 		| "alwaysAllowWrite"
 		| "alwaysAllowWriteOutsideWorkspace"
 		| "alwaysAllowWriteProtected"
+		| "alwaysAllowToolUse"
 		| "alwaysAllowExecute"
 		| "alwaysAllowFollowupQuestions"
 		| "alwaysAllowUpdateTodoList"

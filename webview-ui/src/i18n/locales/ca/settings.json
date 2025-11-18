@@ -227,6 +227,10 @@
 		},
 		"maxLimits": {
 			"description": "Fes sol·licituds automàticament fins a aquests límits abans de demanar aprovació per continuar."
+		},
+		"toolUse": {
+			"label": "Tool use",
+			"description": "Automatically approve tool calls without requiring confirmation"
 		}
 	},
 	"providers": {

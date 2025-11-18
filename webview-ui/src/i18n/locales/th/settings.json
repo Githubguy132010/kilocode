@@ -233,7 +233,11 @@
 		},
 		"toggleAriaLabel": "สลับการอนุมัติอัตโนมัติ",
 		"disabledAriaLabel": "การอนุมัติอัตโนมัติถูกปิดใช้งาน - เลือกตัวเลือกก่อน",
-		"selectOptionsFirst": "เลือกอย่างน้อยหนึ่งตัวเลือกด้านล่างเพื่อเปิดใช้งานการอนุมัติอัตโนมัติ"
+		"selectOptionsFirst": "เลือกอย่างน้อยหนึ่งตัวเลือกด้านล่างเพื่อเปิดใช้งานการอนุมัติอัตโนมัติ",
+		"toolUse": {
+			"label": "Tool use",
+			"description": "Automatically approve tool calls without requiring confirmation"
+		}
 	},
 	"providers": {
 		"providerDocumentation": "เอกสารประกอบ {{provider}}",
@@ -320,9 +324,6 @@
 		"minimaxBaseUrl": "จุดเข้าใช้งาน MiniMax",
 		"zaiEntrypoint": "จุดเข้าใช้งาน Z AI",
 		"zaiEntrypointDescription": "โปรดเลือกจุดเข้าใช้งาน API ที่เหมาะสมตามตำแหน่งของคุณ หากคุณอยู่ในจีน ให้เลือก open.bigmodel.cn มิฉะนั้น ให้เลือก api.z.ai",
-		"minimaxApiKey": "คีย์ API ของ MiniMax",
-		"getMiniMaxApiKey": "รับคีย์ API ของ MiniMax",
-		"minimaxBaseUrl": "จุดเข้าใช้งาน MiniMax",
 		"geminiApiKey": "คีย์ API ของ Gemini",
 		"geminiParameters": {
 			"urlContext": {

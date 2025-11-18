@@ -112,6 +112,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 		alwaysAllowWrite,
 		alwaysAllowWriteOutsideWorkspace,
 		alwaysAllowWriteProtected,
+		alwaysAllowToolUse,
 		alwaysAllowExecute,
 		alwaysAllowMcp,
 		allowedCommands,
@@ -1199,6 +1200,10 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 			// For read/write operations, check if it's outside workspace and if
 			// we have permission for that.
 			if (message.ask === "tool") {
+				if (alwaysAllowToolUse) {
+					return true
+				}
+
 				let tool: any = {}
 
 				try {
@@ -1270,6 +1275,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 			alwaysAllowFollowupQuestions,
 			alwaysAllowSubtasks,
 			alwaysAllowUpdateTodoList,
+			alwaysAllowToolUse,
 		],
 	)
 

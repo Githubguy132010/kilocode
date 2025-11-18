@@ -228,6 +228,10 @@
 		},
 		"maxLimits": {
 			"description": "Bu sınırlara ulaşana kadar otomatik olarak istekleri yap, sonrasında devam etmek için onay iste."
+		},
+		"toolUse": {
+			"label": "Tool use",
+			"description": "Automatically approve tool calls without requiring confirmation"
 		}
 	},
 	"providers": {

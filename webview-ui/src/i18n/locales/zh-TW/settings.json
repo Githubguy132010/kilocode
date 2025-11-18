@@ -228,6 +228,10 @@
 		},
 		"maxLimits": {
 			"description": "在請求獲得繼續操作的核准前，自動發送請求直至達到這些限制。"
+		},
+		"toolUse": {
+			"label": "Tool use",
+			"description": "Automatically approve tool calls without requiring confirmation"
 		}
 	},
 	"providers": {

@@ -253,6 +253,45 @@ describe("ChatView - New Auto Approval Logic Tests", () => {
 				askResponse: "yesButtonClicked",
 			})
 		})
+
+		describe("Tool use auto-approval", () => {
+			it("auto-approves tool calls when the tool-use toggle is enabled", async () => {
+				renderChatView()
+
+				mockPostMessage({
+					autoApprovalEnabled: true,
+					alwaysAllowToolUse: true,
+					alwaysAllowReadOnly: false,
+					alwaysAllowWrite: false,
+					alwaysAllowExecute: false,
+					clineMessages: [
+						{
+							type: "say",
+							say: "task",
+							ts: Date.now() - 2000,
+							text: "Initial task",
+						},
+						{
+							type: "ask",
+							ask: "tool",
+							ts: Date.now(),
+							partial: false,
+							text: JSON.stringify({
+								tool: "deleteFileOrFolder",
+								path: "test.txt",
+							}),
+						},
+					],
+				})
+
+				await waitFor(() => {
+					expect(vscode.postMessage).toHaveBeenCalledWith({
+						type: "askResponse",
+						askResponse: "yesButtonClicked",
+					})
+				})
+			})
+		})
 	})
 
 	describe("Correct auto-approval with sub-options enabled", () => {
