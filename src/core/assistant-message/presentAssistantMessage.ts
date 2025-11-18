@@ -38,6 +38,7 @@ import { Task } from "../task/Task"
 import { newRuleTool } from "../tools/newRuleTool" // kilocode_change
 import { reportBugTool } from "../tools/reportBugTool" // kilocode_change
 import { condenseTool } from "../tools/condenseTool" // kilocode_change
+import { deleteFileOrFolderTool } from "../tools/deleteFileOrFolderTool"
 import { codebaseSearchTool } from "../tools/codebaseSearchTool"
 import { experiments, EXPERIMENT_IDS } from "../../shared/experiments"
 import { applyDiffToolLegacy } from "../tools/applyDiffTool"
@@ -485,6 +486,16 @@ export async function presentAssistantMessage(cline: Task) {
 				case "write_to_file":
 					// await checkpointSaveAndMark(cline) // kilocode_change
 					await writeToFileTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+					break
+				case "delete_file_or_folder":
+					await deleteFileOrFolderTool(
+						cline,
+						block,
+						askApproval,
+						handleError,
+						pushToolResult,
+						removeClosingTag,
+					)
 					break
 				case "update_todo_list":
 					await updateTodoListTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)

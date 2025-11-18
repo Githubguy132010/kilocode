@@ -204,6 +204,7 @@ export const TOOL_DISPLAY_NAMES: Record<ToolName, string> = {
 	apply_diff: "apply changes",
 	edit_file: "edit file", // kilocode_change: Morph fast apply
 	search_files: "search files",
+	delete_file_or_folder: "delete files or folders",
 	list_files: "list files",
 	list_code_definition_names: "list definitions",
 	browser_action: "use a browser",
@@ -240,6 +241,7 @@ export const TOOL_GROUPS: Record<ToolGroup, ToolGroupConfig> = {
 			"apply_diff",
 			"edit_file", // kilocode_change: Morph fast apply
 			"write_to_file",
+			"delete_file_or_folder",
 			"insert_content",
 			"new_rule", // kilocode_change
 			"generate_image",

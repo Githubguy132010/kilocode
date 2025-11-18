@@ -18,6 +18,7 @@ import { getWriteToFileDescription } from "./write-to-file"
 import { getSearchFilesDescription } from "./search-files"
 import { getListFilesDescription } from "./list-files"
 import { getInsertContentDescription } from "./insert-content"
+import { getDeleteFileOrFolderDescription } from "./delete-file-or-folder"
 import { getListCodeDefinitionNamesDescription } from "./list-code-definition-names"
 import { getBrowserActionDescription } from "./browser-action"
 import { getAskFollowupQuestionDescription } from "./ask-followup-question"
@@ -53,6 +54,7 @@ const toolDescriptionMap: Record<string, (args: ToolArgs) => string | undefined>
 	write_to_file: (args) => getWriteToFileDescription(args),
 	search_files: (args) => getSearchFilesDescription(args),
 	list_files: (args) => getListFilesDescription(args),
+	delete_file_or_folder: (args) => getDeleteFileOrFolderDescription(args),
 	list_code_definition_names: (args) => getListCodeDefinitionNamesDescription(args),
 	browser_action: (args) => getBrowserActionDescription(args),
 	ask_followup_question: () => getAskFollowupQuestionDescription(),
@@ -145,7 +147,7 @@ export function getToolDescriptionsForMode(
 	// kilocode_change start: Morph fast apply
 	if (isFastApplyAvailable(clineProviderState)) {
 		// When Morph is enabled, disable traditional editing tools
-		const traditionalEditingTools = ["apply_diff", "write_to_file", "insert_content"]
+		const traditionalEditingTools = ["apply_diff", "write_to_file", "delete_file_or_folder", "insert_content"]
 		traditionalEditingTools.forEach((tool) => tools.delete(tool))
 	} else {
 		tools.delete("edit_file")
@@ -200,6 +202,7 @@ export {
 	getAccessMcpResourceDescription,
 	getSwitchModeDescription,
 	getInsertContentDescription,
+	getDeleteFileOrFolderDescription,
 	getEditFileDescription, // kilocode_change: Morph fast apply
 	getCodebaseSearchDescription,
 	getRunSlashCommandDescription,

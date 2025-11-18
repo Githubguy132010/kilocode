@@ -8,6 +8,7 @@ import executeCommand from "./execute_command"
 import fetchInstructions from "./fetch_instructions"
 import generateImage from "./generate_image"
 import insertContent from "./insert_content"
+import deleteFileOrFolder from "./delete_file_or_folder"
 import listCodeDefinitionNames from "./list_code_definition_names"
 import listFiles from "./list_files"
 import newTask from "./new_task"
@@ -26,6 +27,7 @@ export const nativeTools = [
 	attemptCompletion,
 	browserAction,
 	codebaseSearch,
+	deleteFileOrFolder,
 	editFile,
 	executeCommand,
 	fetchInstructions,
