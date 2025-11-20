@@ -46,12 +46,12 @@
 				"description": "启用后，Kilo Code 将执行超大文件或 MCP 输出读取，即使存在高概率溢出上下文窗口（内容大小 >80% 的上下文窗口）。"
 			},
 			"singleFileReadMode": {
-				"label": "Single-file read mode",
-				"description": "Choose how the read_file tool formats its requests. Force single-file reads if your model struggles with multi-file XML args.",
+				"label": "单文件读取模式",
+				"description": "选择 read_file 工具如何格式化其请求。如果您的模型在处理多文件 XML 参数时遇到困难，可强制使用单文件读取。",
 				"options": {
-					"auto": "Auto (based on model)",
-					"single": "Always single file",
-					"multi": "Allow multi-file reads"
+					"auto": "自动（基于模型）",
+					"single": "始终单文件",
+					"multi": "允许多文件读取"
 				}
 			}
 		},
