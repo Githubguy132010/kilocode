@@ -14,6 +14,7 @@ import {
 	type CloudOrganizationMembership,
 	ORGANIZATION_ALLOW_ALL,
 	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
+	SingleFileReadMode,
 } from "@roo-code/types"
 
 import { ExtensionMessage, ExtensionState, MarketplaceInstalledMetadata, Command } from "@roo/ExtensionMessage"
@@ -184,7 +185,9 @@ export interface ExtensionStateContextType extends ExtensionState {
 	awsUsePromptCache?: boolean
 	setAwsUsePromptCache: (value: boolean) => void
 	maxReadFileLine: number
+	singleFileReadMode: SingleFileReadMode
 	setMaxReadFileLine: (value: number) => void
+	setSingleFileReadMode: (value: SingleFileReadMode) => void
 	maxImageFileSize: number
 	setMaxImageFileSize: (value: number) => void
 	maxTotalImageSize: number
@@ -297,6 +300,7 @@ export const ExtensionStateContextProvider: React.FC<{ children: React.ReactNode
 		showAutoApproveMenu: false, // kilocode_change
 		renderContext: "sidebar",
 		maxReadFileLine: -1, // Default max read file line limit
+		singleFileReadMode: "auto",
 		maxImageFileSize: 5, // Default max image file size in MB
 		maxTotalImageSize: 20, // Default max total image size in MB
 		pinnedApiConfigs: {}, // Empty object for pinned API configs
@@ -559,6 +563,7 @@ export const ExtensionStateContextProvider: React.FC<{ children: React.ReactNode
 		localWorkflows,
 		// kilocode_change end
 		commands,
+		singleFileReadMode: state.singleFileReadMode ?? "auto",
 		soundVolume: state.soundVolume,
 		ttsSpeed: state.ttsSpeed,
 		fuzzyMatchThreshold: state.fuzzyMatchThreshold,
@@ -667,6 +672,7 @@ export const ExtensionStateContextProvider: React.FC<{ children: React.ReactNode
 		setRemoteBrowserEnabled: (value) => setState((prevState) => ({ ...prevState, remoteBrowserEnabled: value })),
 		setAwsUsePromptCache: (value) => setState((prevState) => ({ ...prevState, awsUsePromptCache: value })),
 		setMaxReadFileLine: (value) => setState((prevState) => ({ ...prevState, maxReadFileLine: value })),
+		setSingleFileReadMode: (value) => setState((prevState) => ({ ...prevState, singleFileReadMode: value })),
 		setMaxImageFileSize: (value) => setState((prevState) => ({ ...prevState, maxImageFileSize: value })),
 		setMaxTotalImageSize: (value) => setState((prevState) => ({ ...prevState, maxTotalImageSize: value })),
 		setPinnedApiConfigs: (value) => setState((prevState) => ({ ...prevState, pinnedApiConfigs: value })),

@@ -44,7 +44,8 @@ const toolDescriptionMap: Record<string, (args: ToolArgs) => string | undefined>
 	read_file: (args) => {
 		// Check if the current model should use the simplified read_file tool
 		const modelId = args.settings?.modelId
-		if (modelId && shouldUseSingleFileRead(modelId)) {
+		const singleFileReadMode = args.settings?.singleFileReadMode ?? "auto"
+		if (shouldUseSingleFileRead(modelId ?? "", singleFileReadMode)) {
 			return getSimpleReadFileDescription(args)
 		}
 		return getReadFileDescription(args)

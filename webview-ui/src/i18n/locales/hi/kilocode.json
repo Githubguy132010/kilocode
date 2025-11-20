@@ -76,6 +76,15 @@
 			"allowVeryLargeReads": {
 				"label": "बहुत बड़ी फ़ाइल पढ़ने की अनुमति दें",
 				"description": "जब सक्षम हो, तो Kilo Code बहुत बड़ी फ़ाइल या MCP आउटपुट रीड्स करेगा भले ही संदर्भ विंडो के ओवरफ्लो होने की उच्च संभावना हो (सामग्री का आकार संदर्भ विंडो का >80%)।"
+			},
+			"singleFileReadMode": {
+				"label": "Single-file read mode",
+				"description": "Choose how the read_file tool formats its requests. Force single-file reads if your model struggles with multi-file XML args.",
+				"options": {
+					"auto": "Auto (based on model)",
+					"single": "Always single file",
+					"multi": "Allow multi-file reads"
+				}
 			}
 		},
 		"systemNotifications": {

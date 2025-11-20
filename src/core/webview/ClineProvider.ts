@@ -2002,6 +2002,7 @@ ${prompt}
 			showTimestamps, // kilocode_change
 			hideCostBelowThreshold, // kilocode_change
 			maxReadFileLine,
+			singleFileReadMode,
 			maxImageFileSize,
 			maxTotalImageSize,
 			terminalCompressProgressBar,
@@ -2171,6 +2172,7 @@ ${prompt}
 			language, // kilocode_change
 			renderContext: this.renderContext,
 			maxReadFileLine: maxReadFileLine ?? -1,
+			singleFileReadMode: singleFileReadMode ?? "auto",
 			maxImageFileSize: maxImageFileSize ?? 5,
 			maxTotalImageSize: maxTotalImageSize ?? 20,
 			maxConcurrentFileReads: maxConcurrentFileReads ?? 5,
@@ -2444,6 +2446,7 @@ ${prompt}
 			showTimestamps: stateValues.showTimestamps ?? true, // kilocode_change
 			hideCostBelowThreshold: stateValues.hideCostBelowThreshold ?? 0, // kilocode_change
 			maxReadFileLine: stateValues.maxReadFileLine ?? -1,
+			singleFileReadMode: stateValues.singleFileReadMode ?? "auto",
 			maxImageFileSize: stateValues.maxImageFileSize ?? 5,
 			maxTotalImageSize: stateValues.maxTotalImageSize ?? 20,
 			maxConcurrentFileReads: stateValues.maxConcurrentFileReads ?? 5,

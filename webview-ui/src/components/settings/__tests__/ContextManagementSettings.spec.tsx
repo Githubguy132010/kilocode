@@ -1,7 +1,10 @@
 // npx vitest src/components/settings/__tests__/ContextManagementSettings.spec.tsx
 
+import { type ComponentProps } from "react"
+
 import { render, screen, fireEvent, waitFor } from "@/utils/test-utils"
 import { ContextManagementSettings } from "../ContextManagementSettings"
+import { SingleFileReadMode } from "@roo-code/types"
 
 // Mock the translation hook
 vi.mock("@/hooks/useAppTranslation", () => ({
@@ -45,15 +48,15 @@ vi.mock("@/components/ui", () => ({
 			{children}
 		</button>
 	),
-	Select: ({ children, ...props }: any) => (
-		<div role="combobox" {...props}>
+	Select: ({ value, onValueChange, children, "data-testid": dataTestId }: any) => (
+		<select data-testid={dataTestId} value={value} onChange={(e) => onValueChange?.(e.target.value)}>
 			{children}
-		</div>
+		</select>
 	),
-	SelectTrigger: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-	SelectValue: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-	SelectContent: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-	SelectItem: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+	SelectTrigger: ({ children }: any) => <>{children}</>,
+	SelectValue: ({ children }: any) => <>{children}</>,
+	SelectContent: ({ children }: any) => <>{children}</>,
+	SelectItem: ({ value, children }: any) => <option value={value}>{children}</option>,
 }))
 
 // Mock vscode utilities - this is necessary since we're not in a VSCode environment
@@ -82,16 +85,20 @@ vi.mock("@vscode/webview-ui-toolkit/react", () => ({
 }))
 
 describe("ContextManagementSettings", () => {
-	const defaultProps = {
+	const getComboboxesExcludingSingleFileRead = () =>
+		screen
+			.getAllByRole("combobox")
+			.filter((element) => element.getAttribute("data-testid") !== "single-file-read-mode-select")
+
+	const defaultProps: ComponentProps<typeof ContextManagementSettings> = {
 		autoCondenseContext: false,
 		autoCondenseContextPercent: 80,
-		condensingApiConfigId: undefined,
-		customCondensingPrompt: undefined,
 		listApiConfigMeta: [],
 		maxOpenTabsContext: 20,
 		maxWorkspaceFiles: 200,
 		showRooIgnoredFiles: false,
 		maxReadFileLine: -1,
+		singleFileReadMode: "auto" as SingleFileReadMode,
 		maxConcurrentFileReads: 5,
 		profileThresholds: {},
 		includeDiagnosticMessages: true,
@@ -170,6 +177,23 @@ describe("ContextManagementSettings", () => {
 		// Update to disabled - slider should still be visible
 		rerender(<ContextManagementSettings {...defaultProps} includeDiagnosticMessages={false} />)
 		expect(screen.getByTestId("max-diagnostic-messages-slider")).toBeInTheDocument()
+	})
+
+	it("updates single file read mode when selection changes", async () => {
+		const setCachedStateField = vi.fn()
+		render(
+			<ContextManagementSettings
+				{...defaultProps}
+				singleFileReadMode={"auto" as SingleFileReadMode}
+				setCachedStateField={setCachedStateField}
+			/>,
+		)
+
+		fireEvent.change(screen.getByTestId("single-file-read-mode-select"), { target: { value: "single" } })
+
+		await waitFor(() => {
+			expect(setCachedStateField).toHaveBeenCalledWith("singleFileReadMode", "single")
+		})
 	})
 
 	it("displays correct max diagnostic messages value", () => {
@@ -378,8 +402,8 @@ describe("ContextManagementSettings", () => {
 		expect(slider).toBeInTheDocument()
 
 		// Should render the profile select dropdown
-		const selects = screen.getAllByRole("combobox")
-		expect(selects).toHaveLength(1)
+		const condenseSelects = getComboboxesExcludingSingleFileRead()
+		expect(condenseSelects).toHaveLength(1)
 	})
 
 	describe("Auto Condense Context functionality", () => {
@@ -413,7 +437,8 @@ describe("ContextManagementSettings", () => {
 			// Threshold settings should be visible
 			expect(screen.getByTestId("condense-threshold-slider")).toBeInTheDocument()
 			// One combobox for profile selection
-			expect(screen.getAllByRole("combobox")).toHaveLength(1)
+			const condenseSelects = getComboboxesExcludingSingleFileRead()
+			expect(condenseSelects).toHaveLength(1)
 		})
 
 		it("updates auto condense context percent", () => {

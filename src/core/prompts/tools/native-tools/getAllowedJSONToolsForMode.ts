@@ -24,6 +24,7 @@ export async function getAllowedJSONToolsForMode(
 	model: { id: string; info: ModelInfo } | undefined,
 ): Promise<OpenAI.Chat.ChatCompletionTool[]> {
 	const providerState: ClineProviderState | undefined = await provider?.getState()
+	const singleFileReadMode = providerState?.singleFileReadMode ?? "auto"
 	const config = getModeConfig(mode, providerState?.customModes)
 	const context = ContextProxy.instance.rawContext
 
@@ -154,8 +155,10 @@ export async function getAllowedJSONToolsForMode(
 		}
 	}
 
+	const useSingleFileRead = shouldUseSingleFileRead(model?.id ?? "", singleFileReadMode)
+
 	if (isReadFileToolAllowedForMode) {
-		if (model?.id && shouldUseSingleFileRead(model?.id)) {
+		if (useSingleFileRead) {
 			allowedTools.push(read_file_single)
 		} else {
 			allowedTools.push(read_file_multi)

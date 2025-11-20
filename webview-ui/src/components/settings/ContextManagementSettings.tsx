@@ -11,6 +11,7 @@ import { SetCachedStateField } from "./types"
 import { SectionHeader } from "./SectionHeader"
 import { Section } from "./Section"
 import { vscode } from "@/utils/vscode"
+import { SingleFileReadMode } from "@roo-code/types"
 
 type ContextManagementSettingsProps = HTMLAttributes<HTMLDivElement> & {
 	autoCondenseContext: boolean
@@ -24,6 +25,7 @@ type ContextManagementSettingsProps = HTMLAttributes<HTMLDivElement> & {
 	maxTotalImageSize?: number
 	maxConcurrentFileReads?: number
 	allowVeryLargeReads?: boolean // kilocode_change
+	singleFileReadMode?: SingleFileReadMode
 	profileThresholds?: Record<string, number>
 	includeDiagnosticMessages?: boolean
 	maxDiagnosticMessages?: number
@@ -41,6 +43,7 @@ type ContextManagementSettingsProps = HTMLAttributes<HTMLDivElement> & {
 		| "maxTotalImageSize"
 		| "maxConcurrentFileReads"
 		| "allowVeryLargeReads" // kilocode_change
+		| "singleFileReadMode"
 		| "profileThresholds"
 		| "includeDiagnosticMessages"
 		| "maxDiagnosticMessages"
@@ -63,6 +66,7 @@ export const ContextManagementSettings = ({
 	maxTotalImageSize,
 	maxConcurrentFileReads,
 	allowVeryLargeReads, // kilocode_change
+	singleFileReadMode,
 	profileThresholds = {},
 	includeDiagnosticMessages,
 	maxDiagnosticMessages,
@@ -231,6 +235,35 @@ export const ContextManagementSettings = ({
 					</VSCodeCheckbox>
 					<div className="text-vscode-descriptionForeground text-sm mt-1 mb-3">
 						{t("kilocode:settings.contextManagement.allowVeryLargeReads.description")}
+					</div>
+				</div>
+				<div>
+					<span className="block font-medium mb-1">
+						{t("kilocode:settings.contextManagement.singleFileReadMode.label")}
+					</span>
+					<Select
+						value={singleFileReadMode ?? "auto"}
+						onValueChange={(value) =>
+							setCachedStateField("singleFileReadMode", value as SingleFileReadMode)
+						}
+						data-testid="single-file-read-mode-select">
+						<SelectTrigger className="w-64">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="auto">
+								{t("kilocode:settings.contextManagement.singleFileReadMode.options.auto")}
+							</SelectItem>
+							<SelectItem value="single">
+								{t("kilocode:settings.contextManagement.singleFileReadMode.options.single")}
+							</SelectItem>
+							<SelectItem value="multi">
+								{t("kilocode:settings.contextManagement.singleFileReadMode.options.multi")}
+							</SelectItem>
+						</SelectContent>
+					</Select>
+					<div className="text-vscode-descriptionForeground text-sm mt-1 mb-3">
+						{t("kilocode:settings.contextManagement.singleFileReadMode.description")}
 					</div>
 				</div>
 				{/*kilocode_change end*/}

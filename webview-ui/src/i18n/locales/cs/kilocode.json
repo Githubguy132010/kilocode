@@ -83,6 +83,15 @@
 			"allowVeryLargeReads": {
 				"label": "Povolit čtení velmi velkých souborů",
 				"description": "Když je povoleno, Kilo Code provede čtení velmi velkých souborů nebo výstupů MCP i když existuje vysoká pravděpodobnost přetečení kontextového okna (velikost obsahu >80% kontextového okna)."
+			},
+			"singleFileReadMode": {
+				"label": "Single-file read mode",
+				"description": "Choose how the read_file tool formats its requests. Force single-file reads if your model struggles with multi-file XML args.",
+				"options": {
+					"auto": "Auto (based on model)",
+					"single": "Always single file",
+					"multi": "Allow multi-file reads"
+				}
 			}
 		},
 		"systemNotifications": {

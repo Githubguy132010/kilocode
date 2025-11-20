@@ -27,6 +27,7 @@ export const generateSystemPrompt = async (provider: ClineProvider, message: Web
 		language,
 		maxReadFileLine,
 		maxConcurrentFileReads,
+		singleFileReadMode,
 	} = state // kilocode_change
 
 	// Check experiment to determine which diff strategy to use
@@ -88,6 +89,7 @@ export const generateSystemPrompt = async (provider: ClineProvider, message: Web
 		maxReadFileLine !== -1,
 		{
 			maxConcurrentFileReads: maxConcurrentFileReads ?? 5,
+			singleFileReadMode: singleFileReadMode ?? "auto",
 			todoListEnabled: apiConfiguration?.todoListEnabled ?? true,
 			useAgentRules: vscode.workspace.getConfiguration("kilo-code").get<boolean>("useAgentRules") ?? true,
 			newTaskRequireTodos: vscode.workspace

@@ -83,6 +83,15 @@
 			"allowVeryLargeReads": {
 				"label": "매우 큰 파일 읽기 허용",
 				"description": "활성화되면 Kilo Code는 컨텍스트 창을 오버플로할 가능성이 높더라도 매우 큰 파일이나 MCP 출력 읽기를 수행합니다 (콘텐츠 크기가 컨텍스트 창의 80% 이상)."
+			},
+			"singleFileReadMode": {
+				"label": "Single-file read mode",
+				"description": "Choose how the read_file tool formats its requests. Force single-file reads if your model struggles with multi-file XML args.",
+				"options": {
+					"auto": "Auto (based on model)",
+					"single": "Always single file",
+					"multi": "Allow multi-file reads"
+				}
 			}
 		},
 		"systemNotifications": {
