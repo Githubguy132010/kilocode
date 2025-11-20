@@ -46,12 +46,12 @@
 				"description": "Khi bật, Kilo Code sẽ thực hiện đọc tệp hoặc đầu ra MCP rất lớn ngay cả khi có khả năng cao làm tràn cửa sổ ngữ cảnh (kích thước nội dung >80% cửa sổ ngữ cảnh)."
 			},
 			"singleFileReadMode": {
-				"label": "Single-file read mode",
-				"description": "Choose how the read_file tool formats its requests. Force single-file reads if your model struggles with multi-file XML args.",
+				"label": "Chế độ đọc tệp đơn",
+				"description": "Chọn cách công cụ read_file định dạng các yêu cầu của nó. Buộc đọc tệp đơn nếu mô hình của bạn gặp khó khăn với các đối số XML nhiều tệp.",
 				"options": {
-					"auto": "Auto (based on model)",
-					"single": "Always single file",
-					"multi": "Allow multi-file reads"
+					"auto": "Tự động (dựa trên mô hình)",
+					"single": "Luôn đọc tệp đơn",
+					"multi": "Cho phép đọc nhiều tệp"
 				}
 			}
 		},
