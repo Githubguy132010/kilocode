@@ -85,12 +85,12 @@
 				"description": "Quando ativado, o Kilo Code realizará leituras de arquivos ou saídas MCP muito grandes mesmo que haja uma alta probabilidade de exceder a janela de contexto (tamanho do conteúdo >80% da janela de contexto)."
 			},
 			"singleFileReadMode": {
-				"label": "Single-file read mode",
-				"description": "Choose how the read_file tool formats its requests. Force single-file reads if your model struggles with multi-file XML args.",
+				"label": "Modo de leitura de arquivo único",
+				"description": "Escolha como a ferramenta read_file formata suas solicitações. Force leituras de arquivo único se seu modelo tiver dificuldades com argumentos XML de múltiplos arquivos",
 				"options": {
-					"auto": "Auto (based on model)",
-					"single": "Always single file",
-					"multi": "Allow multi-file reads"
+					"auto": "Automático (com base no modelo)",
+					"single": "Sempre arquivo único",
+					"multi": "Permitir leituras de múltiplos arquivos"
 				}
 			}
 		},
