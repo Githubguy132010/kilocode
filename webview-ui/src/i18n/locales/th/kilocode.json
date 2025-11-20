@@ -46,12 +46,12 @@
 				"description": "เมื่อเปิดใช้งาน Kilo Code จะอ่านไฟล์หรือผลลัพธ์ MCP ที่มีขนาดใหญ่มาก แม้ว่าจะมีโอกาสสูงที่จะล้นหน้าต่างบริบท (ขนาดเนื้อหา >80% ของหน้าต่างบริบท)"
 			},
 			"singleFileReadMode": {
-				"label": "Single-file read mode",
-				"description": "Choose how the read_file tool formats its requests. Force single-file reads if your model struggles with multi-file XML args.",
+				"label": "โหมดอ่านไฟล์เดี่ยว",
+				"description": "เลือกวิธีการที่เครื่องมือ read_file จัดรูปแบบคำขอ บังคับการอ่านไฟล์เดี่ยวหากโมเดลของคุณมีปัญหากับอาร์กิวเมนต์ XML หลายไฟล์",
 				"options": {
-					"auto": "Auto (based on model)",
-					"single": "Always single file",
-					"multi": "Allow multi-file reads"
+					"auto": "อัตโนมัติ (ตามโมเดล)",
+					"single": "ไฟล์เดี่ยวเสมอ",
+					"multi": "อนุญาตการอ่านหลายไฟล์"
 				}
 			}
 		},
