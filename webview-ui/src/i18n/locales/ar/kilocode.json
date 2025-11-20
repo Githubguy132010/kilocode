@@ -80,12 +80,12 @@
 				"description": "إذا تم تفعيله، Kilo Code يقدر يقرأ ملفات ضخمة أو مخرجات MCP حتى لو فيه احتمال يتجاوز حجم السياق (إذا المحتوى تجاوز 80% من حجم السياق)."
 			},
 			"singleFileReadMode": {
-				"label": "Single-file read mode",
-				"description": "Choose how the read_file tool formats its requests. Force single-file reads if your model struggles with multi-file XML args.",
+				"label": "وضع قراءة الملف الواحد",
+				"description": "اختر كيفية تنسيق أداة read_file لطلباتها. فرض قراءة ملف واحد إذا كان نموذجك يواجه صعوبة مع حجج XML متعددة الملفات",
 				"options": {
-					"auto": "Auto (based on model)",
-					"single": "Always single file",
-					"multi": "Allow multi-file reads"
+					"auto": "تلقائي (بناءً على النموذج)",
+					"single": "ملف واحد دائماً",
+					"multi": "السماح بقراءة ملفات متعددة"
 				}
 			}
 		},
