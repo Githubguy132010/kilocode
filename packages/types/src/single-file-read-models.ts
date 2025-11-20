@@ -5,10 +5,11 @@
  */
 
 /**
- * Check if a model should use single file read format
- * @param modelId The model ID to check
- * @param forceSingleFileRead Optional user setting to force or disable single-file reads
- * @returns true if the model should use single file reads
+ * Determines whether a model should use the simplified single-file read format.
+ *
+ * @param modelId - Identifier of the model to evaluate.
+ * @param forceSingleFileRead - Optional override: `true` to force single-file reads, `false` to disable, `null` or `undefined` to use the default heuristic.
+ * @returns `true` if the model should use single-file reads, `false` otherwise.
  */
 export function shouldUseSingleFileRead(modelId: string, forceSingleFileRead?: boolean | null): boolean {
 	if (forceSingleFileRead === true) {

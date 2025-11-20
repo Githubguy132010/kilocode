@@ -1,8 +1,14 @@
 import { ToolArgs } from "./types"
 
 /**
- * Generate a simplified read_file tool description for models that only support single file reads
- * Uses the simpler format: <read_file><path>file/path.ext</path></read_file>
+ * Create a compact tool description for single-file read requests.
+ *
+ * The returned string documents the simplified `<read_file><path>...</path></read_file>` format,
+ * states that only one file may be read per request, indicates that output is line-numbered
+ * for reference (e.g., `1 | const x = 1`), and embeds the workspace directory from `args.cwd`.
+ *
+ * @param args - ToolArgs containing the workspace directory (`cwd`) to include in the description
+ * @returns A formatted description string describing the simplified single-file `read_file` usage
  */
 export function getSimpleReadFileDescription(args: ToolArgs): string {
 	return `## read_file

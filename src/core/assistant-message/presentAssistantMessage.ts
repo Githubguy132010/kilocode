@@ -45,20 +45,11 @@ import { yieldPromise } from "../kilocode"
 import Anthropic from "@anthropic-ai/sdk" // kilocode_change
 
 /**
- * Processes and presents assistant message content to the user interface.
+ * Present assistant response blocks to the UI and drive any requested tool actions.
  *
- * This function is the core message handling system that:
- * - Sequentially processes content blocks from the assistant's response.
- * - Displays text content to the user.
- * - Executes tool use requests with appropriate user approval.
- * - Manages the flow of conversation by determining when to proceed to the next content block.
- * - Coordinates file system checkpointing for modified files.
- * - Controls the conversation state to determine when to continue to the next request.
+ * Processes the current streaming assistant message block-by-block: displays text blocks, requests user approval and executes tool_use blocks (including validation, repetition checks, gatekeeper/Yolo handling, and result reporting), saves file checkpoints when needed, and advances the conversation state and streaming index. Uses a per-task lock to prevent reentry and coordinates partial/streamed content handling.
  *
- * The function uses a locking mechanism to prevent concurrent execution and handles
- * partial content blocks during streaming. It's designed to work with the streaming
- * API response pattern, where content arrives incrementally and needs to be processed
- * as it becomes available.
+ * @throws If the task has been aborted.
  */
 
 export async function presentAssistantMessage(cline: Task) {

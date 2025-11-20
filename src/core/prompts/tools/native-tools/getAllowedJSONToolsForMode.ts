@@ -17,6 +17,19 @@ import * as vscode from "vscode"
 import { read_file_multi, read_file_single } from "./read_file"
 import search_and_replace, { shouldUseSearchAndReplaceInsteadOfApplyDiff } from "./search_and_replace"
 
+/**
+ * Compute the set of JSON-capable tools that are permitted for a given mode and provider context.
+ *
+ * The selection respects provider state (features, experiments, and configuration), workspace indexing availability,
+ * fast-apply and editing feature flags, model capabilities, and the `diffEnabled` flag which controls inclusion of
+ * apply-diff-related tools.
+ *
+ * @param mode - The operational mode to evaluate tool availability for
+ * @param provider - The client provider whose state and settings influence tool availability; may be undefined
+ * @param diffEnabled - When true, include apply-diff tooling variants when allowed by provider settings
+ * @param model - The active model (id and info) used to decide model-dependent tools such as single-file read and image/browser capabilities; may be undefined
+ * @returns An array of OpenAI.Chat.ChatCompletionTool objects that are allowed for the supplied mode and context
+ */
 export async function getAllowedJSONToolsForMode(
 	mode: Mode,
 	provider: ClineProvider | undefined,

@@ -5,6 +5,19 @@ import { SUPPORTED_IMAGE_FORMATS } from "../../tools/helpers/imageHelpers"
 
 import { ToolArgs } from "./types"
 
+/**
+ * Build a Markdown description explaining how to use the read_file tool based on the provided arguments.
+ *
+ * Generates a dynamic, human-readable description that covers whether single- or multi-file reads are allowed, the maximum concurrent file read limit, support for partial (line-range) reads, supported binary/image formats, usage examples, and an efficient reading strategy.
+ *
+ * @param args - Tool configuration and context; expected fields used by this description include:
+ *   - settings?.maxConcurrentFileReads: maximum files allowed per request (defaults to 5)
+ *   - settings?.forceSingleFileRead: when true, disables multi-file reads
+ *   - partialReadsEnabled: enables documenting line-range usage
+ *   - supportsComputerUse: when true, include supported image formats
+ *   - cwd: workspace directory used in example file paths
+ * @returns The assembled Markdown string describing the read_file tool and its usage. 
+ */
 export function getReadFileDescription(args: ToolArgs): string {
 	const maxConcurrentReads = args.settings?.maxConcurrentFileReads ?? 5
 	const forceSingleFileRead = args.settings?.forceSingleFileRead === true
