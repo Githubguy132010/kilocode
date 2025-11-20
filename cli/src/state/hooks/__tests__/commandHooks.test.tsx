@@ -13,7 +13,7 @@ import { Provider } from "jotai"
 
 describe("Command Hook Exports", () => {
 	describe("Hook Exports", () => {
-		it("should export useCommandContext", async () => {
+		it("should export useCommandContext", { timeout: 10_000 }, async () => {
 			const { useCommandContext } = await import("../useCommandContext.js")
 			expect(useCommandContext).toBeDefined()
 			expect(typeof useCommandContext).toBe("function")

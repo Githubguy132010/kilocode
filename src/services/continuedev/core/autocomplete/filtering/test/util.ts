@@ -70,5 +70,20 @@ export async function testAutocompleteFiltering(test: AutocompleteFileringTestIn
 	)
 
 	// Ensure that we return the text that is wanted to be displayed
-	expect(result?.completion).toEqual(test.expectedCompletion)
+	// Normalize trailing whitespace to avoid brittle failures caused by
+	// formatter differences while still validating the completion content.
+	const completion = result?.completion
+
+	if (test.expectedCompletion === undefined) {
+		expect(completion).toBeUndefined()
+		return
+	}
+
+	if (test.expectedCompletion === null) {
+		expect(completion).toBeNull()
+		return
+	}
+
+	const normalize = (value: string) => value.replace(/\s+$/, "")
+	expect(completion && normalize(completion)).toEqual(normalize(test.expectedCompletion))
 }

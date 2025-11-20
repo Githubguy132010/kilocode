@@ -1830,6 +1830,10 @@ export const webviewMessageHandler = async (
 			await updateGlobalState("maxReadFileLine", message.value)
 			await provider.postStateToWebview()
 			break
+		case "singleFileReadMode":
+			await updateGlobalState("singleFileReadMode", message.text ?? "auto")
+			await provider.postStateToWebview()
+			break
 		// kilocode_change start
 		case "kiloCodeImageApiKey":
 			await provider.contextProxy.setValue("kiloCodeImageApiKey", message.text)

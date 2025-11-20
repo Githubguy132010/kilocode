@@ -3,6 +3,7 @@ import { getAllowedJSONToolsForMode } from "../getAllowedJSONToolsForMode"
 import { Mode } from "../../../../../shared/modes"
 import { ClineProvider, ClineProviderState } from "../../../../webview/ClineProvider"
 import { apply_diff_multi_file, apply_diff_single_file } from "../apply_diff"
+import { read_file_multi, read_file_single } from "../read_file"
 import { CodeIndexManager } from "../../../../../services/code-index/manager"
 import { McpServerManager } from "../../../../../services/mcp/McpServerManager"
 import { ContextProxy } from "../../../../config/ContextProxy"
@@ -23,6 +24,10 @@ describe("getAllowedJSONToolsForMode", () => {
 	const modelWithoutImages = {
 		id: "mock-model",
 		info: { contextWindow: 2048, supportsPromptCache: false, supportsImages: false },
+	}
+	const haikuModel = {
+		id: "claude-haiku-4.5",
+		info: { contextWindow: 2048, supportsPromptCache: false, supportsImages: true },
 	}
 
 	beforeEach(() => {
@@ -371,6 +376,46 @@ describe("getAllowedJSONToolsForMode", () => {
 
 			const newTaskTool = tools.find((tool) => "function" in tool && tool.function.name === "new_task")
 			expect(newTaskTool).toBeDefined()
+		})
+
+		describe("single file read mode override", () => {
+			it("should force single-file read tool when mode is set to single", async () => {
+				const providerState: Partial<ClineProviderState> = {
+					experiments: {},
+					singleFileReadMode: "single",
+				}
+
+				vi.mocked(mockProvider.getState!).mockResolvedValue(providerState as ClineProviderState)
+
+				const tools = await getAllowedJSONToolsForMode(
+					"code" as Mode,
+					mockProvider as ClineProvider,
+					true,
+					modelWithImages,
+				)
+
+				const readFileTool = tools.find((tool) => "function" in tool && tool.function.name === "read_file")
+				expect(readFileTool).toEqual(read_file_single)
+			})
+
+			it("should force multi-file read tool when mode is set to multi", async () => {
+				const providerState: Partial<ClineProviderState> = {
+					experiments: {},
+					singleFileReadMode: "multi",
+				}
+
+				vi.mocked(mockProvider.getState!).mockResolvedValue(providerState as ClineProviderState)
+
+				const tools = await getAllowedJSONToolsForMode(
+					"code" as Mode,
+					mockProvider as ClineProvider,
+					true,
+					haikuModel,
+				)
+
+				const readFileTool = tools.find((tool) => "function" in tool && tool.function.name === "read_file")
+				expect(readFileTool).toEqual(read_file_multi)
+			})
 		})
 	})
 })

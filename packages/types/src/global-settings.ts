@@ -15,6 +15,7 @@ import { modeConfigSchema } from "./mode.js"
 import { customModePromptsSchema, customSupportPromptsSchema } from "./mode.js"
 import { languagesSchema } from "./vscode.js"
 import { fastApplyModelSchema, ghostServiceSettingsSchema } from "./kilocode/kilocode.js"
+import { SINGLE_FILE_READ_MODES } from "./single-file-read-models.js"
 
 /**
  * Default delay in milliseconds after writes to allow diagnostics to detect potential problems.
@@ -163,6 +164,7 @@ export const globalSettingsSchema = z.object({
 	maxWorkspaceFiles: z.number().optional(),
 	showRooIgnoredFiles: z.boolean().optional(),
 	maxReadFileLine: z.number().optional(),
+	singleFileReadMode: z.enum(SINGLE_FILE_READ_MODES).optional(),
 	maxImageFileSize: z.number().optional(),
 	maxTotalImageSize: z.number().optional(),
 
@@ -395,6 +397,7 @@ export const EVALS_SETTINGS: RooCodeSettings = {
 	maxWorkspaceFiles: 200,
 	showRooIgnoredFiles: true,
 	maxReadFileLine: -1, // -1 to enable full file reading.
+	singleFileReadMode: "auto",
 
 	includeDiagnosticMessages: true,
 	maxDiagnosticMessages: 50,

@@ -44,6 +44,15 @@
 			"allowVeryLargeReads": {
 				"label": "Дозволити дуже великі читання файлів",
 				"description": "Коли увімкнено, Kilo Code виконуватиме дуже великі читання файлів або виводу MCP, навіть якщо існує висока ймовірність переповнення вікна контексту (розмір вмісту >80% вікна контексту)."
+			},
+			"singleFileReadMode": {
+				"label": "Single-file read mode",
+				"description": "Choose how the read_file tool formats its requests. Force single-file reads if your model struggles with multi-file XML args.",
+				"options": {
+					"auto": "Auto (based on model)",
+					"single": "Always single file",
+					"multi": "Allow multi-file reads"
+				}
 			}
 		},
 		"provider": {
