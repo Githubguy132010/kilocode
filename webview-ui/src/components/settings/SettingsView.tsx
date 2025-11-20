@@ -219,6 +219,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 		terminalCompressProgressBar,
 		maxConcurrentFileReads,
 		allowVeryLargeReads, // kilocode_change
+		forceSingleFileRead,
 		terminalCommandApiConfigId, // kilocode_change
 		condensingApiConfigId,
 		customCondensingPrompt,
@@ -1039,6 +1040,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 							maxTotalImageSize={maxTotalImageSize}
 							maxConcurrentFileReads={maxConcurrentFileReads}
 							allowVeryLargeReads={allowVeryLargeReads /* kilocode_change */}
+							forceSingleFileRead={forceSingleFileRead}
 							profileThresholds={profileThresholds}
 							includeDiagnosticMessages={includeDiagnosticMessages}
 							maxDiagnosticMessages={maxDiagnosticMessages}

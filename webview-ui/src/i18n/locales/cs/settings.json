@@ -327,9 +327,6 @@
 		"minimaxBaseUrl": "Vstupní bod MiniMax",
 		"zaiEntrypoint": "Vstupní bod Z AI",
 		"zaiEntrypointDescription": "Vyberte prosím vhodný vstupní bod API podle vaší polohy. Pokud jste v Číně, vyberte open.bigmodel.cn. Jinak vyberte api.z.ai.",
-		"minimaxApiKey": "Klíč API MiniMax",
-		"getMiniMaxApiKey": "Získat klíč API MiniMax",
-		"minimaxBaseUrl": "Vstupní bod MiniMax",
 		"geminiApiKey": "Klíč API Gemini",
 		"getGroqApiKey": "Získat klíč API Groq",
 		"groqApiKey": "Klíč API Groq",
@@ -728,6 +725,10 @@
 		"maxConcurrentFileReads": {
 			"label": "Limit souběžného čtení souborů",
 			"description": "Maximální počet souborů, které může nástroj 'read_file' zpracovávat souběžně. Vyšší hodnoty mohou urychlit čtení více malých souborů, ale zvyšují využití paměti."
+		},
+		"singleFileRead": {
+			"label": "Vynutit zjednodušené čtení jednoho souboru",
+			"description": "Když je tato možnost povolena, asistent musí používat zjednodušený formát <read_file><path>...</path></read_file> a odesílat jeden soubor na požadavek namísto dávkování více cest."
 		},
 		"maxReadFile": {
 			"label": "Prahová hodnota automatického zkrácení při čtení souboru",

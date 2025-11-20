@@ -155,7 +155,7 @@ export async function getAllowedJSONToolsForMode(
 	}
 
 	if (isReadFileToolAllowedForMode) {
-		if (model?.id && shouldUseSingleFileRead(model?.id)) {
+		if (model?.id && shouldUseSingleFileRead(model?.id, providerState?.forceSingleFileRead)) {
 			allowedTools.push(read_file_single)
 		} else {
 			allowedTools.push(read_file_multi)

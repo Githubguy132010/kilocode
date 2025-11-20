@@ -650,6 +650,10 @@
 			"label": "Afficher les fichiers .kilocodeignore dans les listes et recherches",
 			"description": "Lorsque cette option est activée, les fichiers correspondant aux modèles dans .kilocodeignore seront affichés dans les listes avec un symbole de cadenas. Lorsqu'elle est désactivée, ces fichiers seront complètement masqués des listes de fichiers et des recherches."
 		},
+		"singleFileRead": {
+			"label": "Forcer les lectures simplifiées d'un seul fichier",
+			"description": "Lorsqu'il est activé, l'assistant doit utiliser le format simplifié <read_file><path>...</path></read_file> et envoyer un fichier par requête au lieu de regrouper plusieurs chemins par lots."
+		},
 		"maxReadFile": {
 			"label": "Seuil d'auto-troncature de lecture de fichier",
 			"description": "Kilo Code lit ce nombre de lignes lorsque le modèle omet les valeurs de début/fin. Si ce nombre est inférieur au total du fichier, Kilo Code génère un index des numéros de ligne des définitions de code. Cas spéciaux : -1 indique à Kilo Code de lire le fichier entier (sans indexation), et 0 indique de ne lire aucune ligne et de fournir uniquement les index de ligne pour un contexte minimal. Des valeurs plus basses minimisent l'utilisation initiale du contexte, permettant des lectures ultérieures de plages de lignes précises. Les requêtes avec début/fin explicites ne sont pas limitées par ce paramètre.",

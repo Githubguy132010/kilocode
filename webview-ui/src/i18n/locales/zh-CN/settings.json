@@ -319,9 +319,6 @@
 		"getZaiApiKey": "获取 Z AI API 密钥",
 		"zaiEntrypoint": "Z AI 服务站点",
 		"zaiEntrypointDescription": "请根据您的位置选择适当的 API 服务站点。如果您在中国，请选择 open.bigmodel.cn。否则，请选择 api.z.ai。",
-		"minimaxApiKey": "MiniMax API 密钥",
-		"getMiniMaxApiKey": "获取 MiniMax API 密钥",
-		"minimaxBaseUrl": "MiniMax 服务站点",
 		"geminiApiKey": "Gemini API 密钥",
 		"getGroqApiKey": "获取 Groq API 密钥",
 		"groqApiKey": "Groq API 密钥",
@@ -653,6 +650,10 @@
 		"rooignore": {
 			"label": "在列表和搜索中显示 .kilocodeignore 文件",
 			"description": "启用后，与 .kilocodeignore 中模式匹配的文件将在列表中显示锁定符号。禁用时，这些文件将从文件列表和搜索中完全隐藏。"
+		},
+		"singleFileRead": {
+			"label": "强制简化单文件读取",
+			"description": "启用后，助手必须使用简化的 <read_file><path>...</path></read_file> 格式，并为每个请求发送一个文件，而不是批量处理多个路径。"
 		},
 		"maxReadFile": {
 			"label": "文件读取自动截断阈值",

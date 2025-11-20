@@ -24,6 +24,7 @@ type ContextManagementSettingsProps = HTMLAttributes<HTMLDivElement> & {
 	maxTotalImageSize?: number
 	maxConcurrentFileReads?: number
 	allowVeryLargeReads?: boolean // kilocode_change
+	forceSingleFileRead?: boolean
 	profileThresholds?: Record<string, number>
 	includeDiagnosticMessages?: boolean
 	maxDiagnosticMessages?: number
@@ -41,6 +42,7 @@ type ContextManagementSettingsProps = HTMLAttributes<HTMLDivElement> & {
 		| "maxTotalImageSize"
 		| "maxConcurrentFileReads"
 		| "allowVeryLargeReads" // kilocode_change
+		| "forceSingleFileRead"
 		| "profileThresholds"
 		| "includeDiagnosticMessages"
 		| "maxDiagnosticMessages"
@@ -63,6 +65,7 @@ export const ContextManagementSettings = ({
 	maxTotalImageSize,
 	maxConcurrentFileReads,
 	allowVeryLargeReads, // kilocode_change
+	forceSingleFileRead,
 	profileThresholds = {},
 	includeDiagnosticMessages,
 	maxDiagnosticMessages,
@@ -168,6 +171,20 @@ export const ContextManagementSettings = ({
 					</div>
 					<div className="text-vscode-descriptionForeground text-sm mt-1 mb-3">
 						{t("settings:contextManagement.maxConcurrentFileReads.description")}
+					</div>
+				</div>
+
+				<div>
+					<VSCodeCheckbox
+						checked={!!forceSingleFileRead}
+						onChange={(e: any) => setCachedStateField("forceSingleFileRead", e.target.checked)}
+						data-testid="force-single-file-read-checkbox">
+						<label className="block font-medium mb-1">
+							{t("settings:contextManagement.singleFileRead.label")}
+						</label>
+					</VSCodeCheckbox>
+					<div className="text-vscode-descriptionForeground text-sm mt-1 mb-3">
+						{t("settings:contextManagement.singleFileRead.description")}
 					</div>
 				</div>
 

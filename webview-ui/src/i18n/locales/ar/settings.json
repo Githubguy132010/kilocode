@@ -327,9 +327,6 @@
 		"getZaiApiKey": "احصل على مفتاح Z.AI",
 		"zaiEntrypoint": "نقطة دخول Z AI",
 		"zaiEntrypointDescription": "يرجى اختيار نقطة دخول API المناسبة حسب موقعك. إذا كنت في الصين، اختر open.bigmodel.cn. وإلا، اختر api.z.ai.",
-		"minimaxApiKey": "مفتاح MiniMax API",
-		"getMiniMaxApiKey": "احصل على مفتاح MiniMax API",
-		"minimaxBaseUrl": "نقطة دخول MiniMax",
 		"geminiApiKey": "مفتاح Gemini",
 		"getGroqApiKey": "احصل على مفتاح Groq",
 		"groqApiKey": "مفتاح Groq",
@@ -728,6 +725,10 @@
 		"maxConcurrentFileReads": {
 			"label": "حد قراءة الملفات المتزامنة",
 			"description": "كم ملف يقرأه read_file مع بعض."
+		},
+		"singleFileRead": {
+			"label": "فرض قراءة ملف واحد مبسطة",
+			"description": "عند التمكين، يجب على المساعد استخدام تنسيق <read_file><path>...</path></read_file> المبسط وإرسال ملف واحد لكل طلب بدلاً من تجميع مسارات متعددة."
 		},
 		"maxReadFile": {
 			"label": "حد تقديري لقراءة الملف",

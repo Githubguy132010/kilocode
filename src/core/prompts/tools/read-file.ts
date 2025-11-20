@@ -7,7 +7,8 @@ import { ToolArgs } from "./types"
 
 export function getReadFileDescription(args: ToolArgs): string {
 	const maxConcurrentReads = args.settings?.maxConcurrentFileReads ?? 5
-	const isMultipleReadsEnabled = maxConcurrentReads > 1
+	const forceSingleFileRead = args.settings?.forceSingleFileRead === true
+	const isMultipleReadsEnabled = !forceSingleFileRead && maxConcurrentReads > 1
 	const supportsImages = args.supportsComputerUse // kilocode_change: supportsComputerUse==supportsImages in kilo
 
 	return `## read_file

@@ -163,6 +163,7 @@ export const globalSettingsSchema = z.object({
 	maxWorkspaceFiles: z.number().optional(),
 	showRooIgnoredFiles: z.boolean().optional(),
 	maxReadFileLine: z.number().optional(),
+	forceSingleFileRead: z.boolean().optional(),
 	maxImageFileSize: z.number().optional(),
 	maxTotalImageSize: z.number().optional(),
 
@@ -395,6 +396,7 @@ export const EVALS_SETTINGS: RooCodeSettings = {
 	maxWorkspaceFiles: 200,
 	showRooIgnoredFiles: true,
 	maxReadFileLine: -1, // -1 to enable full file reading.
+	forceSingleFileRead: false,
 
 	includeDiagnosticMessages: true,
 	maxDiagnosticMessages: 50,

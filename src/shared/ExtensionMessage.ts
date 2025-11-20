@@ -339,6 +339,7 @@ export type ExtensionState = Pick<
 	// | "maxWorkspaceFiles" // Optional in GlobalSettings, required here.
 	// | "showRooIgnoredFiles" // Optional in GlobalSettings, required here.
 	// | "maxReadFileLine" // Optional in GlobalSettings, required here.
+	| "forceSingleFileRead"
 	| "maxConcurrentFileReads" // Optional in GlobalSettings, required here.
 	| "allowVeryLargeReads" // kilocode_change
 	| "terminalOutputLineLimit"
@@ -422,6 +423,7 @@ export type ExtensionState = Pick<
 	maxWorkspaceFiles: number // Maximum number of files to include in current working directory details (0-500)
 	showRooIgnoredFiles: boolean // Whether to show .kilocodeignore'd files in listings
 	maxReadFileLine: number // Maximum number of lines to read from a file before truncating
+	forceSingleFileRead?: boolean // Force simplified single-file read_file syntax
 	showAutoApproveMenu: boolean // kilocode_change: Whether to show the auto-approve menu in the chat view
 	maxImageFileSize: number // Maximum size of image files to process in MB
 	maxTotalImageSize: number // Maximum total size for all images in a single read operation in MB

@@ -93,6 +93,7 @@ describe("ContextManagementSettings", () => {
 		showRooIgnoredFiles: false,
 		maxReadFileLine: -1,
 		maxConcurrentFileReads: 5,
+		forceSingleFileRead: false,
 		profileThresholds: {},
 		includeDiagnosticMessages: true,
 		maxDiagnosticMessages: 50,
@@ -113,6 +114,18 @@ describe("ContextManagementSettings", () => {
 		// Check for slider
 		expect(screen.getByTestId("max-diagnostic-messages-slider")).toBeInTheDocument()
 		expect(screen.getByText("50")).toBeInTheDocument()
+	})
+
+	it("calls setCachedStateField when toggling force single file read", () => {
+		render(<ContextManagementSettings {...defaultProps} />)
+
+		const checkbox = screen.getByTestId("force-single-file-read-checkbox").querySelector("input")
+		expect(checkbox).not.toBeNull()
+		if (checkbox) {
+			fireEvent.click(checkbox)
+		}
+
+		expect(defaultProps.setCachedStateField).toHaveBeenCalledWith("forceSingleFileRead", true)
 	})
 
 	it("renders with diagnostic messages enabled", () => {

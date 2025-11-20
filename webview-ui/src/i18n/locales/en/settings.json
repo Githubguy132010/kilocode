@@ -688,6 +688,10 @@
 			"label": "Concurrent file reads limit",
 			"description": "Maximum number of files the 'read_file' tool can process concurrently. Higher values may speed up reading multiple small files but increase memory usage."
 		},
+		"singleFileRead": {
+			"label": "Force simplified single-file reads",
+			"description": "When enabled, the assistant must use the simplified <read_file><path>...</path></read_file> format and send one file per request instead of batching multiple paths."
+		},
 		"maxReadFile": {
 			"label": "File read auto-truncate threshold",
 			"description": "Kilo Code reads this number of lines when the model omits start/end values. If this number is less than the file's total, Kilo Code generates a line number index of code definitions. Special cases: -1 instructs Kilo Code to read the entire file (without indexing), and 0 instructs it to read no lines and provides line indexes only for minimal context. Lower values minimize initial context usage, enabling precise subsequent line-range reads. Explicit start/end requests are not limited by this setting.",

@@ -650,6 +650,10 @@
 			"label": ".kilocodeignore-bestanden tonen in lijsten en zoekopdrachten",
 			"description": "Indien ingeschakeld, worden bestanden die overeenkomen met patronen in .kilocodeignore getoond in lijsten met een slotje. Indien uitgeschakeld, worden deze bestanden volledig verborgen in lijsten en zoekopdrachten."
 		},
+		"singleFileRead": {
+			"label": "Forceer vereenvoudigde lezingen van één bestand",
+			"description": "Indien ingeschakeld, moet de assistent het vereenvoudigde <read_file><path>...</path></read_file>-formaat gebruiken en één bestand per verzoek verzenden in plaats van meerdere paden in batches te verwerken."
+		},
 		"maxReadFile": {
 			"label": "Automatisch afkappen bij bestandslezen",
 			"description": "Kilo Code leest dit aantal regels wanneer het model geen begin/eindwaarden opgeeft. Als dit aantal lager is dan het totaal, genereert Kilo Code een index van codelijnen. Speciale gevallen: -1 laat Kilo Code het hele bestand lezen (zonder indexering), 0 leest geen regels en geeft alleen een minimale index. Lagere waarden minimaliseren het initiële contextgebruik en maken precieze vervolg-leesopdrachten mogelijk. Expliciete begin/eind-aanvragen worden niet door deze instelling beperkt.",

@@ -159,7 +159,10 @@ export async function presentAssistantMessage(cline: Task) {
 			await cline.say("text", content, undefined, block.partial)
 			break
 		}
-		case "tool_use":
+		case "tool_use": {
+			const providerState = await cline.providerRef.deref()?.getState()
+			const forceSingleFileRead = providerState?.forceSingleFileRead
+
 			const toolDescription = (): string => {
 				switch (block.name) {
 					case "execute_command":
@@ -167,7 +170,7 @@ export async function presentAssistantMessage(cline: Task) {
 					case "read_file":
 						// Check if this model should use the simplified description
 						const modelId = cline.api.getModel().id
-						if (shouldUseSingleFileRead(modelId)) {
+						if (shouldUseSingleFileRead(modelId, forceSingleFileRead)) {
 							return getSimpleReadFileToolDescription(block.name, block.params)
 						} else {
 							return getReadFileToolDescription(block.name, block.params)
@@ -530,7 +533,8 @@ export async function presentAssistantMessage(cline: Task) {
 				case "read_file":
 					// Check if this model should use the simplified single-file read tool
 					const modelId = cline.api.getModel().id
-					if (shouldUseSingleFileRead(modelId)) {
+					const useSingleFileRead = shouldUseSingleFileRead(modelId, forceSingleFileRead)
+					if (useSingleFileRead) {
 						await simpleReadFileTool(
 							cline,
 							block,
@@ -632,6 +636,7 @@ export async function presentAssistantMessage(cline: Task) {
 			}
 
 			break
+		}
 	}
 
 	// Seeing out of bounds is fine, it means that the next too call is being

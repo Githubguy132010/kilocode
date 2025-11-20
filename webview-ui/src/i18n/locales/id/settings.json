@@ -680,6 +680,10 @@
 			"label": "Batas pembacaan file bersamaan",
 			"description": "Jumlah maksimum file yang dapat diproses oleh tool 'read_file' secara bersamaan. Nilai yang lebih tinggi dapat mempercepat pembacaan beberapa file kecil tetapi meningkatkan penggunaan memori."
 		},
+		"singleFileRead": {
+			"label": "Paksa pembacaan file tunggal yang disederhanakan",
+			"description": "Jika diaktifkan, asisten harus menggunakan format <read_file><path>...</path></read_file> yang disederhanakan dan mengirim satu file per permintaan, bukan mengelompokkan beberapa jalur."
+		},
 		"maxReadFile": {
 			"label": "Ambang batas auto-truncate pembacaan file",
 			"description": "Kilo Code membaca sejumlah baris ini ketika model menghilangkan nilai start/end. Jika angka ini kurang dari total file, Kilo Code menghasilkan indeks nomor baris dari definisi kode. Kasus khusus: -1 menginstruksikan Kilo Code untuk membaca seluruh file (tanpa indexing), dan 0 menginstruksikannya untuk tidak membaca baris dan hanya menyediakan indeks baris untuk konteks minimal. Nilai yang lebih rendah meminimalkan penggunaan konteks awal, memungkinkan pembacaan rentang baris yang tepat selanjutnya. Permintaan start/end eksplisit tidak dibatasi oleh pengaturan ini.",

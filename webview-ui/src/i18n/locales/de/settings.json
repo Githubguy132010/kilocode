@@ -654,6 +654,10 @@
 			"label": "Gleichzeitige Dateilesungen Limit",
 			"description": "Maximale Anzahl von Dateien, die das 'read_file'-Tool gleichzeitig verarbeiten kann. Höhere Werte können das Lesen mehrerer kleiner Dateien beschleunigen, erhöhen aber den Speicherverbrauch."
 		},
+		"singleFileRead": {
+			"label": "Vereinfachtes Lesen einzelner Dateien erzwingen",
+			"description": "Wenn diese Option aktiviert ist, muss der Assistent das vereinfachte Format <read_file><path>...</path></read_file> verwenden und eine Datei pro Anfrage senden, anstatt mehrere Pfade zu bündeln."
+		},
 		"maxReadFile": {
 			"label": "Schwellenwert für automatische Dateilesekürzung",
 			"description": "Kilo Code liest diese Anzahl von Zeilen, wenn das Modell keine Start-/Endwerte angibt. Wenn diese Zahl kleiner als die Gesamtzahl der Zeilen ist, erstellt Kilo Code einen Zeilennummernindex der Codedefinitionen. Spezialfälle: -1 weist Kilo Code an, die gesamte Datei zu lesen (ohne Indexierung), und 0 weist an, keine Zeilen zu lesen und nur Zeilenindizes für minimalen Kontext bereitzustellen. Niedrigere Werte minimieren die anfängliche Kontextnutzung und ermöglichen präzise nachfolgende Zeilenbereich-Lesungen. Explizite Start-/End-Anfragen sind von dieser Einstellung nicht begrenzt.",

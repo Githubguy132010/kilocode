@@ -320,9 +320,6 @@
 		"minimaxBaseUrl": "จุดเข้าใช้งาน MiniMax",
 		"zaiEntrypoint": "จุดเข้าใช้งาน Z AI",
 		"zaiEntrypointDescription": "โปรดเลือกจุดเข้าใช้งาน API ที่เหมาะสมตามตำแหน่งของคุณ หากคุณอยู่ในจีน ให้เลือก open.bigmodel.cn มิฉะนั้น ให้เลือก api.z.ai",
-		"minimaxApiKey": "คีย์ API ของ MiniMax",
-		"getMiniMaxApiKey": "รับคีย์ API ของ MiniMax",
-		"minimaxBaseUrl": "จุดเข้าใช้งาน MiniMax",
 		"geminiApiKey": "คีย์ API ของ Gemini",
 		"geminiParameters": {
 			"urlContext": {
@@ -713,6 +710,10 @@
 		"maxConcurrentFileReads": {
 			"label": "ขีดจำกัดการอ่านไฟล์พร้อมกัน",
 			"description": "จำนวนไฟล์สูงสุดที่เครื่องมือ 'read_file' สามารถประมวลผลพร้อมกันได้ ค่าที่สูงขึ้นอาจเร่งความเร็วในการอ่านไฟล์ขนาดเล็กหลายไฟล์ แต่จะเพิ่มการใช้หน่วยความจำ"
+		},
+		"singleFileRead": {
+			"label": "บังคับให้อ่านไฟล์เดียวได้ง่ายขึ้น",
+			"description": "เมื่อเปิดใช้งาน ตัวช่วยต้องใช้รูปแบบ <read_file><path>...</path></read_file> แบบง่าย และส่งหนึ่งไฟล์ต่อคำขอ แทนที่จะรวมหลายพาธเป็นชุด"
 		},
 		"maxReadFile": {
 			"label": "เกณฑ์การตัดทอนการอ่านไฟล์อัตโนมัติ",
