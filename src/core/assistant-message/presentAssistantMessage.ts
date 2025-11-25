@@ -160,19 +160,25 @@ export async function presentAssistantMessage(cline: Task) {
 			await cline.say("text", content, undefined, block.partial)
 			break
 		}
-		case "tool_use":
+		case "tool_use": {
+			// kilocode_change start: Get state once for use in toolDescription
+			const toolUseState = await cline.providerRef.deref()?.getState()
+			const alwaysUseSimpleReadFile = toolUseState?.alwaysUseSimpleReadFile ?? false
+			// kilocode_change end
+
 			const toolDescription = (): string => {
 				switch (block.name) {
 					case "execute_command":
 						return `[${block.name} for '${block.params.command}']`
 					case "read_file":
-						// Check if this model should use the simplified description
+						// kilocode_change start: Check if this model should use the simplified description
 						const modelId = cline.api.getModel().id
-						if (shouldUseSingleFileRead(modelId)) {
+						if (shouldUseSingleFileRead(modelId, alwaysUseSimpleReadFile)) {
 							return getSimpleReadFileToolDescription(block.name, block.params)
 						} else {
 							return getReadFileToolDescription(block.name, block.params)
 						}
+					// kilocode_change end
 					case "fetch_instructions":
 						return `[${block.name} for '${block.params.task}']`
 					case "write_to_file":
@@ -535,10 +541,8 @@ export async function presentAssistantMessage(cline: Task) {
 				// kilocode_change end
 				case "read_file": {
 					// kilocode_change start: Check if this model should use the simplified single-file read tool
+					// Note: alwaysUseSimpleReadFile is captured from the outer scope (tool_use case)
 					const modelId = cline.api.getModel().id
-					const provider = cline.providerRef.deref()
-					const state = await provider?.getState()
-					const alwaysUseSimpleReadFile = state?.alwaysUseSimpleReadFile ?? false
 					if (shouldUseSingleFileRead(modelId, alwaysUseSimpleReadFile)) {
 						await simpleReadFileTool(
 							cline,
@@ -643,6 +647,7 @@ export async function presentAssistantMessage(cline: Task) {
 			}
 
 			break
+		}
 	}
 
 	// Seeing out of bounds is fine, it means that the next too call is being
