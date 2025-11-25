@@ -2011,6 +2011,7 @@ ${prompt}
 			organizationSettingsVersion,
 			maxConcurrentFileReads,
 			allowVeryLargeReads, // kilocode_change
+			alwaysUseSimpleReadFile, // kilocode_change
 			ghostServiceSettings, // kilocode_changes
 			condensingApiConfigId,
 			customCondensingPrompt,
@@ -2173,6 +2174,7 @@ ${prompt}
 			maxTotalImageSize: maxTotalImageSize ?? 20,
 			maxConcurrentFileReads: maxConcurrentFileReads ?? 5,
 			allowVeryLargeReads: allowVeryLargeReads ?? false, // kilocode_change
+			alwaysUseSimpleReadFile: alwaysUseSimpleReadFile ?? false, // kilocode_change
 			settingsImportedAt: this.settingsImportedAt,
 			terminalCompressProgressBar: terminalCompressProgressBar ?? true,
 			hasSystemPromptOverride,
@@ -2447,6 +2449,7 @@ ${prompt}
 			maxTotalImageSize: stateValues.maxTotalImageSize ?? 20,
 			maxConcurrentFileReads: stateValues.maxConcurrentFileReads ?? 5,
 			allowVeryLargeReads: stateValues.allowVeryLargeReads ?? false, // kilocode_change
+			alwaysUseSimpleReadFile: stateValues.alwaysUseSimpleReadFile ?? false, // kilocode_change
 			systemNotificationsEnabled: stateValues.systemNotificationsEnabled ?? true, // kilocode_change
 			dismissedNotificationIds: stateValues.dismissedNotificationIds ?? [], // kilocode_change
 			morphApiKey: stateValues.morphApiKey, // kilocode_change

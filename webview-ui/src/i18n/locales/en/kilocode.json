@@ -90,6 +90,10 @@
 			"allowVeryLargeReads": {
 				"label": "Allow very large file reads",
 				"description": "When enabled, Kilo Code will perform very large file or MCP output reads even if there is a high chance of overflowing the context window (content size >80% of context window)."
+			},
+			"alwaysUseSimpleReadFile": {
+				"label": "Read one file at a time (compatibility mode)",
+				"description": "When enabled, Kilo Code uses a simpler read_file format that reads one file at a time. This can help avoid 'required parameter path' errors with some models like Qwen3-Coder. Disable this if your model supports multi-file reads well."
 			}
 		},
 		"systemNotifications": {

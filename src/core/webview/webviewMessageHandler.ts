@@ -1870,6 +1870,10 @@ export const webviewMessageHandler = async (
 			await updateGlobalState("allowVeryLargeReads", message.bool ?? false)
 			await provider.postStateToWebview()
 			break
+		case "alwaysUseSimpleReadFile":
+			await updateGlobalState("alwaysUseSimpleReadFile", message.bool ?? false)
+			await provider.postStateToWebview()
+			break
 		// kilocode_change end
 		case "maxImageFileSize":
 			await updateGlobalState("maxImageFileSize", message.value)

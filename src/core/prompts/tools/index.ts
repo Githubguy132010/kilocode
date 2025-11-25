@@ -44,11 +44,13 @@ import { ManagedIndexer } from "../../../services/code-index/managed/ManagedInde
 const toolDescriptionMap: Record<string, (args: ToolArgs) => string | undefined> = {
 	execute_command: (args) => getExecuteCommandDescription(args),
 	read_file: (args) => {
-		// Check if the current model should use the simplified read_file tool
+		// kilocode_change start: Check if the current model should use the simplified read_file tool
 		const modelId = args.settings?.modelId
-		if (modelId && shouldUseSingleFileRead(modelId)) {
+		const alwaysUseSimpleReadFile = args.settings?.alwaysUseSimpleReadFile
+		if (shouldUseSingleFileRead(modelId ?? "", alwaysUseSimpleReadFile)) {
 			return getSimpleReadFileDescription(args)
 		}
+		// kilocode_change end
 		return getReadFileDescription(args)
 	},
 	fetch_instructions: (args) => getFetchInstructionsDescription(args.settings?.enableMcpServerCreation),

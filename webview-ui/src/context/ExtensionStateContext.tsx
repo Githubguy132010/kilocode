@@ -85,6 +85,7 @@ export interface ExtensionStateContextType extends ExtensionState {
 	sharingEnabled: boolean
 	maxConcurrentFileReads?: number
 	allowVeryLargeReads?: boolean // kilocode_change
+	alwaysUseSimpleReadFile?: boolean // kilocode_change
 	mdmCompliant?: boolean
 	hasOpenedModeSelector: boolean // New property to track if user has opened mode selector
 	setHasOpenedModeSelector: (value: boolean) => void // Setter for the new property
@@ -303,6 +304,7 @@ export const ExtensionStateContextProvider: React.FC<{ children: React.ReactNode
 		terminalZshOhMy: false, // Default Oh My Zsh integration setting
 		maxConcurrentFileReads: 5, // Default concurrent file reads
 		allowVeryLargeReads: false, // kilocode_change
+		alwaysUseSimpleReadFile: false, // kilocode_change
 		terminalZshP10k: false, // Default Powerlevel10k integration setting
 		terminalZdotdir: false, // Default ZDOTDIR handling setting
 		terminalCompressProgressBar: true, // Default to compress progress bar output

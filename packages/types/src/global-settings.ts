@@ -97,6 +97,15 @@ export const globalSettingsSchema = z.object({
 	autoCondenseContextPercent: z.number().optional(),
 	maxConcurrentFileReads: z.number().optional(),
 	allowVeryLargeReads: z.boolean().optional(), // kilocode_change
+	// kilocode_change start
+	/**
+	 * When enabled, forces the use of the simpler single-file read format
+	 * (<read_file><path>...</path></read_file>) instead of the multi-file format.
+	 * This can help avoid "required parameter path" errors with some models.
+	 * @default false
+	 */
+	alwaysUseSimpleReadFile: z.boolean().optional(),
+	// kilocode_change end
 
 	/**
 	 * Whether to include current time in the environment details

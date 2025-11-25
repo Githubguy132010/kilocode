@@ -153,11 +153,14 @@ export async function getAllowedJSONToolsForMode(
 	}
 
 	if (isReadFileToolAllowedForMode) {
-		if (model?.id && shouldUseSingleFileRead(model?.id)) {
+		// kilocode_change start: Check for alwaysUseSimpleReadFile setting
+		const alwaysUseSimpleReadFile = providerState?.alwaysUseSimpleReadFile ?? false
+		if (shouldUseSingleFileRead(model?.id ?? "", alwaysUseSimpleReadFile)) {
 			allowedTools.push(read_file_single)
 		} else {
 			allowedTools.push(read_file_multi)
 		}
+		// kilocode_change end
 	}
 
 	// Handle the "apply_diff" logic separately because the same tool has different

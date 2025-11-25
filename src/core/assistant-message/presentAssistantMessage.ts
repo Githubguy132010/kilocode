@@ -533,10 +533,13 @@ export async function presentAssistantMessage(cline: Task) {
 					await deleteFileTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
 					break
 				// kilocode_change end
-				case "read_file":
-					// Check if this model should use the simplified single-file read tool
+				case "read_file": {
+					// kilocode_change start: Check if this model should use the simplified single-file read tool
 					const modelId = cline.api.getModel().id
-					if (shouldUseSingleFileRead(modelId)) {
+					const provider = cline.providerRef.deref()
+					const state = await provider?.getState()
+					const alwaysUseSimpleReadFile = state?.alwaysUseSimpleReadFile ?? false
+					if (shouldUseSingleFileRead(modelId, alwaysUseSimpleReadFile)) {
 						await simpleReadFileTool(
 							cline,
 							block,
@@ -549,6 +552,8 @@ export async function presentAssistantMessage(cline: Task) {
 						await readFileTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
 					}
 					break
+					// kilocode_change end
+				}
 				case "fetch_instructions":
 					await fetchInstructionsTool(cline, block, askApproval, handleError, pushToolResult)
 					break

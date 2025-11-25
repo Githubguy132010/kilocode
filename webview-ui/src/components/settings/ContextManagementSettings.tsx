@@ -24,6 +24,7 @@ type ContextManagementSettingsProps = HTMLAttributes<HTMLDivElement> & {
 	maxTotalImageSize?: number
 	maxConcurrentFileReads?: number
 	allowVeryLargeReads?: boolean // kilocode_change
+	alwaysUseSimpleReadFile?: boolean // kilocode_change
 	profileThresholds?: Record<string, number>
 	includeDiagnosticMessages?: boolean
 	maxDiagnosticMessages?: number
@@ -41,6 +42,7 @@ type ContextManagementSettingsProps = HTMLAttributes<HTMLDivElement> & {
 		| "maxTotalImageSize"
 		| "maxConcurrentFileReads"
 		| "allowVeryLargeReads" // kilocode_change
+		| "alwaysUseSimpleReadFile" // kilocode_change
 		| "profileThresholds"
 		| "includeDiagnosticMessages"
 		| "maxDiagnosticMessages"
@@ -63,6 +65,7 @@ export const ContextManagementSettings = ({
 	maxTotalImageSize,
 	maxConcurrentFileReads,
 	allowVeryLargeReads, // kilocode_change
+	alwaysUseSimpleReadFile, // kilocode_change
 	profileThresholds = {},
 	includeDiagnosticMessages,
 	maxDiagnosticMessages,
@@ -170,6 +173,22 @@ export const ContextManagementSettings = ({
 						{t("settings:contextManagement.maxConcurrentFileReads.description")}
 					</div>
 				</div>
+
+				{/*kilocode_change start*/}
+				<div>
+					<VSCodeCheckbox
+						checked={alwaysUseSimpleReadFile}
+						onChange={(e: any) => setCachedStateField("alwaysUseSimpleReadFile", e.target.checked)}
+						data-testid="always-use-simple-read-file-checkbox">
+						<label className="block font-medium mb-1">
+							{t("kilocode:settings.contextManagement.alwaysUseSimpleReadFile.label")}
+						</label>
+					</VSCodeCheckbox>
+					<div className="text-vscode-descriptionForeground text-sm mt-1 mb-3">
+						{t("kilocode:settings.contextManagement.alwaysUseSimpleReadFile.description")}
+					</div>
+				</div>
+				{/*kilocode_change end*/}
 
 				<div>
 					<VSCodeCheckbox

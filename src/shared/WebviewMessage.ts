@@ -212,6 +212,7 @@ export interface WebviewMessage {
 		| "maxTotalImageSize"
 		| "maxConcurrentFileReads"
 		| "allowVeryLargeReads" // kilocode_change
+		| "alwaysUseSimpleReadFile" // kilocode_change
 		| "includeDiagnosticMessages"
 		| "maxDiagnosticMessages"
 		| "includeCurrentTime"
