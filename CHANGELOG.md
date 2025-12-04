@@ -1,5 +1,13 @@
 # kilo-code
 
+## 4.130.1
+
+### Patch Changes
+
+- [#4176](https://github.com/Kilo-Org/kilocode/pull/4176) [`a71ee92`](https://github.com/Kilo-Org/kilocode/commit/a71ee92a8a35494a7693748951386c32e24b43ca) Thanks [@iscekic](https://github.com/iscekic)! - adds the /session show command
+
+- [#4204](https://github.com/Kilo-Org/kilocode/pull/4204) [`c200579`](https://github.com/Kilo-Org/kilocode/commit/c2005792b71ff8ea8d2e15286575294eb079066f) Thanks [@iscekic](https://github.com/iscekic)! - fixes session cleanup race conditions
+
 ## 4.130.0
 
 ### Minor Changes
