@@ -1,5 +1,11 @@
 # @kilocode/cli
 
+## 0.12.2
+
+### Patch Changes
+
+- [#4211](https://github.com/Kilo-Org/kilocode/pull/4211) [`489b366`](https://github.com/Kilo-Org/kilocode/commit/489b3669c34f437dfd7c4b9a692cf7d84fff73a1) Thanks [@iscekic](https://github.com/iscekic)! - refactor session manager to better handle asynchronicity of file save events
+
 ## 0.12.1
 
 ### Patch Changes
