@@ -423,10 +423,18 @@ export class BackgroundAgentManager extends EventEmitter implements IBackgroundA
 		if (criteria.maxDataAgeMs && typeof result.data === "object" && result.data !== null) {
 			const data = result.data as Record<string, unknown>
 			if (data.lastUpdated && typeof data.lastUpdated === "string") {
-				const lastUpdate = new Date(data.lastUpdated)
-				const age = Date.now() - lastUpdate.getTime()
-				if (age > criteria.maxDataAgeMs) {
-					return false
+				try {
+					const lastUpdate = new Date(data.lastUpdated)
+					// Check for invalid date
+					if (!isNaN(lastUpdate.getTime())) {
+						const age = Date.now() - lastUpdate.getTime()
+						if (age > criteria.maxDataAgeMs) {
+							return false
+						}
+					}
+				} catch {
+					// Invalid date format, skip freshness check
+					logs.debug("Could not parse lastUpdated date for freshness check", "BackgroundAgentManager")
 				}
 			}
 		}

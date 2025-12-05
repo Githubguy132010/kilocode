@@ -84,6 +84,8 @@ export class ResourceMonitor extends EventEmitter {
 
 	/**
 	 * Get CPU usage percentage
+	 * Note: This returns an instantaneous snapshot. For more accurate measurements
+	 * over time, consider using a rolling average or external monitoring tools.
 	 */
 	private getCpuUsage(): number {
 		const cpus = os.cpus()
@@ -112,11 +114,15 @@ export class ResourceMonitor extends EventEmitter {
 	}
 
 	/**
-	 * Get active process count (simplified - counts Node.js processes)
+	 * Get active process count
+	 * Note: This is a simplified implementation using system load average
+	 * as a proxy for process count. For accurate process counting,
+	 * consider using ps-list or similar process enumeration libraries.
 	 */
 	private getActiveProcessCount(): number {
-		// In a real implementation, we would use ps-list or similar
-		// For now, return a placeholder based on load average
+		// Use 1-minute load average as a rough approximation
+		// Load average represents the average number of processes
+		// waiting to run, which correlates with system activity
 		const loadAvgArr = os.loadavg()
 		const loadAvg = loadAvgArr[0] ?? 0 // 1 minute load average
 		return Math.ceil(loadAvg)

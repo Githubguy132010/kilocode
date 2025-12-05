@@ -154,10 +154,11 @@ export class BackgroundTask extends EventEmitter {
 				cwd: workingDir,
 			})
 
-			// Spawn the process
+			// Spawn the process without shell to avoid command injection
+			// We use the kilocode CLI directly with proper argument escaping
 			this.process = spawn("kilocode", args, {
 				cwd: workingDir,
-				shell: true,
+				shell: false,
 				stdio: ["pipe", "pipe", "pipe"],
 				env: {
 					...process.env,
@@ -213,12 +214,15 @@ export class BackgroundTask extends EventEmitter {
 
 	/**
 	 * Parse the command string into arguments
+	 * Uses the kilocode CLI in CI mode with JSON output
+	 * The command is passed as a single argument to avoid shell injection
 	 */
 	private parseCommand(): string[] {
 		const command = this.config.command.trim()
 
 		// For background research tasks, use CI mode with the prompt
-		const args = ["--ci", "--json", `"${command.replace(/"/g, '\\"')}"`]
+		// Command is passed directly without shell escaping since we use shell: false
+		const args = ["--ci", "--json", command]
 
 		if (this.config.workingDirectory) {
 			args.unshift("--workspace", this.config.workingDirectory)
@@ -242,12 +246,19 @@ export class BackgroundTask extends EventEmitter {
 
 	/**
 	 * Estimate progress based on output length
+	 * This is a heuristic estimation since CLI tasks don't report progress directly.
+	 * Progress is capped at 95% until task completion to indicate ongoing activity.
+	 * @returns Progress percentage (0-95)
 	 */
 	private estimateProgress(): number {
-		// Simple heuristic - more output = more progress
+		// Use output length as a rough proxy for progress
+		// CLI tasks typically generate 5-15KB of output for research tasks
 		const outputLength = this.output.join("").length
-		const maxExpectedLength = 10000 // Adjust based on typical output
-		return Math.min(95, Math.floor((outputLength / maxExpectedLength) * 100))
+		const expectedOutputLength = 10000 // Expected bytes for typical task
+
+		// Calculate percentage, capping at 95% to indicate task is still running
+		const percentage = Math.min(95, Math.floor((outputLength / expectedOutputLength) * 100))
+		return percentage
 	}
 
 	/**
@@ -257,18 +268,24 @@ export class BackgroundTask extends EventEmitter {
 		const fullOutput = this.output.join("")
 
 		// Try to parse JSON output if available
+		// Since we use --json mode, the output should be valid JSON
 		let data: unknown = fullOutput
 		try {
-			// Look for JSON in the output
-			const jsonMatch = fullOutput.match(/\{[\s\S]*\}/g)
-			if (jsonMatch && jsonMatch.length > 0) {
-				const lastMatch = jsonMatch[jsonMatch.length - 1]
-				if (lastMatch) {
-					data = JSON.parse(lastMatch)
+			// First, try to parse the entire output as JSON (preferred)
+			const trimmedOutput = fullOutput.trim()
+			if (trimmedOutput.startsWith("{") && trimmedOutput.endsWith("}")) {
+				data = JSON.parse(trimmedOutput)
+			} else {
+				// Look for the last complete JSON object (handles output with prefixed text)
+				// Use a more careful approach to find balanced braces
+				const jsonData = this.extractLastJsonObject(fullOutput)
+				if (jsonData !== null) {
+					data = jsonData
 				}
 			}
 		} catch {
-			// Keep as string if parsing fails
+			// Keep as string if parsing fails - the CLI output may not be JSON
+			logs.debug("Could not parse output as JSON, keeping as string", "BackgroundTask")
 		}
 
 		const suggestedFollowUps = this.extractSuggestedFollowUps(data)
@@ -283,6 +300,65 @@ export class BackgroundTask extends EventEmitter {
 		}
 
 		return result
+	}
+
+	/**
+	 * Extract the last complete JSON object from a string
+	 * Uses brace balancing to find valid JSON boundaries
+	 */
+	private extractLastJsonObject(text: string): unknown | null {
+		// Find the last closing brace and work backwards to find matching opening brace
+		for (let i = text.length - 1; i >= 0; i--) {
+			const char = text[i]
+
+			if (char === "}") {
+				// Found potential end of JSON, walk backwards to find matching opening brace
+				let start = -1
+				let depth = 1
+				let inString = false
+				let escape = false
+
+				for (let j = i - 1; j >= 0; j--) {
+					const c = text[j]
+
+					if (escape) {
+						escape = false
+						continue
+					}
+
+					if (c === "\\") {
+						escape = true
+						continue
+					}
+
+					if (c === '"' && !escape) {
+						inString = !inString
+						continue
+					}
+
+					if (inString) continue
+
+					if (c === "}") depth++
+					if (c === "{") depth--
+
+					if (depth === 0) {
+						start = j
+						break
+					}
+				}
+
+				if (start !== -1) {
+					const jsonStr = text.slice(start, i + 1)
+					try {
+						return JSON.parse(jsonStr)
+					} catch {
+						// This wasn't valid JSON, continue looking
+					}
+				}
+			}
+		}
+
+		return null
 	}
 
 	/**
