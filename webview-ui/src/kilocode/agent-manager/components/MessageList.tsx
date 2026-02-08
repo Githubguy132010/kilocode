@@ -264,6 +264,7 @@ interface MessageItemProps {
 
 function MessageItem({ message, isLast, commandExecutionByTs, onSuggestionClick, onCopyToInput }: MessageItemProps) {
 	const { t } = useTranslation("agentManager")
+	const isUserMessage = message.type === "say" && message.say === "user_feedback" // kilocode_change
 
 	// --- 1. Determine Message Style & Content ---
 	// Note: CLI JSON output uses "content" instead of "text" for message body
@@ -410,7 +411,11 @@ function MessageItem({ message, isLast, commandExecutionByTs, onSuggestionClick,
 
 	return (
 		<div
-			className={`am-message-item ${message.type === "say" && message.say === "api_req_started" ? "am-api-req" : ""}`}>
+			className={cn(
+				"am-message-item",
+				message.type === "say" && message.say === "api_req_started" && "am-api-req",
+				isUserMessage && "am-message-user", // kilocode_change
+			)}>
 			<div className="am-message-icon">{icon}</div>
 			<div className="am-message-content-wrapper">
 				<div className="am-message-header">
@@ -470,7 +475,7 @@ function QueuedMessageItem({ queuedMessage, isSending: _isSending, onRetry, onDi
 	const canRetry = queuedMessage.retryCount < queuedMessage.maxRetries
 
 	return (
-		<div className={cn("am-message-item", queuedMessage.status === "failed" && "opacity-75")}>
+		<div className={cn("am-message-item", "am-message-user", queuedMessage.status === "failed" && "opacity-75")}>
 			<div className="am-message-icon">{icon}</div>
 			<div className="am-message-content-wrapper">
 				<div className="am-message-header">

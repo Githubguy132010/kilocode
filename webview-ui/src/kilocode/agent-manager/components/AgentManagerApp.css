@@ -431,6 +431,12 @@
 	align-items: flex-start;
 }
 
+.am-message-item.am-message-user {
+	background-color: var(--vscode-input-background); /* kilocode_change */
+	border-left: 3px solid var(--vscode-textLink-foreground); /* kilocode_change */
+	padding-left: 17px; /* kilocode_change */
+}
+
 .am-message-item:hover {
 	background-color: var(--vscode-list-hoverBackground);
 }
@@ -443,6 +449,10 @@
 
 .am-message-item.am-api-req:hover {
 	opacity: 1;
+}
+
+.am-message-item.am-message-user .am-message-author {
+	color: var(--vscode-textLink-foreground); /* kilocode_change */
 }
 
 .am-message-icon {

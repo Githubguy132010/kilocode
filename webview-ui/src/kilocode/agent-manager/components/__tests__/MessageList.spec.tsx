@@ -213,6 +213,33 @@ describe("MessageList", () => {
 		})
 	})
 
+	describe("user message styling", () => {
+		// kilocode_change
+		it("adds a user styling class for user feedback messages", () => {
+			const store = createStore()
+			store.set(sessionMessagesAtomFamily(sessionId), [
+				{
+					ts: 1,
+					type: "say",
+					say: "user_feedback",
+					text: "Hello from user",
+				} as ClineMessage,
+			])
+
+			render(
+				<Provider store={store}>
+					<MessageList sessionId={sessionId} />
+				</Provider>,
+			)
+
+			const messageText = screen.getByText("Hello from user")
+			const messageItem = messageText.closest(".am-message-item")
+
+			expect(messageItem).not.toBeNull()
+			expect(messageItem).toHaveClass("am-message-user")
+		})
+	})
+
 	describe("updateTodoList filtering", () => {
 		it("does not render updateTodoList tool messages (text format)", () => {
 			const store = createStore()
