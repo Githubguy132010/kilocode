@@ -47,6 +47,7 @@ export function SearchableSelect({
 }: SearchableSelectProps) {
 	const [open, setOpen] = React.useState(false)
 	const [searchValue, setSearchValue] = React.useState("")
+	const [highlightedIndex, setHighlightedIndex] = React.useState(-1) // kilocode_change
 	const searchInputRef = React.useRef<HTMLInputElement>(null)
 	const searchResetTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
 	const isMountedRef = React.useRef(true)
@@ -59,6 +60,28 @@ export function SearchableSelect({
 		if (!searchValue) return options
 		return options.filter((option) => option.label.toLowerCase().includes(searchValue.toLowerCase()))
 	}, [options, searchValue])
+
+	// kilocode_change start - keyboard navigation and selection support in searchable dropdown
+	const enabledFilteredOptions = React.useMemo(
+		() => filteredOptions.filter((option) => !option.disabled),
+		[filteredOptions],
+	)
+
+	const getDefaultHighlightedIndex = React.useCallback(() => {
+		if (enabledFilteredOptions.length === 0) {
+			return -1
+		}
+
+		if (value) {
+			const selectedEnabledOptionIndex = enabledFilteredOptions.findIndex((option) => option.value === value)
+			if (selectedEnabledOptionIndex !== -1) {
+				return selectedEnabledOptionIndex
+			}
+		}
+
+		return 0
+	}, [enabledFilteredOptions, value])
+	// kilocode_change end
 
 	// Cleanup timeout on unmount
 	React.useEffect(() => {
@@ -85,6 +108,7 @@ export function SearchableSelect({
 
 	const handleOpenChange = (open: boolean) => {
 		setOpen(open)
+		setHighlightedIndex(open ? getDefaultHighlightedIndex() : -1) // kilocode_change
 		// Reset search when closing
 		if (!open) {
 			if (searchResetTimeoutRef.current) {
@@ -103,6 +127,36 @@ export function SearchableSelect({
 		setSearchValue("")
 		searchInputRef.current?.focus()
 	}
+
+	// kilocode_change start - keyboard navigation and selection support in searchable dropdown
+	const handleSearchValueChange = (nextSearchValue: string) => {
+		setSearchValue(nextSearchValue)
+		setHighlightedIndex(0)
+	}
+
+	const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+		if (enabledFilteredOptions.length === 0) {
+			return
+		}
+
+		if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+			event.preventDefault()
+			const direction = event.key === "ArrowDown" ? 1 : -1
+			const safeIndex = highlightedIndex === -1 ? 0 : highlightedIndex
+			const nextIndex = (safeIndex + direction + enabledFilteredOptions.length) % enabledFilteredOptions.length
+			setHighlightedIndex(nextIndex)
+			return
+		}
+
+		if (event.key === "Enter" && highlightedIndex >= 0) {
+			event.preventDefault()
+			const highlightedOption = enabledFilteredOptions[highlightedIndex]
+			if (highlightedOption) {
+				handleSelect(highlightedOption.value)
+			}
+		}
+	}
+	// kilocode_change end
 
 	return (
 		<Popover open={open} onOpenChange={handleOpenChange}>
@@ -134,7 +188,8 @@ export function SearchableSelect({
 						<CommandInput
 							ref={searchInputRef}
 							value={searchValue}
-							onValueChange={setSearchValue}
+							onValueChange={handleSearchValueChange}
+							onKeyDown={handleInputKeyDown}
 							placeholder={searchPlaceholder}
 							className="h-9 mr-4"
 						/>
@@ -152,25 +207,36 @@ export function SearchableSelect({
 							{searchValue && <div className="py-2 px-1 text-sm">{emptyMessage}</div>}
 						</CommandEmpty>
 						<CommandGroup>
-							{filteredOptions.map((option) => (
-								<CommandItem
-									key={option.value}
-									value={option.label}
-									onSelect={() => handleSelect(option.value)}
-									disabled={option.disabled}
-									className={option.disabled ? "text-vscode-errorForeground" : ""}>
-									<div className="flex items-center">
-										{option.icon}
-										{option.label}
-									</div>
-									<Check
+							{filteredOptions.map((option) => {
+								const enabledOptionIndex = enabledFilteredOptions.findIndex(
+									(enabledOption) => enabledOption.value === option.value,
+								)
+								const isHighlighted = enabledOptionIndex === highlightedIndex && !option.disabled
+
+								return (
+									<CommandItem
+										key={option.value}
+										value={option.label}
+										onSelect={() => handleSelect(option.value)}
+										onMouseEnter={() => !option.disabled && setHighlightedIndex(enabledOptionIndex)}
+										disabled={option.disabled}
 										className={cn(
-											"ml-auto h-4 w-4 p-0.5",
-											value === option.value ? "opacity-100" : "opacity-0",
-										)}
-									/>
-								</CommandItem>
-							))}
+											option.disabled && "text-vscode-errorForeground",
+											isHighlighted && "bg-accent text-accent-foreground",
+										)}>
+										<div className="flex items-center">
+											{option.icon}
+											{option.label}
+										</div>
+										<Check
+											className={cn(
+												"ml-auto h-4 w-4 p-0.5",
+												value === option.value ? "opacity-100" : "opacity-0",
+											)}
+										/>
+									</CommandItem>
+								)
+							})}
 						</CommandGroup>
 					</CommandList>
 				</Command>
