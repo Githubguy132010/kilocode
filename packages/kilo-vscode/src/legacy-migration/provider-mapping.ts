@@ -240,6 +240,13 @@ export const PROVIDER_MAP: Record<string, ProviderMapping> = {
     key: "syntheticApiKey",
     name: "Synthetic",
   },
+  apertis: {
+    id: "apertis",
+    key: "apertisApiKey",
+    name: "Apertis",
+    modelField: "apertisModelId",
+    urlField: "apertisBaseUrl",
+  },
 }
 
 /** Providers that have no equivalent in the new CLI backend */
@@ -256,7 +263,6 @@ export const UNSUPPORTED_PROVIDERS = new Set([
   "nano-gpt",
   "poe",
   "aihubmix",
-  "apertis",
   "zenmux",
 ])
 
