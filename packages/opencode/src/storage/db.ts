@@ -12,10 +12,8 @@ import z from "zod"
 import path from "path"
 import { readFileSync, readdirSync, existsSync } from "fs"
 import * as schema from "./schema"
-import { Installation } from "../installation"
-import { Flag } from "../flag/flag"
 
-declare const KILO_MIGRATIONS: { sql: string; timestamp: number; name: string }[] | undefined
+declare const KILO_MIGRATIONS: { sql: string; timestamp: number }[] | undefined
 
 export const NotFoundError = NamedError.create(
   "NotFoundError",
@@ -27,22 +25,13 @@ export const NotFoundError = NamedError.create(
 const log = Log.create({ service: "db" })
 
 export namespace Database {
-  export function file(channel: string) {
-    if (channel === "latest" || Flag.KILO_DISABLE_CHANNEL_DB) return "kilo.db"
-    const safe = channel.replace(/[^a-zA-Z0-9._-]/g, "-")
-    return `kilo-${safe}.db`
-  }
-
-  export const Path = (() => {
-    return path.join(Global.Path.data, file(Installation.CHANNEL))
-  })()
-
+  export const Path = path.join(Global.Path.data, "kilo.db")
   type Schema = typeof schema
   export type Transaction = SQLiteTransaction<"sync", void, Schema>
 
   type Client = SQLiteBunDatabase<Schema>
 
-  type Journal = { sql: string; timestamp: number; name: string }[]
+  type Journal = { sql: string; timestamp: number }[]
 
   const state = {
     sqlite: undefined as BunDatabase | undefined,
@@ -73,7 +62,6 @@ export namespace Database {
         return {
           sql: readFileSync(file, "utf-8"),
           timestamp: time(name),
-          name,
         }
       })
       .filter(Boolean) as Journal
@@ -82,9 +70,9 @@ export namespace Database {
   }
 
   export const Client = lazy(() => {
-    log.info("opening database", { path: Path })
+    log.info("opening database", { path: path.join(Global.Path.data, "kilo.db") })
 
-    const sqlite = new BunDatabase(Path, { create: true })
+    const sqlite = new BunDatabase(path.join(Global.Path.data, "kilo.db"), { create: true })
     state.sqlite = sqlite
 
     sqlite.run("PRAGMA journal_mode = WAL")
@@ -155,7 +143,7 @@ export namespace Database {
     } catch (err) {
       if (err instanceof Context.NotFound) {
         const effects: (() => void | Promise<void>)[] = []
-        const result = (Client().transaction as any)((tx: TxOrDb) => {
+        const result = Client().transaction((tx) => {
           return ctx.provide({ tx, effects }, () => callback(tx))
         })
         for (const effect of effects) effect()

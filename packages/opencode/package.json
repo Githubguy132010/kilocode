@@ -19,8 +19,7 @@
     "db": "bun drizzle-kit"
   },
   "bin": {
-    "kilo": "./bin/kilo",
-    "kilocode": "./bin/kilo"
+    "opencode": "./bin/opencode"
   },
   "randomField": "this-is-a-random-value-12345",
   "exports": {
@@ -37,7 +36,6 @@
     "@parcel/watcher-linux-x64-glibc": "2.5.1",
     "@parcel/watcher-linux-x64-musl": "2.5.1",
     "@parcel/watcher-win32-x64": "2.5.1",
-    "@parcel/watcher-win32-arm64": "2.5.1",
     "@standard-schema/spec": "1.0.0",
     "@tsconfig/bun": "catalog:",
     "@types/babel__core": "7.20.5",
@@ -47,8 +45,8 @@
     "@types/yargs": "17.0.33",
     "@types/which": "3.0.4",
     "@typescript/native-preview": "catalog:",
-    "drizzle-kit": "1.0.0-beta.16-ea816b6",
-    "drizzle-orm": "1.0.0-beta.16-ea816b6",
+    "drizzle-kit": "1.0.0-beta.12-a5629fb",
+    "drizzle-orm": "1.0.0-beta.12-a5629fb",
     "typescript": "catalog:",
     "vscode-languageserver-types": "3.17.5",
     "why-is-node-running": "3.2.2",
@@ -88,6 +86,7 @@
     "@kilocode/plugin": "workspace:*",
     "@kilocode/sdk": "workspace:*",
     "@modelcontextprotocol/sdk": "1.25.2",
+    "@morphllm/morphsdk": "0.2.148",
     "@octokit/graphql": "9.0.2",
     "@octokit/rest": "catalog:",
     "@openauthjs/openauth": "catalog:",
@@ -110,7 +109,7 @@
     "clipboardy": "4.0.0",
     "decimal.js": "10.5.0",
     "diff": "catalog:",
-    "drizzle-orm": "1.0.0-beta.16-ea816b6",
+    "drizzle-orm": "1.0.0-beta.12-a5629fb",
     "fuzzysort": "3.1.0",
     "glob": "13.0.5",
     "google-auth-library": "10.5.0",
@@ -137,11 +136,10 @@
     "xdg-basedir": "5.1.0",
     "yargs": "18.0.0",
     "zod": "catalog:",
-    "zod-to-json-schema": "3.24.5",
-    "@morphllm/morphsdk": "0.2.148"
+    "zod-to-json-schema": "3.24.5"
   },
   "overrides": {
-    "drizzle-orm": "1.0.0-beta.16-ea816b6"
+    "drizzle-orm": "1.0.0-beta.12-a5629fb"
   },
   "peerDependencies": {}
 }

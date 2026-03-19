@@ -11,14 +11,6 @@ export function useNavigate() {
   return () => undefined
 }
 
-export function useLocation() {
-  return {
-    pathname: "/story/session/story-session",
-    search: "",
-    hash: "",
-  }
-}
-
 export function MemoryRouter(props: ParentProps) {
   return props.children
 }

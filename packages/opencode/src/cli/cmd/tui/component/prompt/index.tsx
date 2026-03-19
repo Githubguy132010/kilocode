@@ -34,7 +34,6 @@ import { useToast } from "../../ui/toast"
 import { useKV } from "../../context/kv"
 import { useTextareaKeybindings } from "../textarea-keybindings"
 import { DialogSkill } from "../dialog-skill"
-import { shouldSummarize as shouldPasteSummary } from "@/kilocode/paste-summary"
 
 export type PromptProps = {
   sessionID?: string
@@ -982,14 +981,15 @@ export function Prompt(props: PromptProps) {
                   } catch {}
                 }
 
-                // kilocode_change start
-                const summary = shouldPasteSummary(pastedContent)
-                if (summary.summarize && !sync.data.config.experimental?.disable_paste_summary) {
+                const lineCount = (pastedContent.match(/\n/g)?.length ?? 0) + 1
+                if (
+                  (lineCount >= 3 || pastedContent.length > 150) &&
+                  !sync.data.config.experimental?.disable_paste_summary
+                ) {
                   event.preventDefault()
-                  pasteText(pastedContent, `[Pasted ~${summary.lines} lines]`)
+                  pasteText(pastedContent, `[Pasted ~${lineCount} lines]`)
                   return
                 }
-                // kilocode_change end
 
                 // Force layout update and render for the pasted content
                 setTimeout(() => {

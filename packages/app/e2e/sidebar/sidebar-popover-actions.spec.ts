@@ -1,6 +1,6 @@
 import { test, expect } from "../fixtures"
-import { cleanupSession, closeSidebar, hoverSessionItem } from "../actions"
-import { projectSwitchSelector } from "../selectors"
+import { closeSidebar, hoverSessionItem } from "../actions"
+import { projectSwitchSelector, sessionItemSelector } from "../selectors"
 
 test("collapsed sidebar popover stays open when archiving a session", async ({ page, slug, sdk, gotoSession }) => {
   const stamp = Date.now()
@@ -15,15 +15,12 @@ test("collapsed sidebar popover stays open when archiving a session", async ({ p
     await gotoSession(one.id)
     await closeSidebar(page)
 
-    const oneItem = page.locator(`[data-session-id="${one.id}"]`).last()
-    const twoItem = page.locator(`[data-session-id="${two.id}"]`).last()
-
     const project = page.locator(projectSwitchSelector(slug)).first()
     await expect(project).toBeVisible()
     await project.hover()
 
-    await expect(oneItem).toBeVisible()
-    await expect(twoItem).toBeVisible()
+    await expect(page.locator(sessionItemSelector(one.id)).first()).toBeVisible()
+    await expect(page.locator(sessionItemSelector(two.id)).first()).toBeVisible()
 
     const item = await hoverSessionItem(page, one.id)
     await item
@@ -31,9 +28,9 @@ test("collapsed sidebar popover stays open when archiving a session", async ({ p
       .first()
       .click()
 
-    await expect(twoItem).toBeVisible()
+    await expect(page.locator(sessionItemSelector(two.id)).first()).toBeVisible()
   } finally {
-    await cleanupSession({ sdk, sessionID: one.id })
-    await cleanupSession({ sdk, sessionID: two.id })
+    await sdk.session.delete({ sessionID: one.id }).catch(() => undefined)
+    await sdk.session.delete({ sessionID: two.id }).catch(() => undefined)
   }
 })

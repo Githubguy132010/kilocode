@@ -16,6 +16,7 @@ test("titlebar back/forward navigates between sessions", async ({ page, slug, sd
 
       const link = page.locator(`[data-session-id="${two.id}"] a`).first()
       await expect(link).toBeVisible()
+      await link.scrollIntoViewIfNeeded()
       await link.click()
 
       await expect(page).toHaveURL(new RegExp(`/${slug}/session/${two.id}(?:\\?|#|$)`))
@@ -55,6 +56,7 @@ test("titlebar forward is cleared after branching history from sidebar", async (
 
         const second = page.locator(`[data-session-id="${b.id}"] a`).first()
         await expect(second).toBeVisible()
+        await second.scrollIntoViewIfNeeded()
         await second.click()
 
         await expect(page).toHaveURL(new RegExp(`/${slug}/session/${b.id}(?:\\?|#|$)`))
@@ -74,6 +76,7 @@ test("titlebar forward is cleared after branching history from sidebar", async (
 
         const third = page.locator(`[data-session-id="${c.id}"] a`).first()
         await expect(third).toBeVisible()
+        await third.scrollIntoViewIfNeeded()
         await third.click()
 
         await expect(page).toHaveURL(new RegExp(`/${slug}/session/${c.id}(?:\\?|#|$)`))
@@ -99,6 +102,7 @@ test("keyboard shortcuts navigate titlebar history", async ({ page, slug, sdk, g
 
       const link = page.locator(`[data-session-id="${two.id}"] a`).first()
       await expect(link).toBeVisible()
+      await link.scrollIntoViewIfNeeded()
       await link.click()
 
       await expect(page).toHaveURL(new RegExp(`/${slug}/session/${two.id}(?:\\?|#|$)`))

@@ -3,9 +3,7 @@
   "globalEnv": ["CI", "KILO_DISABLE_SHARE"],
   "globalPassThroughEnv": ["CI", "KILO_DISABLE_SHARE"],
   "tasks": {
-    "typecheck": {
-      "dependsOn": ["^typecheck"]
-    },
+    "typecheck": {},
     "build": {
       "dependsOn": [],
       "outputs": ["dist/**"]

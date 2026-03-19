@@ -1,6 +1,6 @@
 import { test, expect } from "../fixtures"
 import { promptSelector } from "../selectors"
-import { cleanupSession, sessionIDFromUrl, withSession } from "../actions"
+import { sessionIDFromUrl, withSession } from "../actions"
 
 test("can send a prompt and receive a reply", async ({ page, sdk, gotoSession }) => {
   test.setTimeout(120_000)
@@ -46,7 +46,7 @@ test("can send a prompt and receive a reply", async ({ page, sdk, gotoSession })
       .toContain(token)
   } finally {
     page.off("pageerror", onPageError)
-    await cleanupSession({ sdk, sessionID })
+    await sdk.session.delete({ sessionID }).catch(() => undefined)
   }
 
   if (pageErrors.length > 0) {

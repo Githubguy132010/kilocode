@@ -32,19 +32,22 @@ test("changing sidebar toggle keybind works", async ({ page, gotoSession }) => {
 
   await closeDialog(page, dialog)
 
-  const button = page.getByRole("button", { name: /toggle sidebar/i }).first()
-  const initiallyClosed = (await button.getAttribute("aria-expanded")) !== "true"
+  const main = page.locator("main")
+  const initialClasses = (await main.getAttribute("class")) ?? ""
+  const initiallyClosed = initialClasses.includes("xl:border-l")
 
   await page.keyboard.press(`${modKey}+Shift+H`)
-  await expect(button).toHaveAttribute("aria-expanded", initiallyClosed ? "true" : "false")
+  await page.waitForTimeout(100)
 
-  const afterToggleClosed = (await button.getAttribute("aria-expanded")) !== "true"
+  const afterToggleClasses = (await main.getAttribute("class")) ?? ""
+  const afterToggleClosed = afterToggleClasses.includes("xl:border-l")
   expect(afterToggleClosed).toBe(!initiallyClosed)
 
   await page.keyboard.press(`${modKey}+Shift+H`)
-  await expect(button).toHaveAttribute("aria-expanded", initiallyClosed ? "false" : "true")
+  await page.waitForTimeout(100)
 
-  const finalClosed = (await button.getAttribute("aria-expanded")) !== "true"
+  const finalClasses = (await main.getAttribute("class")) ?? ""
+  const finalClosed = finalClasses.includes("xl:border-l")
   expect(finalClosed).toBe(initiallyClosed)
 })
 

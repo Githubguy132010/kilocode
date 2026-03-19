@@ -199,7 +199,6 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
           parts: Part[]
           agent: string
           model: { providerID: string; modelID: string }
-          variant?: string
         }) {
           const message: Message = {
             id: input.messageID,
@@ -208,7 +207,6 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
             time: { created: Date.now() },
             agent: input.agent,
             model: input.model,
-            variant: input.variant,
           }
           const [, setStore] = target()
           setOptimisticAdd(setStore as (...args: unknown[]) => void, {

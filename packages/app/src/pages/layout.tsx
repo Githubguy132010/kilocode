@@ -10,8 +10,9 @@ import {
   ParentProps,
   Show,
   untrack,
+  type JSX,
 } from "solid-js"
-import { useNavigate, useParams } from "@solidjs/router"
+import { A, useNavigate, useParams } from "@solidjs/router"
 import { useLayout, LocalProject } from "@/context/layout"
 import { useGlobalSync } from "@/context/global-sync"
 import { Persist, persisted } from "@/utils/persist"
@@ -19,6 +20,7 @@ import { base64Encode } from "@opencode-ai/util/encode"
 import { decode64 } from "@/utils/base64"
 import { ResizeHandle } from "@opencode-ai/ui/resize-handle"
 import { Button } from "@opencode-ai/ui/button"
+import { Icon } from "@opencode-ai/ui/icon"
 import { IconButton } from "@opencode-ai/ui/icon-button"
 import { Tooltip } from "@opencode-ai/ui/tooltip"
 import { DropdownMenu } from "@opencode-ai/ui/dropdown-menu"
@@ -57,6 +59,7 @@ import { Titlebar } from "@/components/titlebar"
 import { useServer } from "@/context/server"
 import { useLanguage, type Locale } from "@/context/language"
 import {
+  childMapByParent,
   displayName,
   effectiveWorkspaceOrder,
   errorMessage,
@@ -93,7 +96,6 @@ export default function Layout(props: ParentProps) {
       workspaceName: {} as Record<string, string>,
       workspaceBranchName: {} as Record<string, Record<string, string>>,
       workspaceExpanded: {} as Record<string, boolean>,
-      gettingStartedDismissed: false,
     }),
   )
 
@@ -155,8 +157,6 @@ export default function Layout(props: ParentProps) {
   const isBusy = (directory: string) => !!state.busyWorkspaces[workspaceKey(directory)]
   const navLeave = { current: undefined as number | undefined }
   const [sortNow, setSortNow] = createSignal(Date.now())
-  const [sizing, setSizing] = createSignal(false)
-  let sizet: number | undefined
   let sortNowInterval: ReturnType<typeof setInterval> | undefined
   const sortNowTimeout = setTimeout(
     () => {
@@ -169,7 +169,7 @@ export default function Layout(props: ParentProps) {
   const aim = createAim({
     enabled: () => !layout.sidebar.opened(),
     active: () => state.hoverProject,
-    el: () => state.nav?.querySelector<HTMLElement>("[data-component='sidebar-rail']") ?? state.nav,
+    el: () => state.nav,
     onActivate: (directory) => {
       globalSync.child(directory)
       setState("hoverProject", directory)
@@ -181,21 +181,7 @@ export default function Layout(props: ParentProps) {
     if (navLeave.current !== undefined) clearTimeout(navLeave.current)
     clearTimeout(sortNowTimeout)
     if (sortNowInterval) clearInterval(sortNowInterval)
-    if (sizet !== undefined) clearTimeout(sizet)
-    if (peekt !== undefined) clearTimeout(peekt)
     aim.reset()
-  })
-
-  onMount(() => {
-    const stop = () => setSizing(false)
-    window.addEventListener("pointerup", stop)
-    window.addEventListener("pointercancel", stop)
-    window.addEventListener("blur", stop)
-    onCleanup(() => {
-      window.removeEventListener("pointerup", stop)
-      window.removeEventListener("pointercancel", stop)
-      window.removeEventListener("blur", stop)
-    })
   })
 
   const sidebarHovering = createMemo(() => !layout.sidebar.opened() && state.hoverProject !== undefined)
@@ -208,52 +194,10 @@ export default function Layout(props: ParentProps) {
   const clearHoverProjectSoon = () => queueMicrotask(() => setHoverProject(undefined))
   const setHoverSession = (id: string | undefined) => setState("hoverSession", id)
 
-  const disarm = () => {
-    if (navLeave.current === undefined) return
-    clearTimeout(navLeave.current)
-    navLeave.current = undefined
-  }
-
-  const arm = () => {
-    if (layout.sidebar.opened()) return
-    if (state.hoverProject === undefined) return
-    disarm()
-    navLeave.current = window.setTimeout(() => {
-      navLeave.current = undefined
-      setHoverProject(undefined)
-      setState("hoverSession", undefined)
-    }, 300)
-  }
-
-  const [peek, setPeek] = createSignal<LocalProject | undefined>(undefined)
-  const [peeked, setPeeked] = createSignal(false)
-  let peekt: number | undefined
-
   const hoverProjectData = createMemo(() => {
     const id = state.hoverProject
     if (!id) return
     return layout.projects.list().find((project) => project.worktree === id)
-  })
-
-  createEffect(() => {
-    const p = hoverProjectData()
-    if (p) {
-      if (peekt !== undefined) {
-        clearTimeout(peekt)
-        peekt = undefined
-      }
-      setPeek(p)
-      setPeeked(true)
-      return
-    }
-
-    setPeeked(false)
-    if (peek() === undefined) return
-    if (peekt !== undefined) clearTimeout(peekt)
-    peekt = window.setTimeout(() => {
-      peekt = undefined
-      setPeek(undefined)
-    }, 180)
   })
 
   createEffect(() => {
@@ -1103,13 +1047,18 @@ export default function Layout(props: ParentProps) {
   }
 
   function projectRoot(directory: string) {
+    const key = workspaceKey(directory)
     const project = layout.projects
       .list()
-      .find((item) => item.worktree === directory || item.sandboxes?.includes(directory))
+      .find(
+        (item) =>
+          workspaceKey(item.worktree) === key ||
+          (item.sandboxes ?? []).some((sandbox) => workspaceKey(sandbox) === key),
+      )
     if (project) return project.worktree
 
     const known = Object.entries(store.workspaceOrder).find(
-      ([root, dirs]) => root === directory || dirs.includes(directory),
+      ([root, dirs]) => workspaceKey(root) === key || dirs.some((dir) => workspaceKey(dir) === key),
     )
     if (known) return known[0]
 
@@ -1181,12 +1130,6 @@ export default function Layout(props: ParentProps) {
     }
     const openSession = async (target: { directory: string; id: string }) => {
       if (!canOpen(target.directory)) return false
-      const [data] = globalSync.child(target.directory, { bootstrap: false })
-      if (data.session.some((item) => item.id === target.id)) {
-        setStore("lastProjectSession", root, { directory: target.directory, id: target.id, at: Date.now() })
-        navigateWithSidebarReset(`/${base64Encode(target.directory)}/session/${target.id}`)
-        return true
-      }
       const resolved = await globalSDK.client.session
         .get({ sessionID: target.id })
         .then((x) => x.data)
@@ -1877,8 +1820,7 @@ export default function Layout(props: ParentProps) {
     setHoverSession,
   }
 
-  const SidebarPanel = (panelProps: { project: LocalProject | undefined; mobile?: boolean; merged?: boolean }) => {
-    const merged = createMemo(() => panelProps.mobile || (panelProps.merged ?? layout.sidebar.opened()))
+  const SidebarPanel = (panelProps: { project: LocalProject | undefined; mobile?: boolean }) => {
     const projectName = createMemo(() => {
       const project = panelProps.project
       if (!project) return ""
@@ -1904,19 +1846,12 @@ export default function Layout(props: ParentProps) {
     return (
       <div
         classList={{
-          "flex flex-col min-h-0 min-w-0 rounded-tl-[12px] px-2": true,
-          "border border-b-0 border-border-weak-base": !merged(),
-          "border-l border-t border-border-weaker-base": merged(),
-          "bg-background-base": merged(),
-          "bg-background-stronger": !merged(),
+          "flex flex-col min-h-0 bg-background-stronger border border-b-0 border-border-weak-base rounded-tl-[12px]": true,
           "flex-1 min-w-0": panelProps.mobile,
-          "max-w-full overflow-hidden": panelProps.mobile,
         }}
-        style={{
-          width: panelProps.mobile ? undefined : `${Math.max(Math.max(layout.sidebar.width(), 244) - 64, 0)}px`,
-        }}
+        style={{ width: panelProps.mobile ? undefined : `${Math.max(layout.sidebar.width() - 64, 0)}px` }}
       >
-        <Show when={panelProps.project}>
+        <Show when={panelProps.project} keyed>
           {(p) => (
             <>
               <div class="shrink-0 px-2 py-1">
@@ -1925,7 +1860,7 @@ export default function Layout(props: ParentProps) {
                     <InlineEditor
                       id={`project:${projectId()}`}
                       value={projectName}
-                      onSave={(next) => renameProject(p(), next)}
+                      onSave={(next) => renameProject(p, next)}
                       class="text-14-medium text-text-strong truncate"
                       displayClass="text-14-medium text-text-strong truncate"
                       stopPropagation
@@ -1934,7 +1869,7 @@ export default function Layout(props: ParentProps) {
                     <Tooltip
                       placement="bottom"
                       gutter={2}
-                      value={p().worktree}
+                      value={p.worktree}
                       class="shrink-0"
                       contentStyle={{
                         "max-width": "640px",
@@ -1942,7 +1877,7 @@ export default function Layout(props: ParentProps) {
                       }}
                     >
                       <span class="text-12-regular text-text-base truncate select-text">
-                        {p().worktree.replace(homedir(), "~")}
+                        {p.worktree.replace(homedir(), "~")}
                       </span>
                     </Tooltip>
                   </div>
@@ -1953,33 +1888,33 @@ export default function Layout(props: ParentProps) {
                       icon="dot-grid"
                       variant="ghost"
                       data-action="project-menu"
-                      data-project={base64Encode(p().worktree)}
+                      data-project={base64Encode(p.worktree)}
                       class="shrink-0 size-6 rounded-md data-[expanded]:bg-surface-base-active"
                       classList={{
                         "opacity-0 group-hover/project:opacity-100 data-[expanded]:opacity-100": !panelProps.mobile,
                       }}
                       aria-label={language.t("common.moreOptions")}
                     />
-                    <DropdownMenu.Portal>
+                    <DropdownMenu.Portal mount={!panelProps.mobile ? state.nav : undefined}>
                       <DropdownMenu.Content class="mt-1">
-                        <DropdownMenu.Item onSelect={() => showEditProjectDialog(p())}>
+                        <DropdownMenu.Item onSelect={() => showEditProjectDialog(p)}>
                           <DropdownMenu.ItemLabel>{language.t("common.edit")}</DropdownMenu.ItemLabel>
                         </DropdownMenu.Item>
                         <DropdownMenu.Item
                           data-action="project-workspaces-toggle"
-                          data-project={base64Encode(p().worktree)}
-                          disabled={p().vcs !== "git" && !layout.sidebar.workspaces(p().worktree)()}
-                          onSelect={() => toggleProjectWorkspaces(p())}
+                          data-project={base64Encode(p.worktree)}
+                          disabled={p.vcs !== "git" && !layout.sidebar.workspaces(p.worktree)()}
+                          onSelect={() => toggleProjectWorkspaces(p)}
                         >
                           <DropdownMenu.ItemLabel>
-                            {layout.sidebar.workspaces(p().worktree)()
+                            {layout.sidebar.workspaces(p.worktree)()
                               ? language.t("sidebar.workspaces.disable")
                               : language.t("sidebar.workspaces.enable")}
                           </DropdownMenu.ItemLabel>
                         </DropdownMenu.Item>
                         <DropdownMenu.Item
                           data-action="project-clear-notifications"
-                          data-project={base64Encode(p().worktree)}
+                          data-project={base64Encode(p.worktree)}
                           disabled={unseenCount() === 0}
                           onSelect={clearNotifications}
                         >
@@ -1990,8 +1925,8 @@ export default function Layout(props: ParentProps) {
                         <DropdownMenu.Separator />
                         <DropdownMenu.Item
                           data-action="project-close-menu"
-                          data-project={base64Encode(p().worktree)}
-                          onSelect={() => closeProject(p().worktree)}
+                          data-project={base64Encode(p.worktree)}
+                          onSelect={() => closeProject(p.worktree)}
                         >
                           <DropdownMenu.ItemLabel>{language.t("common.close")}</DropdownMenu.ItemLabel>
                         </DropdownMenu.Item>
@@ -2011,7 +1946,7 @@ export default function Layout(props: ParentProps) {
                           size="large"
                           icon="plus-small"
                           class="w-full"
-                          onClick={() => navigateWithSidebarReset(`/${base64Encode(p().worktree)}/session`)}
+                          onClick={() => navigateWithSidebarReset(`/${base64Encode(p.worktree)}/session`)}
                         >
                           {language.t("command.session.new")}
                         </Button>
@@ -2019,7 +1954,7 @@ export default function Layout(props: ParentProps) {
                       <div class="flex-1 min-h-0">
                         <LocalWorkspace
                           ctx={workspaceSidebarCtx}
-                          project={p()}
+                          project={p}
                           sortNow={sortNow}
                           mobile={panelProps.mobile}
                         />
@@ -2029,7 +1964,7 @@ export default function Layout(props: ParentProps) {
                 >
                   <>
                     <div class="shrink-0 py-4 px-3">
-                      <Button size="large" icon="plus-small" class="w-full" onClick={() => createWorkspace(p())}>
+                      <Button size="large" icon="plus-small" class="w-full" onClick={() => createWorkspace(p)}>
                         {language.t("workspace.new")}
                       </Button>
                     </div>
@@ -2054,7 +1989,7 @@ export default function Layout(props: ParentProps) {
                                 <SortableWorkspace
                                   ctx={workspaceSidebarCtx}
                                   directory={directory}
-                                  project={p()}
+                                  project={p}
                                   sortNow={sortNow}
                                   mobile={panelProps.mobile}
                                 />
@@ -2079,31 +2014,25 @@ export default function Layout(props: ParentProps) {
         </Show>
 
         <div
-          class="shrink-0 px-3 py-3"
+          class="shrink-0 px-2 py-3 border-t border-border-weak-base"
           classList={{
-            hidden: store.gettingStartedDismissed || !(providers.all().length > 0 && providers.paid().length === 0),
+            hidden: !(providers.all().length > 0 && providers.paid().length === 0),
           }}
         >
-          <div class="rounded-xl bg-background-base shadow-xs-border-base" data-component="getting-started">
-            <div class="p-3 flex flex-col gap-6">
-              <div class="flex flex-col gap-2">
-                <div class="text-14-medium text-text-strong">{language.t("sidebar.gettingStarted.title")}</div>
-                <div class="text-14-regular text-text-base" style={{ "line-height": "var(--line-height-normal)" }}>
-                  {language.t("sidebar.gettingStarted.line1")}
-                </div>
-                <div class="text-14-regular text-text-base" style={{ "line-height": "var(--line-height-normal)" }}>
-                  {language.t("sidebar.gettingStarted.line2")}
-                </div>
-              </div>
-              <div data-component="getting-started-actions">
-                <Button size="large" icon="plus-small" onClick={connectProvider}>
-                  {language.t("command.provider.connect")}
-                </Button>
-                <Button size="large" variant="ghost" onClick={() => setStore("gettingStartedDismissed", true)}>
-                  Not yet
-                </Button>
-              </div>
+          <div class="rounded-md bg-background-base shadow-xs-border-base">
+            <div class="p-3 flex flex-col gap-2">
+              <div class="text-12-medium text-text-strong">{language.t("sidebar.gettingStarted.title")}</div>
+              <div class="text-text-base">{language.t("sidebar.gettingStarted.line1")}</div>
+              <div class="text-text-base">{language.t("sidebar.gettingStarted.line2")}</div>
             </div>
+            <Button
+              class="flex w-full text-left justify-start text-12-medium text-text-strong stroke-[1.5px] rounded-md rounded-t-none shadow-none border-t border-border-weak-base px-3"
+              size="large"
+              icon="plus"
+              onClick={connectProvider}
+            >
+              {language.t("command.provider.connect")}
+            </Button>
           </div>
         </div>
       </div>
@@ -2113,27 +2042,33 @@ export default function Layout(props: ParentProps) {
   return (
     <div class="relative bg-background-base flex-1 min-h-0 flex flex-col select-none [&_input]:select-text [&_textarea]:select-text [&_[contenteditable]]:select-text">
       <Titlebar />
-      <div class="flex-1 min-h-0 relative overflow-x-hidden">
+      <div class="flex-1 min-h-0 flex">
         <nav
           aria-label={language.t("sidebar.nav.projectsAndSessions")}
           data-component="sidebar-nav-desktop"
           classList={{
             "hidden xl:block": true,
-            "absolute inset-y-0 left-0": true,
-            "z-10": true,
+            "relative shrink-0": true,
           }}
-          style={{ width: `${Math.max(layout.sidebar.width(), 244)}px` }}
+          style={{ width: layout.sidebar.opened() ? `${Math.max(layout.sidebar.width(), 244)}px` : "64px" }}
           ref={(el) => {
             setState("nav", el)
           }}
           onMouseEnter={() => {
-            disarm()
+            if (navLeave.current === undefined) return
+            clearTimeout(navLeave.current)
+            navLeave.current = undefined
           }}
           onMouseLeave={() => {
             aim.reset()
             if (!sidebarHovering()) return
 
-            arm()
+            if (navLeave.current !== undefined) clearTimeout(navLeave.current)
+            navLeave.current = window.setTimeout(() => {
+              navLeave.current = undefined
+              setHoverProject(undefined)
+              setState("hoverSession", undefined)
+            }, 300)
           }}
         >
           <div class="@container w-full h-full contain-strict">
@@ -2157,39 +2092,33 @@ export default function Layout(props: ParentProps) {
               settingsKeybind={() => command.keybind("settings.open")}
               onOpenSettings={openSettings}
               helpLabel={() => language.t("sidebar.help")}
-              onOpenHelp={() => platform.openLink("https://opencode.ai/desktop-feedback")}
+              onOpenHelp={() => platform.openLink("https://kilo.ai/desktop-feedback")}
               renderPanel={() => (
                 <Show when={currentProject()} keyed>
-                  {(project) => <SidebarPanel project={project} merged />}
+                  {(project) => <SidebarPanel project={project} />}
                 </Show>
               )}
             />
           </div>
+          <Show when={!layout.sidebar.opened() ? hoverProjectData()?.worktree : undefined} keyed>
+            {(worktree) => (
+              <div class="absolute inset-y-0 left-16 z-50 flex" onMouseEnter={aim.reset}>
+                <SidebarPanel project={hoverProjectData()} />
+              </div>
+            )}
+          </Show>
           <Show when={layout.sidebar.opened()}>
-            <div onPointerDown={() => setSizing(true)}>
-              <ResizeHandle
-                direction="horizontal"
-                size={layout.sidebar.width()}
-                min={244}
-                max={typeof window === "undefined" ? 1000 : window.innerWidth * 0.3 + 64}
-                collapseThreshold={244}
-                onResize={(w) => {
-                  setSizing(true)
-                  if (sizet !== undefined) clearTimeout(sizet)
-                  sizet = window.setTimeout(() => setSizing(false), 120)
-                  layout.sidebar.resize(w)
-                }}
-                onCollapse={layout.sidebar.close}
-              />
-            </div>
+            <ResizeHandle
+              direction="horizontal"
+              size={layout.sidebar.width()}
+              min={244}
+              max={typeof window === "undefined" ? 1000 : window.innerWidth * 0.3 + 64}
+              collapseThreshold={244}
+              onResize={layout.sidebar.resize}
+              onCollapse={layout.sidebar.close}
+            />
           </Show>
         </nav>
-
-        <div
-          class="hidden xl:block pointer-events-none absolute top-0 right-0 z-0 border-t border-border-weaker-base"
-          style={{ left: "calc(4rem + 12px)" }}
-        />
-
         <div class="xl:hidden">
           <div
             classList={{
@@ -2205,7 +2134,7 @@ export default function Layout(props: ParentProps) {
             aria-label={language.t("sidebar.nav.projectsAndSessions")}
             data-component="sidebar-nav-mobile"
             classList={{
-              "@container fixed top-10 bottom-0 left-0 z-50 w-full max-w-[400px] overflow-hidden border-r border-border-weaker-base bg-background-base transition-transform duration-200 ease-out": true,
+              "@container fixed top-10 bottom-0 left-0 z-50 w-72 bg-background-base transition-transform duration-200 ease-out": true,
               "translate-x-0": layout.mobileSidebar.opened(),
               "-translate-x-full": !layout.mobileSidebar.opened(),
             }}
@@ -2232,72 +2161,22 @@ export default function Layout(props: ParentProps) {
               settingsKeybind={() => command.keybind("settings.open")}
               onOpenSettings={openSettings}
               helpLabel={() => language.t("sidebar.help")}
-              onOpenHelp={() => platform.openLink("https://opencode.ai/desktop-feedback")}
+              onOpenHelp={() => platform.openLink("https://kilo.ai/desktop-feedback")}
               renderPanel={() => <SidebarPanel project={currentProject()} mobile />}
             />
           </nav>
         </div>
 
-        <div
+        <main
           classList={{
-            "absolute inset-0": true,
-            "xl:inset-y-0 xl:right-0 xl:left-[var(--main-left)]": true,
-            "z-20": true,
-            "transition-[left] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[left] motion-reduce:transition-none":
-              !sizing(),
-          }}
-          style={{
-            "--main-left": layout.sidebar.opened() ? `${Math.max(layout.sidebar.width(), 244)}px` : "4rem",
+            "size-full overflow-x-hidden flex flex-col items-start contain-strict border-t border-border-weak-base": true,
+            "xl:border-l xl:rounded-tl-[12px]": !layout.sidebar.opened(),
           }}
         >
-          <main
-            classList={{
-              "size-full overflow-x-hidden flex flex-col items-start contain-strict border-t border-border-weak-base bg-background-base xl:border-l xl:rounded-tl-[12px]": true,
-            }}
-          >
-            <Show when={!autoselecting()} fallback={<div class="size-full" />}>
-              {props.children}
-            </Show>
-          </main>
-        </div>
-
-        <div
-          classList={{
-            "hidden xl:flex absolute inset-y-0 left-16 z-30": true,
-            "opacity-100 translate-x-0 pointer-events-auto": peeked() && !layout.sidebar.opened(),
-            "opacity-0 -translate-x-2 pointer-events-none": !peeked() || layout.sidebar.opened(),
-            "transition-[opacity,transform] motion-reduce:transition-none": true,
-            "duration-180 ease-out": peeked() && !layout.sidebar.opened(),
-            "duration-120 ease-in": !peeked() || layout.sidebar.opened(),
-          }}
-          onMouseMove={disarm}
-          onMouseEnter={() => {
-            disarm()
-            aim.reset()
-          }}
-          onPointerDown={disarm}
-          onMouseLeave={() => {
-            arm()
-          }}
-        >
-          <Show when={peek()} keyed>
-            {(project) => <SidebarPanel project={project} merged={false} />}
+          <Show when={!autoselecting()} fallback={<div class="size-full" />}>
+            {props.children}
           </Show>
-        </div>
-
-        <div
-          classList={{
-            "hidden xl:block pointer-events-none absolute inset-y-0 right-0 z-25 overflow-hidden": true,
-            "opacity-100 translate-x-0": peeked() && !layout.sidebar.opened(),
-            "opacity-0 -translate-x-2": !peeked() || layout.sidebar.opened(),
-            "transition-[opacity,transform] motion-reduce:transition-none": true,
-            "duration-180 ease-out": peeked() && !layout.sidebar.opened(),
-            "duration-120 ease-in": !peeked() || layout.sidebar.opened(),
-          }}
-          style={{ left: `calc(4rem + ${Math.max(Math.max(layout.sidebar.width(), 244) - 64, 0)}px)` }}
-        >
-          <div class="h-full w-px" style={{ "box-shadow": "var(--shadow-sidebar-overlay)" }} />
-        </div>
+        </main>
       </div>
       <Toast.Region />
     </div>

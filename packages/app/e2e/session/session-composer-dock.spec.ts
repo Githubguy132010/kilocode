@@ -1,5 +1,5 @@
 import { test, expect } from "../fixtures"
-import { cleanupSession, clearSessionDockSeed, seedSessionQuestion, seedSessionTodos } from "../actions"
+import { clearSessionDockSeed, seedSessionQuestion, seedSessionTodos } from "../actions"
 import {
   permissionDockSelector,
   promptSelector,
@@ -26,7 +26,7 @@ async function withDockSession<T>(
   try {
     return await fn(session)
   } finally {
-    await cleanupSession({ sdk, sessionID: session.id })
+    await sdk.session.delete({ sessionID: session.id }).catch(() => undefined)
   }
 }
 
@@ -315,7 +315,7 @@ test("child session question request blocks parent dock and unblocks after submi
         await expect(page.locator(promptSelector)).toBeVisible()
       })
     } finally {
-      await cleanupSession({ sdk, sessionID: child.id })
+      await sdk.session.delete({ sessionID: child.id }).catch(() => undefined)
     }
   })
 })
@@ -362,7 +362,7 @@ test("child session permission request blocks parent dock and supports allow onc
         },
       )
     } finally {
-      await cleanupSession({ sdk, sessionID: child.id })
+      await sdk.session.delete({ sessionID: child.id }).catch(() => undefined)
     }
   })
 })

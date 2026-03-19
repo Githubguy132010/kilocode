@@ -244,6 +244,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     draggingType: "image" | "@mention" | null
     mode: "normal" | "shell"
     applyingHistory: boolean
+    pendingAutoAccept: boolean
   }>({
     popover: null,
     historyIndex: -1,
@@ -252,6 +253,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     draggingType: null,
     mode: "normal",
     applyingHistory: false,
+    pendingAutoAccept: false,
   })
 
   const buttonsSpring = useSpring(() => (store.mode === "normal" ? 1 : 0), { visualDuration: 0.2, bounce: 0 })
@@ -301,6 +303,12 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       example: suggest() ? language.t(EXAMPLES[store.placeholder]) : "",
       suggest: suggest(),
       t: (key, params) => language.t(key as Parameters<typeof language.t>[0], params as never),
+    }),
+  )
+
+  createEffect(
+    on(sessionKey, () => {
+      setStore("pendingAutoAccept", false)
     }),
   )
 
@@ -953,7 +961,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   const variants = createMemo(() => ["default", ...local.model.variant.list()])
   const accepting = createMemo(() => {
     const id = params.id
-    if (!id) return permission.isAutoAcceptingDirectory(sdk.directory)
+    if (!id) return store.pendingAutoAccept
     return permission.isAutoAccepting(id, sdk.directory)
   })
 
@@ -1207,9 +1215,9 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
               aria-multiline="true"
               aria-label={placeholder()}
               contenteditable="true"
-              autocapitalize={store.mode === "normal" ? "sentences" : "off"}
-              autocorrect={store.mode === "normal" ? "on" : "off"}
-              spellcheck={store.mode === "normal"}
+              autocapitalize="off"
+              autocorrect="off"
+              spellcheck={false}
               onInput={handleInput}
               onPaste={handlePaste}
               onCompositionStart={() => setComposing(true)}
@@ -1332,7 +1340,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                   variant="ghost"
                   onClick={() => {
                     if (!params.id) {
-                      permission.toggleAutoAcceptDirectory(sdk.directory)
+                      setStore("pendingAutoAccept", (value) => !value)
                       return
                     }
                     permission.toggleAutoAccept(params.id, sdk.directory)
