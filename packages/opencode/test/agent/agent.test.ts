@@ -140,7 +140,7 @@ test("ask agent denies edit and write", async () => {
   })
 })
 
-test("ask agent allows Truncate.GLOB for external directories", async () => {
+test("ask agent gates external directories and allows Truncate.GLOB", async () => {
   const { Truncate } = await import("../../src/tool/truncation")
   await using tmp = await tmpdir()
   await Instance.provide({
@@ -148,6 +148,8 @@ test("ask agent allows Truncate.GLOB for external directories", async () => {
     fn: async () => {
       const ask = await Agent.get("ask")
       expect(ask).toBeDefined()
+      // ask agent should deny arbitrary external paths (its deny+allowlist denies by default)
+      expect(PermissionNext.evaluate("external_directory", "/some/other/path", ask!.permission).action).toBe("deny")
       expect(PermissionNext.evaluate("external_directory", Truncate.GLOB, ask!.permission).action).toBe("allow")
     },
   })
