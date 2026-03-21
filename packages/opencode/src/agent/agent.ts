@@ -232,6 +232,7 @@ export namespace Agent {
               [Truncate.GLOB]: "allow",
             },
           }),
+          user,
         ),
         mode: "subagent",
         native: true,
