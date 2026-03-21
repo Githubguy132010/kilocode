@@ -16,6 +16,7 @@ Guidelines:
 
 5. For each subtask, use the task tool with the appropriate agent type:
    - "ask" for codebase research, finding files, understanding patterns
+   - "architect" to produce a detailed implementation plan before writing code (use for non-trivial tasks where upfront design pays off)
    - "code" for implementation, analysis, and multi-step tasks
    Provide each agent with all context it needs to work independently: relevant results from prior waves, file paths, constraints, and a clearly defined scope.
 

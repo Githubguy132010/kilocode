@@ -9,6 +9,7 @@ import { Auth } from "../auth"
 import { ProviderTransform } from "../provider/transform"
 
 import PROMPT_GENERATE from "./generate.txt"
+import PROMPT_ARCHITECT from "./prompt/architect.txt"
 import PROMPT_COMPACTION from "./prompt/compaction.txt"
 import PROMPT_DEBUG from "./prompt/debug.txt"
 import PROMPT_ASK from "./prompt/ask.txt"
@@ -201,6 +202,40 @@ export namespace Agent {
         ),
         mode: "all",
         native: true,
+      },
+      // kilocode_change end
+      // kilocode_change start - hidden architect subagent for automated design phases
+      architect: {
+        name: "architect",
+        description:
+          "Analyze the codebase and produce a detailed implementation plan. Read-only — does not write code.",
+        prompt: PROMPT_ARCHITECT,
+        options: {},
+        permission: PermissionNext.merge(
+          defaults,
+          PermissionNext.fromConfig({
+            "*": "deny",
+            read: {
+              "*": "allow",
+              "*.env": "ask",
+              "*.env.*": "ask",
+              "*.env.example": "allow",
+            },
+            grep: "allow",
+            glob: "allow",
+            list: "allow",
+            webfetch: "allow",
+            websearch: "allow",
+            codesearch: "allow",
+            codebase_search: "allow",
+            external_directory: {
+              [Truncate.GLOB]: "allow",
+            },
+          }),
+        ),
+        mode: "subagent",
+        native: true,
+        hidden: true,
       },
       // kilocode_change end
       compaction: {

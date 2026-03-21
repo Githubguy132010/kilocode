@@ -23,6 +23,7 @@ test("returns default native agents when no config", async () => {
       expect(names).toContain("debug") // kilocode_change
       expect(names).toContain("orchestrator") // kilocode_change
       expect(names).toContain("ask") // kilocode_change
+      expect(names).toContain("architect") // kilocode_change
       expect(names).toContain("compaction")
       expect(names).toContain("title")
       expect(names).toContain("summary")
@@ -154,6 +155,44 @@ test("ask agent gates external directories and allows Truncate.GLOB", async () =
     },
   })
 })
+
+// kilocode_change start - architect agent tests
+test("architect agent is hidden subagent with read-only permissions", async () => {
+  await using tmp = await tmpdir()
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const architect = await Agent.get("architect")
+      expect(architect).toBeDefined()
+      expect(architect?.mode).toBe("subagent")
+      expect(architect?.hidden).toBe(true)
+      expect(architect?.native).toBe(true)
+      // read-only: denies mutating tools
+      expect(evalPerm(architect, "edit")).toBe("deny")
+      expect(evalPerm(architect, "write")).toBe("deny")
+      expect(evalPerm(architect, "bash")).toBe("deny")
+      // allows research tools
+      expect(evalPerm(architect, "read")).toBe("allow")
+      expect(evalPerm(architect, "grep")).toBe("allow")
+      expect(evalPerm(architect, "glob")).toBe("allow")
+      expect(evalPerm(architect, "webfetch")).toBe("allow")
+    },
+  })
+})
+
+test("architect agent does not appear in task tool agent list", async () => {
+  await using tmp = await tmpdir()
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const agents = await Agent.list()
+      const visible = agents.filter((a) => !a.hidden)
+      const names = visible.map((a) => a.name)
+      expect(names).not.toContain("architect")
+    },
+  })
+})
+// kilocode_change end
 
 test("compaction agent denies all permissions", async () => {
   await using tmp = await tmpdir()
