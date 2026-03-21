@@ -23,8 +23,6 @@ test("returns default native agents when no config", async () => {
       expect(names).toContain("debug") // kilocode_change
       expect(names).toContain("orchestrator") // kilocode_change
       expect(names).toContain("ask") // kilocode_change
-      expect(names).toContain("general")
-      expect(names).toContain("explore")
       expect(names).toContain("compaction")
       expect(names).toContain("title")
       expect(names).toContain("summary")
@@ -40,7 +38,7 @@ test("code agent has correct default properties", async () => {
     fn: async () => {
       const code = await Agent.get("code")
       expect(code).toBeDefined()
-      expect(code?.mode).toBe("primary")
+      expect(code?.mode).toBe("all")
       expect(code?.native).toBe(true)
       expect(evalPerm(code, "edit")).toBe("allow")
       expect(evalPerm(code, "bash")).toBe("allow")
@@ -57,7 +55,7 @@ test("ask agent has correct default properties", async () => {
     fn: async () => {
       const ask = await Agent.get("ask")
       expect(ask).toBeDefined()
-      expect(ask?.mode).toBe("primary")
+      expect(ask?.mode).toBe("all")
       expect(ask?.native).toBe(true)
       // ask agent should allow read-only tools
       expect(evalPerm(ask, "read")).toBe("allow")
@@ -128,47 +126,29 @@ test("plan agent denies edits except .kilo/plans/* and .opencode/plans/*", async
 })
 // kilocode_change end
 
-test("explore agent denies edit and write", async () => {
+test("ask agent denies edit and write", async () => {
   await using tmp = await tmpdir()
   await Instance.provide({
     directory: tmp.path,
     fn: async () => {
-      const explore = await Agent.get("explore")
-      expect(explore).toBeDefined()
-      expect(explore?.mode).toBe("subagent")
-      expect(evalPerm(explore, "edit")).toBe("deny")
-      expect(evalPerm(explore, "write")).toBe("deny")
-      expect(evalPerm(explore, "todoread")).toBe("deny")
-      expect(evalPerm(explore, "todowrite")).toBe("deny")
+      const ask = await Agent.get("ask")
+      expect(ask).toBeDefined()
+      expect(ask?.mode).toBe("all")
+      expect(evalPerm(ask, "edit")).toBe("deny")
+      expect(evalPerm(ask, "write")).toBe("deny")
     },
   })
 })
 
-test("explore agent asks for external directories and allows Truncate.GLOB", async () => {
+test("ask agent allows Truncate.GLOB for external directories", async () => {
   const { Truncate } = await import("../../src/tool/truncation")
   await using tmp = await tmpdir()
   await Instance.provide({
     directory: tmp.path,
     fn: async () => {
-      const explore = await Agent.get("explore")
-      expect(explore).toBeDefined()
-      expect(PermissionNext.evaluate("external_directory", "/some/other/path", explore!.permission).action).toBe("ask")
-      expect(PermissionNext.evaluate("external_directory", Truncate.GLOB, explore!.permission).action).toBe("allow")
-    },
-  })
-})
-
-test("general agent denies todo tools", async () => {
-  await using tmp = await tmpdir()
-  await Instance.provide({
-    directory: tmp.path,
-    fn: async () => {
-      const general = await Agent.get("general")
-      expect(general).toBeDefined()
-      expect(general?.mode).toBe("subagent")
-      expect(general?.hidden).toBeUndefined()
-      expect(evalPerm(general, "todoread")).toBe("deny")
-      expect(evalPerm(general, "todowrite")).toBe("deny")
+      const ask = await Agent.get("ask")
+      expect(ask).toBeDefined()
+      expect(PermissionNext.evaluate("external_directory", Truncate.GLOB, ask!.permission).action).toBe("allow")
     },
   })
 })
@@ -253,18 +233,18 @@ test("agent disable removes agent from list", async () => {
   await using tmp = await tmpdir({
     config: {
       agent: {
-        explore: { disable: true },
+        debug: { disable: true },
       },
     },
   })
   await Instance.provide({
     directory: tmp.path,
     fn: async () => {
-      const explore = await Agent.get("explore")
-      expect(explore).toBeUndefined()
+      const debug = await Agent.get("debug")
+      expect(debug).toBeUndefined()
       const agents = await Agent.list()
       const names = agents.map((a) => a.name)
-      expect(names).not.toContain("explore")
+      expect(names).not.toContain("debug")
     },
   })
 })
@@ -346,15 +326,15 @@ test("agent mode can be overridden", async () => {
   await using tmp = await tmpdir({
     config: {
       agent: {
-        explore: { mode: "primary" },
+        code: { mode: "primary" },
       },
     },
   })
   await Instance.provide({
     directory: tmp.path,
     fn: async () => {
-      const explore = await Agent.get("explore")
-      expect(explore?.mode).toBe("primary")
+      const code = await Agent.get("code")
+      expect(code?.mode).toBe("primary")
     },
   })
 })
@@ -724,13 +704,19 @@ test("defaultAgent respects default_agent config set to custom agent with mode a
 test("defaultAgent throws when default_agent points to subagent", async () => {
   await using tmp = await tmpdir({
     config: {
-      default_agent: "explore",
+      default_agent: "my_subagent",
+      agent: {
+        my_subagent: {
+          description: "Test subagent",
+          mode: "subagent",
+        },
+      },
     },
   })
   await Instance.provide({
     directory: tmp.path,
     fn: async () => {
-      await expect(Agent.defaultAgent()).rejects.toThrow('default agent "explore" is a subagent')
+      await expect(Agent.defaultAgent()).rejects.toThrow('default agent "my_subagent" is a subagent')
     },
   })
 })
