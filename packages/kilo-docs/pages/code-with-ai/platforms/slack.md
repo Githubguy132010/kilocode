@@ -1,11 +1,15 @@
 ---
-title: "Slack"
-description: "Using Kilo Code in Slack"
+title: "Slack (Legacy)"
+description: "Legacy guidance for using Kilo Code in Slack"
 ---
 
-# Kilo for Slack
+# Kilo for Slack (Legacy)
 
-Kilo for Slack brings the power of Kilo Code directly into your Slack workspace. Ask questions about your repositories, request code implementations, or get help with issues—all without leaving Slack.
+{% callout type="warning" title="Legacy guidance" %}
+This page describes an older Kilo workspace integration. The current main supported Kilo Code products in this repository are the VS Code extension and CLI.
+{% /callout %}
+
+Kilo for Slack is a legacy integration for teams that still use Slack-based workflows. New users should start with the VS Code extension or CLI for the current Kilo Code experience.
 
 ---
 

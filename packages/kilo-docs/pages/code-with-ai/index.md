@@ -6,14 +6,14 @@ description: "Learn how to code with AI using Kilo Code across different platfor
 # {% $markdoc.frontmatter.title %}
 
 {% callout type="generic" %}
-Kilo Code is your AI pair programmer that works in your IDE, terminal, or browser. Generate code, refactor, debug, and ship faster with AI that understands your codebase and context.
+Kilo Code helps you code with AI through its main supported products: the VS Code extension and CLI. Legacy and secondary integrations remain documented where needed for existing users.
 {% /callout %}
 
 ## Getting Started
 
 New to Kilo Code? Start here to understand the core concepts:
 
-- [**Install Kilo Code**](/docs/getting-started/installing) — Get started in VS Code, JetBrains, CLI, or mobile
+- [**Install Kilo Code**](/docs/getting-started/installing) — Get started in VS Code or the CLI
 - [**Connect an AI Provider**](/docs/ai-providers) — Set up your preferred model
 - [**Quick Start Guide**](/docs/getting-started/quickstart) — Run your first task in minutes
 
@@ -21,12 +21,12 @@ New to Kilo Code? Start here to understand the core concepts:
 
 Use Kilo Code wherever you work:
 
-- [**VS Code**](/docs/code-with-ai/platforms/vscode) — The most popular IDE integration
-- [**JetBrains**](/docs/code-with-ai/platforms/jetbrains) — IntelliJ, PyCharm, WebStorm, and more
-- [**CLI**](/docs/code-with-ai/platforms/cli) — Terminal-based AI coding for scripts and automation
+- [**VS Code**](/docs/code-with-ai/platforms/vscode) — Main supported editor experience
+- [**CLI**](/docs/code-with-ai/platforms/cli) — Main supported terminal experience
+- [**JetBrains**](/docs/code-with-ai/platforms/jetbrains) — Legacy IDE guidance
 - [**Cloud Agent**](/docs/code-with-ai/platforms/cloud-agent) — Run Kilo in the cloud
-- [**Mobile Apps**](/docs/code-with-ai/platforms/mobile) — iOS and Android support
-- [**Slack**](/docs/code-with-ai/platforms/slack) — Chat with Kilo in your workspace
+- [**Mobile Apps**](/docs/code-with-ai/platforms/mobile) — Coming soon
+- [**Slack**](/docs/code-with-ai/platforms/slack) — Legacy workspace integration
 - [**App Builder**](/docs/code-with-ai/app-builder) — Create full-stack applications with AI
 
 ## Working with Agents

@@ -9,9 +9,11 @@ This documentation applies only to Kilo version 1.0 and later. Users running ver
 
 # Kilo CLI
 
+Kilo CLI is one of the main supported Kilo Code products in this repository. It powers terminal workflows, automation, and the current VS Code extension.
+
 Orchestrate agents from your terminal. Plan, debug, and code fast with keyboard-first navigation on the command line.
 
-The Kilo Code CLI uses the same underlying technology that powers the IDE extensions, so you can expect the same workflow to handle agentic coding tasks from start to finish.
+The Kilo CLI is the shared runtime behind terminal workflows and the current VS Code extension, so features and behavior stay aligned across both products.
 
 **Source code & issues (Kilo CLI 1.0):** [Kilo-Org/kilocode](https://github.com/Kilo-Org/kilocode) · [Report an issue](https://github.com/Kilo-Org/kilocode/issues)
 

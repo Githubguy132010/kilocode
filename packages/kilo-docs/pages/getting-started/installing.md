@@ -14,43 +14,39 @@ Get started with Kilo Code by installing it on your preferred platform. Choose y
 
 ## VS Code Extension
 
+{% callout type="info" %}
+The current Kilo Code VS Code extension is the main supported editor experience. It runs on the Kilo CLI backend in this repository and is the recommended install for new users.
+{% /callout %}
+
 {% partial file="install-vscode.md" /%}
 
 {% /tab %}
-{% tab label="VS Code (Preview)" %}
+{% tab label="Legacy VS Code" %}
 
-## VS Code Preview Extension
+## Legacy VS Code Extension
 
-{% callout type="info" %}
-We're rebuilding Kilo Code from the ground up on the new [Kilo CLI](https://github.com/Kilo-Org/kilocode). The pre-release extension is available for users who want to try the latest architecture and provide feedback, and don't mind some missing features and rough edges.
+{% callout type="warning" title="Legacy extension" %}
+This install path is for the older VS Code extension experience. It is retained for existing users, but new users should install the current VS Code extension or use the CLI.
 {% /callout %}
 
-The pre-release extension is a complete rebuild featuring:
+The legacy extension remains available if you need to stay on the older workflow for compatibility or migration reasons.
 
-- A new Solid.js-based UI
-- Deep integration with the Kilo CLI backend
-- Improved session management and model switching
-
-### Current Status
-
-This is an early pre-release. Core features like chat, markdown rendering, authentication, and model/mode switching are working. Some features from the stable extension are still being implemented.
-
-For the full feature status, see the [feature parity tracking document](https://github.com/Kilo-Org/kilocode/blob/main/packages/kilo-vscode/docs/opencode-migration-plan.md).
-
-### Installing the Pre-Release
+### Installing the Legacy Extension
 
 1. Open VS Code
 2. Go to Extensions (`Ctrl+Shift+X` / `Cmd+Shift+X`)
 3. Search for "Kilo Code"
-4. Click the dropdown arrow next to **Install** and select **Install Pre-Release Version**
+4. Open the extension details menu and select the legacy or older release you need
 
-### Switching Back to Stable
+For migration details and remaining differences from the legacy extension, see the [feature parity tracking document](https://github.com/Kilo-Org/kilocode/blob/main/packages/kilo-vscode/docs/opencode-migration-plan.md).
 
-If you need to return to the stable version:
+### Returning to the Current Extension
+
+If you want to move back to the current extension:
 
 1. Open Extensions in VS Code
 2. Find Kilo Code
-3. Click the dropdown and select **Switch to Release Version**
+3. Install the latest marketplace version of the extension
 
 ### Feedback and Issues
 

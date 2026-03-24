@@ -6,17 +6,18 @@ description: "Get started with Kilo Code - the leading open source agentic engin
 # {% $markdoc.frontmatter.title %}
 
 {% callout type="generic" %}
-Kilo Code is an open-source AI coding assistant that works wherever you do—in your IDE, terminal, browser, or on the go. Generate code, automate reviews, debug issues, and ship faster with AI that understands your codebase.
+Kilo Code is an open-source agentic coding platform built around its current VS Code extension and CLI. Use the VS Code extension for the main editor experience, or use the CLI for terminal-first workflows and automation.
 {% /callout %}
 
 ## Where to Use Kilo
 
-- **In your IDE** — [VS Code](/docs/code-with-ai/platforms/vscode), [JetBrains](/docs/code-with-ai/platforms/jetbrains), Cursor, Windsurf, and other VS Code forks
-- [**CLI**](/docs/code-with-ai/platforms/cli) — Run Kilo from your terminal for scripting and automation
-- **Web & Mobile** — Access Kilo from your browser (coming soon) or [iOS/Android apps](/docs/code-with-ai/platforms/mobile)
-- [**Slack**](/docs/code-with-ai/platforms/slack) — Chat with Kilo directly in your workspace
+- [**VS Code**](/docs/code-with-ai/platforms/vscode) — Main supported editor experience
+- [**CLI**](/docs/code-with-ai/platforms/cli) — Main supported terminal experience
+- [**JetBrains**](/docs/code-with-ai/platforms/jetbrains) — Legacy IDE guidance for existing users
+- **Web & Mobile** — Browser-based workflows and [mobile apps](/docs/code-with-ai/platforms/mobile) are secondary or coming soon
+- [**Slack**](/docs/code-with-ai/platforms/slack) — Legacy workspace integration
 
-Your sessions sync across all of these, so you can start a task on your phone and finish it in your IDE.
+VS Code and CLI are the primary surfaces for the current Kilo Code experience.
 
 ## What Kilo Can Do
 
@@ -27,7 +28,7 @@ Your sessions sync across all of these, so you can start a task on your phone an
 
 ## Quick Start
 
-1. [Install Kilo Code](/docs/getting-started/installing) in your preferred environment
+1. Install Kilo Code in [VS Code](/docs/code-with-ai/platforms/vscode) or the [CLI](/docs/code-with-ai/platforms/cli)
 2. [Connect an AI provider](/docs/ai-providers) or use Kilo's built-in provider & credits
 3. [Run your first task](/docs/getting-started/quickstart)
 
