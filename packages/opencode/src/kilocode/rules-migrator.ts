@@ -1,6 +1,7 @@
 import * as fs from "fs/promises"
 import * as path from "path"
 import os from "os"
+import { ModesMigrator } from "./modes-migrator"
 
 export namespace RulesMigrator {
   // Only support .kilocoderules (no migration for .roorules or .clinerules)
@@ -10,9 +11,6 @@ export namespace RulesMigrator {
   // Directory-based rules (read from both .kilo and .kilocode)
   const KILO_RULES_DIRS = [".kilo/rules", ".kilocode/rules"]
   const globalRulesDirs = () => [path.join(home(), ".kilo", "rules"), path.join(home(), ".kilocode", "rules")]
-
-  // Known modes for mode-specific rule discovery
-  const KNOWN_MODES = ["code", "architect", "ask", "debug", "orchestrator"]
 
   export interface RuleFile {
     path: string
@@ -45,6 +43,16 @@ export namespace RulesMigrator {
     } catch {
       return []
     }
+  }
+
+  async function modes(projectDir: string): Promise<string[]> {
+    const names = new Set(["code", "architect", "ask", "debug", "orchestrator"])
+
+    for (const mode of await ModesMigrator.readModesFile(path.join(projectDir, ".kilocodemodes"))) {
+      names.add(mode.slug)
+    }
+
+    return Array.from(names)
   }
 
   export async function discoverRules(projectDir: string): Promise<RuleFile[]> {
@@ -86,7 +94,7 @@ export namespace RulesMigrator {
     }
 
     // 4. Mode-specific rules
-    for (const mode of KNOWN_MODES) {
+    for (const mode of await modes(projectDir)) {
       // Mode-specific directories (.kilo/rules-{mode}/*.md and .kilocode/rules-{mode}/*.md)
       const modeSeen = new Set<string>()
       for (const prefix of [".kilo", ".kilocode"]) {
@@ -117,6 +125,7 @@ export namespace RulesMigrator {
     projectDir: string
     includeGlobal?: boolean
     includeModeSpecific?: boolean
+    mode?: string
   }): Promise<MigrationResult> {
     const warnings: string[] = []
     const instructions: string[] = []
@@ -134,6 +143,10 @@ export namespace RulesMigrator {
       // Skip mode-specific if not requested
       if (rule.mode && !includeModeSpecific) {
         warnings.push(`Mode-specific rule '${path.basename(rule.path)}' skipped (mode: ${rule.mode})`)
+        continue
+      }
+
+      if (rule.mode && options.mode && rule.mode !== options.mode) {
         continue
       }
 

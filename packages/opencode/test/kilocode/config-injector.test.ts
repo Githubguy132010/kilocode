@@ -128,6 +128,34 @@ describe("KilocodeConfigInjector", () => {
       expect(config.instructions[0]).toContain("main.md")
     })
 
+    test("includes custom mode rule paths in config instructions", async () => {
+      await using tmp = await tmpdir({
+        init: async (dir) => {
+          await Bun.write(
+            path.join(dir, ".kilocodemodes"),
+            `customModes:
+  - slug: translate
+    name: Translate
+    roleDefinition: You are a translator
+    groups:
+      - read`,
+          )
+          await fs.mkdir(path.join(dir, ".kilo", "rules-translate"), { recursive: true })
+          await Bun.write(path.join(dir, ".kilo", "rules-translate", "glossary.md"), "# Glossary")
+        },
+      })
+
+      const result = await KilocodeConfigInjector.buildConfig({
+        projectDir: tmp.path,
+        skipGlobalPaths: true,
+      })
+      const config = JSON.parse(result.configJson)
+
+      expect(config.instructions).toBeDefined()
+      expect(config.instructions).toHaveLength(1)
+      expect(config.instructions[0]).toContain("glossary.md")
+    })
+
     test("skips rules when includeRules is false", async () => {
       await using tmp = await tmpdir({
         init: async (dir) => {

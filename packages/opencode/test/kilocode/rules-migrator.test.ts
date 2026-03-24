@@ -94,6 +94,29 @@ describe("RulesMigrator", () => {
       expect(rules[0].mode).toBe("code")
     })
 
+    test("discovers custom mode directory rules from .kilocodemodes", async () => {
+      await using tmp = await tmpdir({
+        init: async (dir) => {
+          await Bun.write(
+            path.join(dir, ".kilocodemodes"),
+            `customModes:
+  - slug: translate
+    name: Translate
+    roleDefinition: Translate text
+    groups:
+      - read`,
+          )
+          await fs.mkdir(path.join(dir, ".kilo", "rules-translate"), { recursive: true })
+          await Bun.write(path.join(dir, ".kilo", "rules-translate", "glossary.md"), "# Glossary")
+        },
+      })
+
+      const rules = await RulesMigrator.discoverRules(tmp.path)
+
+      expect(rules).toHaveLength(1)
+      expect(rules[0].mode).toBe("translate")
+    })
+
     test("discovers mode-specific legacy file", async () => {
       await using tmp = await tmpdir({
         init: async (dir) => {
@@ -224,6 +247,23 @@ describe("RulesMigrator", () => {
       const result = await RulesMigrator.migrate({ projectDir: tmp.path })
 
       expect(result.instructions).toHaveLength(1)
+    })
+
+    test("filters mode-specific rules to the active mode", async () => {
+      await using tmp = await tmpdir({
+        init: async (dir) => {
+          await Bun.write(path.join(dir, ".kilocoderules-code"), "# Code")
+          await Bun.write(path.join(dir, ".kilocoderules-architect"), "# Architect")
+          await Bun.write(path.join(dir, ".kilocoderules"), "# Shared")
+        },
+      })
+
+      const result = await RulesMigrator.migrate({ projectDir: tmp.path, mode: "code" })
+
+      expect(result.instructions).toHaveLength(2)
+      expect(result.instructions.some((x) => x.includes(".kilocoderules"))).toBe(true)
+      expect(result.instructions.some((x) => x.includes(".kilocoderules-code"))).toBe(true)
+      expect(result.instructions.some((x) => x.includes(".kilocoderules-architect"))).toBe(false)
     })
 
     test("returns empty result for project without rules", async () => {

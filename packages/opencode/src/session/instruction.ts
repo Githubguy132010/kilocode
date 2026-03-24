@@ -70,6 +70,7 @@ export namespace InstructionPrompt {
   export async function systemPaths() {
     const config = await Config.get()
     const paths = new Set<string>()
+    const mode = process.env.KILO_ACTIVE_AGENT?.toLowerCase()
 
     if (!Flag.KILO_DISABLE_PROJECT_CONFIG) {
       for (const file of FILES) {
@@ -93,6 +94,16 @@ export namespace InstructionPrompt {
     if (config.instructions) {
       for (let instruction of config.instructions) {
         if (instruction.startsWith("https://") || instruction.startsWith("http://")) continue
+        const name = path.basename(instruction)
+        const match = name.match(/^\.kilocoderules-(.+)$/)
+        if (match && mode && match[1] !== mode) continue
+        if (instruction.includes(`${path.sep}rules-`) && mode) {
+          const part = instruction.split(path.sep).find((x) => x.startsWith("rules-"))
+          if (part) {
+            const slug = part.slice("rules-".length)
+            if (slug && slug !== mode) continue
+          }
+        }
         if (instruction.startsWith("~/")) {
           instruction = path.join(os.homedir(), instruction.slice(2))
         }
