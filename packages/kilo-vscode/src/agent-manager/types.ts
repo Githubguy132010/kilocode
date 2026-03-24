@@ -30,6 +30,60 @@ export type WorktreeDiffEntry = FileDiff & {
 }
 
 // ---------------------------------------------------------------------------
+// PR Status types (GitHub PR integration)
+// ---------------------------------------------------------------------------
+
+export type PRState = "open" | "draft" | "merged" | "closed"
+export type ReviewDecision = "approved" | "changes_requested" | "pending"
+export type CheckStatus = "success" | "failure" | "pending" | "skipped" | "cancelled"
+export type AggregateCheckStatus = "success" | "failure" | "pending" | "none"
+
+export interface PRCheck {
+  name: string
+  status: CheckStatus
+  url?: string
+  duration?: string
+}
+
+export interface PRComment {
+  id: string
+  author: string
+  avatar?: string
+  body: string
+  file?: string
+  line?: number
+  url?: string
+  resolved: boolean
+  createdAt?: number
+}
+
+export interface PRStatus {
+  number: number
+  title: string
+  url: string
+  state: PRState
+  review: ReviewDecision | null
+  checks: {
+    status: AggregateCheckStatus
+    total: number
+    passed: number
+    failed: number
+    pending: number
+    items: PRCheck[]
+  }
+  comments: {
+    total: number
+    unresolved: number
+    items: PRComment[]
+  }
+  additions: number
+  deletions: number
+  files: number
+}
+
+export type PRError = "gh_missing" | "gh_auth" | "fetch_failed"
+
+// ---------------------------------------------------------------------------
 // Extension → Webview messages (postToWebview)
 // ---------------------------------------------------------------------------
 
@@ -179,6 +233,13 @@ interface ActionOutMessage {
   action: string
 }
 
+interface PRStatusMessage {
+  type: "agentManager.prStatus"
+  worktreeId: string
+  pr: PRStatus | null
+  error?: PRError
+}
+
 /** All messages the Agent Manager extension sends to the webview. */
 export type AgentManagerOutMessage =
   | WorktreeStatsMessage
@@ -202,6 +263,7 @@ export type AgentManagerOutMessage =
   | WorktreeDiffMessage
   | WorktreeDiffFileMessage
   | ActionOutMessage
+  | PRStatusMessage
 
 // ---------------------------------------------------------------------------
 // Webview → Extension messages (onMessage)
@@ -405,6 +467,16 @@ interface AbortIn {
   sessionID: string
 }
 
+interface RefreshPRIn {
+  type: "agentManager.refreshPR"
+  worktreeId: string
+}
+
+interface OpenPRIn {
+  type: "agentManager.openPR"
+  worktreeId: string
+}
+
 /** All messages the Agent Manager expects from the webview (onMessage input). */
 export type AgentManagerInMessage =
   | CreateWorktreeIn
@@ -444,3 +516,5 @@ export type AgentManagerInMessage =
   | LoadMessagesIn
   | ClearSessionIn
   | AbortIn
+  | RefreshPRIn
+  | OpenPRIn

@@ -942,6 +942,68 @@ export interface LocalGitStats {
   behind: number
 }
 
+// ============================================================================
+// PR Status types (GitHub PR integration)
+// ============================================================================
+
+export type PRState = "open" | "draft" | "merged" | "closed"
+export type ReviewDecision = "approved" | "changes_requested" | "pending"
+export type CheckStatus = "success" | "failure" | "pending" | "skipped" | "cancelled"
+export type AggregateCheckStatus = "success" | "failure" | "pending" | "none"
+
+export interface PRCheck {
+  name: string
+  status: CheckStatus
+  url?: string
+  duration?: string
+}
+
+export interface PRComment {
+  id: string
+  author: string
+  avatar?: string
+  body: string
+  file?: string
+  line?: number
+  url?: string
+  resolved: boolean
+  createdAt?: number
+}
+
+export interface PRStatus {
+  number: number
+  title: string
+  url: string
+  state: PRState
+  review: ReviewDecision | null
+  checks: {
+    status: AggregateCheckStatus
+    total: number
+    passed: number
+    failed: number
+    pending: number
+    items: PRCheck[]
+  }
+  comments: {
+    total: number
+    unresolved: number
+    items: PRComment[]
+  }
+  additions: number
+  deletions: number
+  files: number
+}
+
+export type PRError = "gh_missing" | "gh_auth" | "fetch_failed"
+
+// Agent Manager: PR status push (extension → webview)
+export interface AgentManagerPRStatusMessage {
+  type: "agentManager.prStatus"
+  worktreeId: string
+  pr: PRStatus | null
+  error?: PRError
+}
+
 // Agent Manager: Local workspace git stats push (extension → webview)
 export interface AgentManagerLocalStatsMessage {
   type: "agentManager.localStats"
@@ -1259,6 +1321,7 @@ export type ExtensionMessage =
   | AgentManagerApplyWorktreeDiffResultMessage
   | AgentManagerWorktreeStatsMessage
   | AgentManagerLocalStatsMessage
+  | AgentManagerPRStatusMessage
   // legacy-migration start
   | LegacyMigrationDataMessage
   | LegacyMigrationProgressMessage
@@ -1875,6 +1938,18 @@ export interface RequestRecentsMessage {
   type: "requestRecents"
 }
 
+// Agent Manager: Refresh PR status for a worktree (webview → extension)
+export interface RefreshPRMessage {
+  type: "agentManager.refreshPR"
+  worktreeId: string
+}
+
+// Agent Manager: Open PR URL in browser (webview → extension)
+export interface OpenPRMessage {
+  type: "agentManager.openPR"
+  worktreeId: string
+}
+
 export type WebviewMessage =
   | SendMessageRequest
   | AbortRequest
@@ -1985,6 +2060,8 @@ export type WebviewMessage =
   | SaveCustomProviderMessage
   | PersistRecentsRequest
   | RequestRecentsMessage
+  | RefreshPRMessage
+  | OpenPRMessage
 
 // ============================================
 // VS Code API type

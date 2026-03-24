@@ -26,6 +26,10 @@ export interface Worktree {
   groupId?: string
   /** User-provided display name for the worktree. */
   label?: string
+  /** PR number associated with this worktree's branch (if any). */
+  prNumber?: number
+  /** PR URL associated with this worktree's branch (if any). */
+  prUrl?: string
 }
 
 /**
