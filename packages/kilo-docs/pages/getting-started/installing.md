@@ -5,19 +5,19 @@ description: "How to install Kilo Code on your system"
 
 # Installation
 
-Get started with Kilo Code by installing it on your preferred platform. Choose your development environment below:
+Get started with the current Kilo Code clients below. VS Code and the CLI are the actively developed installation paths, while JetBrains and Slack remain available as legacy options.
 
 ## Choose Your Platform
 
 {% tabs %}
-{% tab label="VS Code" %}
+{% tab label="VS Code (Current)" %}
 
 ## VS Code Extension
 
 {% partial file="install-vscode.md" /%}
 
 {% /tab %}
-{% tab label="VS Code (Preview)" %}
+{% tab label="VS Code Preview" %}
 
 ## VS Code Preview Extension
 
@@ -57,23 +57,31 @@ If you need to return to the stable version:
 Report issues or provide feedback in the [Kilo-Org/kilocode repository](https://github.com/Kilo-Org/kilocode/issues).
 
 {% /tab %}
-{% tab label="JetBrains" %}
+{% tab label="JetBrains (Legacy)" %}
 
 ## JetBrains IDEs
+
+{% callout type="warning" title="Legacy Client" %}
+The JetBrains plugin remains available for existing users, but new Kilo Code development is focused on the VS Code extension and CLI.
+{% /callout %}
 
 {% partial file="install-jetbrains.md" /%}
 
 {% /tab %}
-{% tab label="CLI" %}
+{% tab label="CLI (Current)" %}
 
 ## Command Line Interface
 
 {% partial file="install-cli.md" /%}
 
 {% /tab %}
-{% tab label="Slack" %}
+{% tab label="Slack (Legacy)" %}
 
 ## Slack Integration
+
+{% callout type="warning" title="Legacy Integration" %}
+Slack docs are kept for existing workflows, but the current Kilo Code product focus is the VS Code extension and CLI.
+{% /callout %}
 
 {% partial file="install-slack.md" /%}
 

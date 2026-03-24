@@ -7,6 +7,8 @@ description: "Using Kilo Code on iOS and Android"
 
 Kilo Code is coming to mobile! Soon you'll be able to use Kilo Code's powerful AI coding capabilities directly from your iOS or Android device.
 
+Today, the actively developed Kilo Code clients are the VS Code extension and CLI. Mobile remains an upcoming experience.
+
 {% callout type="info" title="Coming Soon" %}
 Mobile apps for iOS and Android are currently in development. Sign up to be notified when they launch!
 {% /callout %}

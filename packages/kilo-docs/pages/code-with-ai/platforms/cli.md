@@ -11,6 +11,8 @@ This documentation applies only to Kilo version 1.0 and later. Users running ver
 
 Orchestrate agents from your terminal. Plan, debug, and code fast with keyboard-first navigation on the command line.
 
+The CLI is one of the primary Kilo Code clients today and is the best fit for terminal-first workflows, automation, and local agent orchestration.
+
 The Kilo Code CLI uses the same underlying technology that powers the IDE extensions, so you can expect the same workflow to handle agentic coding tasks from start to finish.
 
 **Source code & issues (Kilo CLI 1.0):** [Kilo-Org/kilocode](https://github.com/Kilo-Org/kilocode) · [Report an issue](https://github.com/Kilo-Org/kilocode/issues)

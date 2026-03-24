@@ -6,17 +6,18 @@ description: "Get started with Kilo Code - the leading open source agentic engin
 # {% $markdoc.frontmatter.title %}
 
 {% callout type="generic" %}
-Kilo Code is an open-source AI coding assistant that works wherever you do—in your IDE, terminal, browser, or on the go. Generate code, automate reviews, debug issues, and ship faster with AI that understands your codebase.
+Kilo Code is an open-source AI coding assistant built first for VS Code and the CLI. Generate code, automate reviews, debug issues, and ship faster with AI that understands your codebase.
 {% /callout %}
 
 ## Where to Use Kilo
 
-- **In your IDE** — [VS Code](/docs/code-with-ai/platforms/vscode), [JetBrains](/docs/code-with-ai/platforms/jetbrains), Cursor, Windsurf, and other VS Code forks
-- [**CLI**](/docs/code-with-ai/platforms/cli) — Run Kilo from your terminal for scripting and automation
-- **Web & Mobile** — Access Kilo from your browser (coming soon) or [iOS/Android apps](/docs/code-with-ai/platforms/mobile)
-- [**Slack**](/docs/code-with-ai/platforms/slack) — Chat with Kilo directly in your workspace
+- [**VS Code**](/docs/code-with-ai/platforms/vscode) — The primary IDE experience for Kilo Code today
+- [**CLI**](/docs/code-with-ai/platforms/cli) — The primary terminal experience for scripting, automation, and power users
+- **Other VS Code-based editors** — Install the VS Code extension in Cursor, Windsurf, and similar editors
+- **Legacy clients** — [JetBrains](/docs/code-with-ai/platforms/jetbrains) and [Slack](/docs/code-with-ai/platforms/slack) remain documented for existing users
+- **Coming soon** — Browser access and [mobile apps](/docs/code-with-ai/platforms/mobile)
 
-Your sessions sync across all of these, so you can start a task on your phone and finish it in your IDE.
+Your sessions sync across supported experiences, so you can start a task in one client and continue it in another.
 
 ## What Kilo Can Do
 
