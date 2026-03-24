@@ -324,11 +324,12 @@ const AgentBehaviourTab: Component = () => {
         </span>
       </div>
 
-      <Card style={{ "margin-bottom": "12px" }}>
-        {/* Name */}
+      {/* Name */}
+      <Card data-variant="wide-input" style={{ "margin-bottom": "12px" }}>
         <SettingsRow
           title={language.t("settings.agentBehaviour.createMode.name")}
           description={language.t("settings.agentBehaviour.createMode.name.description")}
+          last
         >
           <TextField
             value={newName()}
@@ -350,32 +351,37 @@ const AgentBehaviourTab: Component = () => {
             </div>
           </Show>
         </SettingsRow>
+      </Card>
 
-        {/* Description */}
-        <SettingsRow
-          title={language.t("settings.agentBehaviour.createMode.description")}
-          description={language.t("settings.agentBehaviour.createMode.description.help")}
-        >
-          <TextField
-            value={newDescription()}
-            placeholder={language.t("settings.agentBehaviour.createMode.description.placeholder")}
-            onChange={(val) => setNewDescription(val)}
-          />
-        </SettingsRow>
+      {/* Description (full-width) */}
+      <Card style={{ "margin-bottom": "12px" }}>
+        <div data-slot="settings-row-label-title" style={{ "margin-bottom": "4px" }}>
+          {language.t("settings.agentBehaviour.createMode.description")}
+        </div>
+        <div data-slot="settings-row-label-subtitle" style={{ "margin-bottom": "8px" }}>
+          {language.t("settings.agentBehaviour.createMode.description.help")}
+        </div>
+        <TextField
+          value={newDescription()}
+          placeholder={language.t("settings.agentBehaviour.createMode.description.placeholder")}
+          onChange={(val) => setNewDescription(val)}
+        />
+      </Card>
 
-        {/* Prompt */}
-        <SettingsRow
-          title={language.t("settings.agentBehaviour.createMode.prompt")}
-          description={language.t("settings.agentBehaviour.createMode.prompt.help")}
-          last
-        >
-          <TextField
-            value={newPrompt()}
-            placeholder={language.t("settings.agentBehaviour.createMode.prompt.placeholder")}
-            multiline
-            onChange={(val) => setNewPrompt(val)}
-          />
-        </SettingsRow>
+      {/* Prompt (full-width, auto-resizing) */}
+      <Card style={{ "margin-bottom": "12px" }}>
+        <div data-slot="settings-row-label-title" style={{ "margin-bottom": "4px" }}>
+          {language.t("settings.agentBehaviour.createMode.prompt")}
+        </div>
+        <div data-slot="settings-row-label-subtitle" style={{ "margin-bottom": "8px" }}>
+          {language.t("settings.agentBehaviour.createMode.prompt.help")}
+        </div>
+        <TextField
+          value={newPrompt()}
+          placeholder={language.t("settings.agentBehaviour.createMode.prompt.placeholder")}
+          multiline
+          onChange={(val) => setNewPrompt(val)}
+        />
       </Card>
 
       <div style={{ display: "flex", gap: "8px", "justify-content": "flex-end" }}>
@@ -454,35 +460,37 @@ const AgentBehaviourTab: Component = () => {
           </Card>
         </Show>
 
-        <Card style={{ "margin-bottom": "12px" }}>
-          {/* Description (editable for custom modes) */}
-          <Show when={!isNative()}>
-            <SettingsRow title={language.t("settings.agentBehaviour.editMode.description")} description="">
-              <TextField
-                value={editDescription()}
-                placeholder={language.t("settings.agentBehaviour.createMode.description.placeholder")}
-                onChange={(val) => setEditDescription(val)}
-              />
-            </SettingsRow>
-          </Show>
-
-          {/* Prompt */}
-          <SettingsRow
-            title={
-              isNative()
-                ? language.t("settings.agentBehaviour.editMode.promptOverride")
-                : language.t("settings.agentBehaviour.editMode.prompt")
-            }
-            description=""
-          >
+        {/* Description (full-width, custom modes only) */}
+        <Show when={!isNative()}>
+          <Card style={{ "margin-bottom": "12px" }}>
+            <div data-slot="settings-row-label-title" style={{ "margin-bottom": "8px" }}>
+              {language.t("settings.agentBehaviour.editMode.description")}
+            </div>
             <TextField
-              value={editPrompt()}
-              placeholder={language.t("settings.agentBehaviour.createMode.prompt.placeholder")}
-              multiline
-              onChange={(val) => setEditPrompt(val)}
+              value={editDescription()}
+              placeholder={language.t("settings.agentBehaviour.createMode.description.placeholder")}
+              onChange={(val) => setEditDescription(val)}
             />
-          </SettingsRow>
+          </Card>
+        </Show>
 
+        {/* Prompt (full-width, auto-resizing) */}
+        <Card style={{ "margin-bottom": "12px" }}>
+          <div data-slot="settings-row-label-title" style={{ "margin-bottom": "8px" }}>
+            {isNative()
+              ? language.t("settings.agentBehaviour.editMode.promptOverride")
+              : language.t("settings.agentBehaviour.editMode.prompt")}
+          </div>
+          <TextField
+            value={editPrompt()}
+            placeholder={language.t("settings.agentBehaviour.createMode.prompt.placeholder")}
+            multiline
+            onChange={(val) => setEditPrompt(val)}
+          />
+        </Card>
+
+        {/* Config overrides (wider inputs) */}
+        <Card data-variant="wide-input" style={{ "margin-bottom": "12px" }}>
           {/* Model override */}
           <SettingsRow
             title={language.t("settings.agentBehaviour.modelOverride.title")}
