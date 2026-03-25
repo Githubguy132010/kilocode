@@ -32,7 +32,7 @@ const McpEditView: Component<Props> = (props) => {
     })
   }
 
-  const transport = () => (cfg().url ? "remote" : "local")
+  const transport = () => cfg().type ?? (cfg().url ? "remote" : "local")
 
   const cmd = () => {
     const c = cfg().command
@@ -146,66 +146,68 @@ const McpEditView: Component<Props> = (props) => {
         </Card>
       </Show>
 
-      {/* Environment variables */}
-      <Card style={{ "margin-bottom": "12px" }}>
-        <div data-slot="settings-row-label-title" style={{ "margin-bottom": "4px" }}>
-          {language.t("settings.agentBehaviour.editMcp.env")}
-        </div>
-        <div data-slot="settings-row-label-subtitle" style={{ "margin-bottom": "8px" }}>
-          {language.t("settings.agentBehaviour.editMcp.env.help")}
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            gap: "8px",
-            "align-items": "center",
-            padding: "8px 0",
-            "border-bottom": env().length > 0 ? "1px solid var(--border-weak-base)" : "none",
-          }}
-        >
-          <div style={{ flex: 1 }}>
-            <TextField value={envKey()} placeholder="KEY" onChange={(val) => setEnvKey(val)} />
+      {/* Environment variables (local servers only) */}
+      <Show when={transport() === "local"}>
+        <Card style={{ "margin-bottom": "12px" }}>
+          <div data-slot="settings-row-label-title" style={{ "margin-bottom": "4px" }}>
+            {language.t("settings.agentBehaviour.editMcp.env")}
           </div>
-          <div style={{ flex: 1 }}>
-            <TextField
-              value={envVal()}
-              placeholder="value"
-              onChange={(val) => setEnvVal(val)}
-              onKeyDown={(e: KeyboardEvent) => {
-                if (e.key === "Enter") addEnv()
-              }}
-            />
+          <div data-slot="settings-row-label-subtitle" style={{ "margin-bottom": "8px" }}>
+            {language.t("settings.agentBehaviour.editMcp.env.help")}
           </div>
-          <Button variant="secondary" onClick={addEnv}>
-            {language.t("common.add")}
-          </Button>
-        </div>
 
-        <For each={env()}>
-          {([key, val], index) => (
-            <div
-              style={{
-                display: "flex",
-                "align-items": "center",
-                "justify-content": "space-between",
-                padding: "6px 0",
-                "border-bottom": index() < env().length - 1 ? "1px solid var(--border-weak-base)" : "none",
-              }}
-            >
-              <span
+          <div
+            style={{
+              display: "flex",
+              gap: "8px",
+              "align-items": "center",
+              padding: "8px 0",
+              "border-bottom": env().length > 0 ? "1px solid var(--border-weak-base)" : "none",
+            }}
+          >
+            <div style={{ flex: 1 }}>
+              <TextField value={envKey()} placeholder="KEY" onChange={(val) => setEnvKey(val)} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <TextField
+                value={envVal()}
+                placeholder="value"
+                onChange={(val) => setEnvVal(val)}
+                onKeyDown={(e: KeyboardEvent) => {
+                  if (e.key === "Enter") addEnv()
+                }}
+              />
+            </div>
+            <Button variant="secondary" onClick={addEnv}>
+              {language.t("common.add")}
+            </Button>
+          </div>
+
+          <For each={env()}>
+            {([key, val], index) => (
+              <div
                 style={{
-                  "font-family": "var(--vscode-editor-font-family, monospace)",
-                  "font-size": "12px",
+                  display: "flex",
+                  "align-items": "center",
+                  "justify-content": "space-between",
+                  padding: "6px 0",
+                  "border-bottom": index() < env().length - 1 ? "1px solid var(--border-weak-base)" : "none",
                 }}
               >
-                {key}={val}
-              </span>
-              <IconButton size="small" variant="ghost" icon="close" onClick={() => removeEnv(key)} />
-            </div>
-          )}
-        </For>
-      </Card>
+                <span
+                  style={{
+                    "font-family": "var(--vscode-editor-font-family, monospace)",
+                    "font-size": "12px",
+                  }}
+                >
+                  {key}={val}
+                </span>
+                <IconButton size="small" variant="ghost" icon="close" onClick={() => removeEnv(key)} />
+              </div>
+            )}
+          </For>
+        </Card>
+      </Show>
 
       <div style={{ display: "flex", "justify-content": "flex-end" }}>
         <Button variant="ghost" onClick={props.onBack}>
