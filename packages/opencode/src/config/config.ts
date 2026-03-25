@@ -1335,7 +1335,43 @@ export namespace Config {
 
   export type Info = z.output<typeof Info>
 
+  // kilocode_change start — migrate bash permission for existing users before config is consumed
+  const GLOBAL_CONFIG_FILES = ["config.json", "kilo.json", "kilo.jsonc", "opencode.json", "opencode.jsonc"]
+
+  async function migrateBashPermission() {
+    const files = GLOBAL_CONFIG_FILES.map((file) => path.join(Global.Path.config, file))
+    const existing: string[] = []
+    for (const file of files) {
+      if (existsSync(file)) existing.push(file)
+    }
+    // no global config → new user, they'll get the new bash:ask default
+    if (existing.length === 0) return
+    // check if any config file already has an explicit bash permission
+    for (const file of existing) {
+      const text = await Bun.file(file).text()
+      const data = parseJsonc(text) ?? {}
+      if (data.permission?.bash) return
+    }
+    // existing user without bash permission in any file → write bash:allow to the
+    // highest-precedence existing file to preserve their current behavior
+    const target = existing[existing.length - 1]
+    const text = await Bun.file(target).text()
+    if (target.endsWith(".jsonc")) {
+      const edits = modify(text, ["permission", "bash"], "allow", {
+        formattingOptions: { insertSpaces: true, tabSize: 2 },
+      })
+      await Bun.write(target, applyEdits(text, edits))
+    } else {
+      const data = parseJsonc(text) ?? {}
+      const merged = { ...data, permission: { ...data.permission, bash: "allow" } }
+      await Bun.write(target, JSON.stringify(merged, null, 2))
+    }
+    log.info("migrated bash permission to allow for existing user", { path: target })
+  }
+  // kilocode_change end
+
   export const global = lazy(async () => {
+    await migrateBashPermission() // kilocode_change — run before config is read
     let result: Info = pipe(
       {},
       mergeDeep(await loadFile(path.join(Global.Path.config, "config.json"))),

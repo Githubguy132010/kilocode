@@ -62,9 +62,90 @@ export namespace Agent {
 
     const skillDirs = await Skill.dirs()
     const whitelistedDirs = [Truncate.GLOB, ...skillDirs.map((dir) => path.join(dir, "*"))]
+    // kilocode_change start — safe bash commands that don't need user approval
+    const bash: Record<string, string> = {
+      "*": "ask",
+      // read-only / informational
+      "cat *": "allow",
+      "head *": "allow",
+      "tail *": "allow",
+      "less *": "allow",
+      "ls *": "allow",
+      "tree *": "allow",
+      "pwd *": "allow",
+      "echo *": "allow",
+      "wc *": "allow",
+      "find *": "allow",
+      "which *": "allow",
+      "type *": "allow",
+      "file *": "allow",
+      "diff *": "allow",
+      "du *": "allow",
+      "df *": "allow",
+      "date *": "allow",
+      "uname *": "allow",
+      "whoami *": "allow",
+      "env *": "allow",
+      "printenv *": "allow",
+      "man *": "allow",
+      // text processing
+      "grep *": "allow",
+      "rg *": "allow",
+      "ag *": "allow",
+      "awk *": "allow",
+      "sed *": "allow",
+      "sort *": "allow",
+      "uniq *": "allow",
+      "cut *": "allow",
+      "tr *": "allow",
+      "jq *": "allow",
+      // file operations
+      "touch *": "allow",
+      "mkdir *": "allow",
+      "cp *": "allow",
+      "mv *": "allow",
+      // version control
+      "git *": "allow",
+      // package managers & runtimes
+      "node *": "allow",
+      "npx *": "allow",
+      "npm *": "allow",
+      "yarn *": "allow",
+      "pnpm *": "allow",
+      "bun *": "allow",
+      "bunx *": "allow",
+      "deno *": "allow",
+      // build & language tools
+      "tsc *": "allow",
+      "tsgo *": "allow",
+      "cargo *": "allow",
+      "go *": "allow",
+      "python *": "allow",
+      "python3 *": "allow",
+      "pip *": "allow",
+      "pip3 *": "allow",
+      "uv *": "allow",
+      "ruby *": "allow",
+      "gem *": "allow",
+      "make *": "allow",
+      "cmake *": "allow",
+      "dotnet *": "allow",
+      // http & archive
+      "curl *": "allow",
+      "wget *": "allow",
+      "tar *": "allow",
+      "unzip *": "allow",
+      "gzip *": "allow",
+      "gunzip *": "allow",
+      // containers
+      "docker *": "allow",
+      "docker-compose *": "allow",
+      "kubectl *": "allow",
+    }
+    // kilocode_change end
     const defaults = PermissionNext.fromConfig({
       "*": "allow",
-      bash: "ask", // kilocode_change
+      bash, // kilocode_change
       doom_loop: "ask",
       external_directory: {
         "*": "ask",
