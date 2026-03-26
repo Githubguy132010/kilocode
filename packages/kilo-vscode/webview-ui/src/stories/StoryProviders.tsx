@@ -14,7 +14,7 @@ import { VSCodeProvider } from "../context/vscode"
 import { ServerProvider } from "../context/server"
 import { ProviderContext } from "../context/provider"
 import { flattenModels, findModel as _findModel } from "../context/provider-utils"
-import { ConfigProvider } from "../context/config"
+import { ConfigProvider, ConfigContext } from "../context/config"
 import { DataProvider } from "@kilocode/kilo-ui/context/data"
 import { DiffComponentProvider } from "@kilocode/kilo-ui/context/diff"
 import { CodeComponentProvider } from "@kilocode/kilo-ui/context/code"
@@ -26,13 +26,14 @@ import { Diff } from "@kilocode/kilo-ui/diff"
 import { Code } from "@kilocode/kilo-ui/code"
 import { File } from "@kilocode/kilo-ui/file"
 import { SessionContext } from "../context/session"
+import { NotificationsContext } from "../context/notifications"
 import { LanguageContext } from "../context/language"
 import { dict as uiEn } from "@kilocode/kilo-ui/i18n/en"
 import { dict as appEn } from "../i18n/en"
 import { dict as amEn } from "../../agent-manager/i18n/en"
 import { dict as kiloEn } from "@kilocode/kilo-i18n/en"
 import { resolveTemplate } from "../context/language-utils"
-import type { PermissionRequest, QuestionRequest } from "../types/messages"
+import type { Config, KilocodeNotification, PermissionRequest, QuestionRequest } from "../types/messages"
 
 // Merged English dictionary (same merge order as the real LanguageProvider)
 const dict: Record<string, string> = { ...appEn, ...amEn, ...uiEn, ...kiloEn }
@@ -76,6 +77,9 @@ const MockProviderProvider: ParentComponent = (props) => {
     defaultSelection: () => ({ providerID: "kilo", modelID: "anthropic/claude-sonnet-4-6" }),
     models: () => MOCK_MODELS,
     findModel: (sel: any) => _findModel(MOCK_MODELS, sel),
+    authMethods: () => ({}),
+    authStates: () => ({}),
+    isModelValid: () => true,
   }
   return <ProviderContext.Provider value={value}>{props.children}</ProviderContext.Provider>
 }
@@ -95,10 +99,22 @@ export const defaultMockData = {
 }
 
 // ---------------------------------------------------------------------------
-// Mock SessionContext value — only the subset used by components
+// Mock NotificationsContext value
 // ---------------------------------------------------------------------------
 
 function noop() {}
+
+function mockNotificationsValue(items: KilocodeNotification[] = []) {
+  return {
+    notifications: () => items,
+    filteredNotifications: () => items,
+    dismiss: noop,
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Mock SessionContext value — only the subset used by components
+// ---------------------------------------------------------------------------
 
 export function mockSessionValue(overrides?: {
   id?: string
@@ -131,6 +147,7 @@ export function mockSessionValue(overrides?: {
     allMessages: () => ({}),
     allParts: () => ({}),
     allStatusMap: () => ({}),
+    familyData: () => ({ messages: {}, parts: {}, status: {} }),
     getParts: () => [],
     todos: () => [],
     permissions: () => permissions,
@@ -146,12 +163,21 @@ export function mockSessionValue(overrides?: {
     totalCost: () => 0,
     contextUsage: () => undefined,
     agents: () => [{ name: "code", description: "Code mode", mode: "primary" as const }],
+    skills: () => [],
+    refreshSkills: noop,
+    removeSkill: noop,
+    removeMode: noop,
     selectedAgent: () => "code",
     selectAgent: noop,
     getSessionAgent: () => "code",
     getSessionModel: () => ({ providerID: "kilo", modelID: "anthropic/claude-sonnet-4-6" }),
     setSessionModel: noop,
     setSessionAgent: noop,
+    revert: () => undefined,
+    revertedCount: () => 0,
+    summary: () => undefined,
+    revertSession: noop,
+    unrevertSession: noop,
     variantList: () => [],
     currentVariant: () => undefined,
     selectVariant: noop,
@@ -181,10 +207,29 @@ interface StoryProvidersProps {
   data?: any
   permissions?: PermissionRequest[]
   questions?: QuestionRequest[]
+  notifications?: KilocodeNotification[]
   status?: string
   sessionID?: string
+  /** When provided, injects a mock ConfigContext with this config instead of the real ConfigProvider. */
+  config?: Config
   /** When true, renders children without the default 12px padding wrapper */
   noPadding?: boolean
+}
+
+/** Wraps children with either a mock ConfigContext (when config prop is given) or the real ConfigProvider. */
+const ConfigWrapper: ParentComponent<{ config?: Config }> = (props) => {
+  if (props.config) {
+    const value = {
+      config: () => props.config!,
+      loading: () => false,
+      isDirty: () => false,
+      updateConfig: noop,
+      saveConfig: noop,
+      discardConfig: noop,
+    }
+    return <ConfigContext.Provider value={value}>{props.children}</ConfigContext.Provider>
+  }
+  return <ConfigProvider>{props.children}</ConfigProvider>
 }
 
 export const StoryProviders: ParentComponent<StoryProvidersProps> = (props) => {
@@ -195,12 +240,13 @@ export const StoryProviders: ParentComponent<StoryProvidersProps> = (props) => {
     questions: props.questions,
     status: props.status,
   })
+  const notifications = mockNotificationsValue(props.notifications)
   const [locale] = createSignal<"en">("en")
 
   return (
     <VSCodeProvider>
       <ServerProvider>
-        <ConfigProvider>
+        <ConfigWrapper config={props.config}>
           <MockProviderProvider>
             <DialogProvider>
               <LanguageContext.Provider
@@ -212,28 +258,30 @@ export const StoryProviders: ParentComponent<StoryProvidersProps> = (props) => {
                 }}
               >
                 <I18nProvider value={{ locale: () => "en", t }}>
-                  <SessionContext.Provider value={session as any}>
-                    <DataProvider data={data()} directory="/project/">
-                      <DiffComponentProvider component={Diff}>
-                        <CodeComponentProvider component={Code}>
-                          <FileComponentProvider component={File}>
-                            <MarkedProvider>
-                              {props.noPadding ? (
-                                props.children
-                              ) : (
-                                <div style={{ padding: "12px" }}>{props.children}</div>
-                              )}
-                            </MarkedProvider>
-                          </FileComponentProvider>
-                        </CodeComponentProvider>
-                      </DiffComponentProvider>
-                    </DataProvider>
-                  </SessionContext.Provider>
+                  <NotificationsContext.Provider value={notifications}>
+                    <SessionContext.Provider value={session as any}>
+                      <DataProvider data={data()} directory="/project/">
+                        <DiffComponentProvider component={Diff}>
+                          <CodeComponentProvider component={Code}>
+                            <FileComponentProvider component={File}>
+                              <MarkedProvider>
+                                {props.noPadding ? (
+                                  props.children
+                                ) : (
+                                  <div style={{ padding: "12px" }}>{props.children}</div>
+                                )}
+                              </MarkedProvider>
+                            </FileComponentProvider>
+                          </CodeComponentProvider>
+                        </DiffComponentProvider>
+                      </DataProvider>
+                    </SessionContext.Provider>
+                  </NotificationsContext.Provider>
                 </I18nProvider>
               </LanguageContext.Provider>
             </DialogProvider>
           </MockProviderProvider>
-        </ConfigProvider>
+        </ConfigWrapper>
       </ServerProvider>
     </VSCodeProvider>
   )

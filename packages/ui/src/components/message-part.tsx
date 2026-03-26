@@ -13,29 +13,6 @@ import {
   type JSX,
 } from "solid-js"
 import stripAnsi from "strip-ansi"
-
-// kilocode_change start - process carriage returns to simulate terminal line-overwrite behavior
-// Windows CLI tools (e.g. winget) use \r to overwrite progress bars in-place.
-// Without this, every progress frame renders as a separate visual line.
-function processCarriageReturns(input: string): string {
-  // Normalize \r\n to \n first so CRLF line endings aren't treated as overwrites
-  const normalized = input.replace(/\r\n/g, "\n")
-  return normalized
-    .split("\n")
-    .map((line) => {
-      if (!line.includes("\r")) return line
-      const parts = line.split("\r")
-      // A trailing \r produces an empty last segment — preserve the previous visible frame
-      const last = parts[parts.length - 1]
-      if (last !== "") return last
-      for (let i = parts.length - 2; i >= 0; i--) {
-        if (parts[i] !== "") return parts[i]
-      }
-      return ""
-    })
-    .join("\n")
-}
-// kilocode_change end
 import { Dynamic } from "solid-js/web"
 import {
   AgentPart,
@@ -54,9 +31,8 @@ import {
 import { useData } from "../context"
 import { useFileComponent } from "../context/file"
 import { useDialog } from "../context/dialog"
-import { useI18n } from "../context/i18n"
-import { BasicTool } from "./basic-tool"
-import { GenericTool } from "./basic-tool"
+import { type UiI18n, useI18n } from "../context/i18n"
+import { BasicTool, GenericTool } from "./basic-tool"
 import { Accordion } from "./accordion"
 import { StickyAccordionHeader } from "./sticky-accordion-header"
 import { Card } from "./card"
@@ -67,7 +43,6 @@ import { Checkbox } from "./checkbox"
 import { DiffChanges } from "./diff-changes"
 import { Markdown } from "./markdown"
 import { ImagePreview } from "./image-preview"
-import { extractFilePathFromHref } from "../file-path" // kilocode_change
 import { getDirectory as _getDirectory, getFilename } from "@opencode-ai/util/path"
 import { checksum } from "@opencode-ai/util/encode"
 import { Tooltip } from "./tooltip"
@@ -78,6 +53,7 @@ import { ProviderIcon } from "./provider-icon"
 import { AnimatedCountList } from "./tool-count-summary"
 import { ToolStatusTitle } from "./tool-status-title"
 import { animate } from "motion"
+import { useLocation } from "@solidjs/router"
 
 function ShellSubmessage(props: { text: string; animate?: boolean }) {
   let widthRef: HTMLSpanElement | undefined
@@ -286,6 +262,11 @@ export type ToolInfo = {
   subtitle?: string
 }
 
+function agentTitle(i18n: UiI18n, type?: string) {
+  if (!type) return i18n.t("ui.tool.agent.default")
+  return i18n.t("ui.tool.agent", { type })
+}
+
 export function getToolInfo(tool: string, input: any = {}): ToolInfo {
   const i18n = useI18n()
   switch (tool) {
@@ -319,12 +300,29 @@ export function getToolInfo(tool: string, input: any = {}): ToolInfo {
         title: i18n.t("ui.tool.webfetch"),
         subtitle: input.url,
       }
-    case "task":
+    case "websearch":
+      return {
+        icon: "window-cursor",
+        title: i18n.t("ui.tool.websearch"),
+        subtitle: input.query,
+      }
+    case "codesearch":
+      return {
+        icon: "code",
+        title: i18n.t("ui.tool.codesearch"),
+        subtitle: input.query,
+      }
+    case "task": {
+      const type =
+        typeof input.subagent_type === "string" && input.subagent_type
+          ? input.subagent_type[0]!.toUpperCase() + input.subagent_type.slice(1)
+          : undefined
       return {
         icon: "task",
-        title: i18n.t("ui.tool.agent", { type: input.subagent_type || "task" }),
+        title: agentTitle(i18n, type),
         subtitle: input.description,
       }
+    }
     case "bash":
       return {
         icon: "console",
@@ -377,6 +375,18 @@ export function getToolInfo(tool: string, input: any = {}): ToolInfo {
         title: tool,
       }
   }
+}
+
+function urls(text: string | undefined) {
+  if (!text) return []
+  const seen = new Set<string>()
+  return [...text.matchAll(/https?:\/\/[^\s<>"'`)\]]+/g)]
+    .map((item) => item[0].replace(/[),.;:!?]+$/g, ""))
+    .filter((item) => {
+      if (seen.has(item)) return false
+      seen.add(item)
+      return true
+    })
 }
 
 const CONTEXT_GROUP_TOOLS = new Set(["read", "glob", "grep", "list"])
@@ -546,7 +556,8 @@ export function AssistantParts(props: {
               {(() => {
                 const parts = createMemo(
                   () => {
-                    const entry = entryAccessor() as { type: "context"; refs: PartRef[] }
+                    const entry = entryAccessor()
+                    if (entry.type !== "context") return emptyTools
                     return entry.refs
                       .map((ref) => partByID(list(data.store.part?.[ref.messageID], emptyParts), ref.partID))
                       .filter((part): part is ToolPart => !!part && isContextGroupTool(part))
@@ -566,29 +577,27 @@ export function AssistantParts(props: {
             <Match when={entryType() === "part"}>
               {(() => {
                 const message = createMemo(() => {
-                  const entry = entryAccessor() as { type: "part"; ref: PartRef }
+                  const entry = entryAccessor()
+                  if (entry.type !== "part") return
                   return props.messages.find((item) => item.id === entry.ref.messageID)
                 })
                 const part = createMemo(() => {
-                  const entry = entryAccessor() as { type: "part"; ref: PartRef }
+                  const entry = entryAccessor()
+                  if (entry.type !== "part") return
                   return partByID(list(data.store.part?.[entry.ref.messageID], emptyParts), entry.ref.partID)
                 })
 
                 return (
                   <Show when={message()}>
-                    {(msg) => (
-                      <Show when={part()}>
-                        {(p) => (
-                          <Part
-                            part={p()}
-                            message={msg()}
-                            showAssistantCopyPartID={props.showAssistantCopyPartID}
-                            turnDurationMs={props.turnDurationMs}
-                            defaultOpen={partDefaultOpen(p(), props.shellToolDefaultOpen, props.editToolDefaultOpen)}
-                          />
-                        )}
-                      </Show>
-                    )}
+                    <Show when={part()}>
+                      <Part
+                        part={part()!}
+                        message={message()!}
+                        showAssistantCopyPartID={props.showAssistantCopyPartID}
+                        turnDurationMs={props.turnDurationMs}
+                        defaultOpen={partDefaultOpen(part()!, props.shellToolDefaultOpen, props.editToolDefaultOpen)}
+                      />
+                    </Show>
                   </Show>
                 )
               })()}
@@ -674,6 +683,32 @@ function contextToolSummary(parts: ToolPart[]) {
   return { read, search, list }
 }
 
+function ExaOutput(props: { output?: string }) {
+  const links = createMemo(() => urls(props.output))
+
+  return (
+    <Show when={links().length > 0}>
+      <div data-component="exa-tool-output">
+        <div data-slot="exa-tool-links">
+          <For each={links()}>
+            {(url) => (
+              <a
+                data-slot="exa-tool-link"
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(event) => event.stopPropagation()}
+              >
+                {url}
+              </a>
+            )}
+          </For>
+        </div>
+      </div>
+    </Show>
+  )
+}
+
 export function registerPartComponent(type: string, component: PartComponent) {
   PART_MAPPING[type] = component
 }
@@ -737,7 +772,8 @@ export function AssistantMessageDisplay(props: {
               {(() => {
                 const parts = createMemo(
                   () => {
-                    const entry = entryAccessor() as { type: "context"; refs: PartRef[] }
+                    const entry = entryAccessor()
+                    if (entry.type !== "context") return emptyTools
                     return entry.refs
                       .map((ref) => partByID(props.parts, ref.partID))
                       .filter((part): part is ToolPart => !!part && isContextGroupTool(part))
@@ -756,19 +792,18 @@ export function AssistantMessageDisplay(props: {
             <Match when={entryType() === "part"}>
               {(() => {
                 const part = createMemo(() => {
-                  const entry = entryAccessor() as { type: "part"; ref: PartRef }
+                  const entry = entryAccessor()
+                  if (entry.type !== "part") return
                   return partByID(props.parts, entry.ref.partID)
                 })
 
                 return (
                   <Show when={part()}>
-                    {(p) => (
-                      <Part
-                        part={p()}
-                        message={props.message}
-                        showAssistantCopyPartID={props.showAssistantCopyPartID}
-                      />
-                    )}
+                    <Part
+                      part={part()!}
+                      message={props.message}
+                      showAssistantCopyPartID={props.showAssistantCopyPartID}
+                    />
                   </Show>
                 )
               })()}
@@ -883,6 +918,7 @@ export function UserMessageDisplay(props: {
   parts: PartType[]
   interrupted?: boolean
   queued?: boolean
+  onRevert?: () => void
 }) {
   const data = useData()
   const dialog = useDialog()
@@ -1191,26 +1227,6 @@ PART_MAPPING["tool"] = function ToolPartDisplay(props) {
 
   const render = createMemo(() => ToolRegistry.render(part().tool) ?? GenericTool)
 
-  // kilocode_change start
-  const dismissed = createMemo(() => {
-    if (part().tool !== "question") return false
-    const s = part().state
-    return s.status === "error" && s.error.includes("dismissed this question")
-  })
-
-  if (dismissed()) {
-    return (
-      <Show when={!hideQuestion()}>
-        <div data-component="tool-part-wrapper">
-          <div style="width: 100%; display: flex; justify-content: flex-end; padding: 4px 0;">
-            <span class="text-13-regular text-text-weak cursor-default">{i18n.t("ui.tool.questions")} dismissed</span>
-          </div>
-        </div>
-      </Show>
-    )
-  }
-  // kilocode_change end
-
   return (
     <Show when={!hideQuestion()}>
       <div data-component="tool-part-wrapper">
@@ -1352,54 +1368,14 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  // kilocode_change start
-  const handleMarkdownClick = (e: MouseEvent) => {
-    if (!data.openFile) return
-    const target = e.target
-    if (!(target instanceof HTMLElement)) return
-    // Handle .file-link code spans (e.g. `src/foo.ts:42`)
-    const fileLink = target.closest(".file-link[data-file-path]")
-    if (fileLink) {
-      const path = fileLink.getAttribute("data-file-path")
-      if (!path) return
-      const lineAttr = fileLink.getAttribute("data-file-line")
-      const colAttr = fileLink.getAttribute("data-file-col")
-      const line = lineAttr ? parseInt(lineAttr, 10) : undefined
-      const column = colAttr ? parseInt(colAttr, 10) : undefined
-      data.openFile(path, line, column)
-      return
-    }
-    // Handle markdown links whose href looks like a relative file path
-    // (e.g. [AGENTS.md](AGENTS.md) or [src/foo.ts](src/foo.ts))
-    const anchor = target.closest("a.external-link") as HTMLAnchorElement | null
-    if (anchor) {
-      const href = anchor.getAttribute("href")
-      if (!href) return
-      const filePath = extractFilePathFromHref(href)
-      if (!filePath) return
-      e.preventDefault()
-      data.openFile(filePath)
-    }
-  }
-  // kilocode_change end
-
   return (
     <Show when={throttledText()}>
       <div data-component="text-part">
         <div data-slot="text-part-body">
-          <Markdown text={throttledText()} cacheKey={part().id} onClick={handleMarkdownClick} /> {/* kilocode_change */}
+          <Markdown text={throttledText()} cacheKey={part().id} />
         </div>
         <Show when={showCopy()}>
-          {/* kilocode_change: data-is-turn-copy makes the copy button always visible for the final response */}
-          <div
-            data-slot="text-part-copy-wrapper"
-            data-interrupted={interrupted() ? "" : undefined}
-            data-is-turn-copy={
-              typeof props.showAssistantCopyPartID === "string" && props.showAssistantCopyPartID === part().id
-                ? ""
-                : undefined
-            }
-          >
+          <div data-slot="text-part-copy-wrapper" data-interrupted={interrupted() ? "" : undefined}>
             <Tooltip
               value={copied() ? i18n.t("ui.message.copied") : i18n.t("ui.message.copyResponse")}
               placement="top"
@@ -1434,11 +1410,7 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
 
 PART_MAPPING["reasoning"] = function ReasoningPartDisplay(props) {
   const part = () => props.part as ReasoningPart
-  // kilocode_change start
-  // Filter out redacted reasoning chunks from OpenRouter
-  // OpenRouter sends encrypted reasoning data that appears as [REDACTED]
-  const text = () => part().text.replace("[REDACTED]", "").trim()
-  // kilocode_change end
+  const text = () => part().text.trim()
   const throttledText = createThrottledValue(text)
 
   return (
@@ -1474,19 +1446,10 @@ ToolRegistry.register({
             subtitle: props.input.filePath ? getFilename(props.input.filePath) : "",
             args,
           }}
-          // kilocode_change start
-          onSubtitleClick={
-            data.openFile && props.input.filePath ? () => data.openFile!(props.input.filePath) : undefined
-          }
-          // kilocode_change end
         />
         <For each={loaded()}>
           {(filepath) => (
-            <div
-              data-component="tool-loaded-file"
-              classList={{ clickable: !!data.openFile }} // kilocode_change
-              onClick={() => data.openFile?.(filepath)} // kilocode_change
-            >
+            <div data-component="tool-loaded-file">
               <Icon name="enter" size="small" />
               <span>
                 {i18n.t("ui.tool.loaded")} {relativizeProjectPath(filepath, data.directory)}
@@ -1510,11 +1473,9 @@ ToolRegistry.register({
         trigger={{ title: i18n.t("ui.tool.list"), subtitle: getDirectory(props.input.path || "/") }}
       >
         <Show when={props.output}>
-          {(output) => (
-            <div data-component="tool-output" data-scrollable>
-              <Markdown text={output()} />
-            </div>
-          )}
+          <div data-component="tool-output" data-scrollable>
+            <Markdown text={props.output!} />
+          </div>
         </Show>
       </BasicTool>
     )
@@ -1536,11 +1497,9 @@ ToolRegistry.register({
         }}
       >
         <Show when={props.output}>
-          {(output) => (
-            <div data-component="tool-output" data-scrollable>
-              <Markdown text={output()} />
-            </div>
-          )}
+          <div data-component="tool-output" data-scrollable>
+            <Markdown text={props.output!} />
+          </div>
         </Show>
       </BasicTool>
     )
@@ -1565,11 +1524,9 @@ ToolRegistry.register({
         }}
       >
         <Show when={props.output}>
-          {(output) => (
-            <div data-component="tool-output" data-scrollable>
-              <Markdown text={output()} />
-            </div>
-          )}
+          <div data-component="tool-output" data-scrollable>
+            <Markdown text={props.output!} />
+          </div>
         </Show>
       </BasicTool>
     )
@@ -1623,12 +1580,70 @@ ToolRegistry.register({
 })
 
 ToolRegistry.register({
+  name: "websearch",
+  render(props) {
+    const i18n = useI18n()
+    const query = createMemo(() => {
+      const value = props.input.query
+      if (typeof value !== "string") return ""
+      return value
+    })
+
+    return (
+      <BasicTool
+        {...props}
+        icon="window-cursor"
+        trigger={{
+          title: i18n.t("ui.tool.websearch"),
+          subtitle: query(),
+          subtitleClass: "exa-tool-query",
+        }}
+      >
+        <ExaOutput output={props.output} />
+      </BasicTool>
+    )
+  },
+})
+
+ToolRegistry.register({
+  name: "codesearch",
+  render(props) {
+    const i18n = useI18n()
+    const query = createMemo(() => {
+      const value = props.input.query
+      if (typeof value !== "string") return ""
+      return value
+    })
+
+    return (
+      <BasicTool
+        {...props}
+        icon="code"
+        trigger={{
+          title: i18n.t("ui.tool.codesearch"),
+          subtitle: query(),
+          subtitleClass: "exa-tool-query",
+        }}
+      >
+        <ExaOutput output={props.output} />
+      </BasicTool>
+    )
+  },
+})
+
+ToolRegistry.register({
   name: "task",
   render(props) {
     const data = useData()
     const i18n = useI18n()
+    const location = useLocation()
     const childSessionId = () => props.metadata.sessionId as string | undefined
-    const title = createMemo(() => i18n.t("ui.tool.agent", { type: props.input.subagent_type || props.tool }))
+    const type = createMemo(() => {
+      const raw = props.input.subagent_type
+      if (typeof raw !== "string" || !raw) return undefined
+      return raw[0]!.toUpperCase() + raw.slice(1)
+    })
+    const title = createMemo(() => agentTitle(i18n, type()))
     const description = createMemo(() => {
       const value = props.input.description
       if (typeof value === "string") return value
@@ -1643,8 +1658,7 @@ ToolRegistry.register({
       const direct = data.sessionHref?.(sessionId)
       if (direct) return direct
 
-      if (typeof window === "undefined") return
-      const path = window.location.pathname
+      const path = location.pathname
       const idx = path.indexOf("/session")
       if (idx === -1) return
       return `${path.slice(0, idx)}/session/${sessionId}`
@@ -1661,16 +1675,14 @@ ToolRegistry.register({
           <Show when={description()}>
             <Switch>
               <Match when={href()}>
-                {(url) => (
-                  <a
-                    data-slot="basic-tool-tool-subtitle"
-                    class="clickable subagent-link"
-                    href={url()}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {description()}
-                  </a>
-                )}
+                <a
+                  data-slot="basic-tool-tool-subtitle"
+                  class="clickable subagent-link"
+                  href={href()!}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {description()}
+                </a>
               </Match>
               <Match when={true}>
                 <span data-slot="basic-tool-tool-subtitle">{description()}</span>
@@ -1691,17 +1703,16 @@ ToolRegistry.register({
     const i18n = useI18n()
     const pending = () => props.status === "pending" || props.status === "running"
     const sawPending = pending()
-    // kilocode_change start - separate cmd/output memos so copy excludes the "$ " display prefix
-    const cmd = createMemo(() => props.input.command ?? props.metadata.command ?? "")
-    const out = createMemo(() => processCarriageReturns(stripAnsi(props.output || props.metadata.output || "")))
-    const text = createMemo(() => `$ ${cmd()}${out() ? "\n\n" + out() : ""}`)
-    // kilocode_change end
+    const text = createMemo(() => {
+      const cmd = props.input.command ?? props.metadata.command ?? ""
+      const out = stripAnsi(props.output || props.metadata.output || "")
+      return `$ ${cmd}${out ? "\n\n" + out : ""}`
+    })
     const [copied, setCopied] = createSignal(false)
 
     const handleCopy = async () => {
-      const command = cmd() // kilocode_change
-      if (!command) return
-      const content = out() ? `${command}\n\n${out()}` : command // kilocode_change
+      const content = text()
+      if (!content) return
       await navigator.clipboard.writeText(content)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
@@ -1710,7 +1721,6 @@ ToolRegistry.register({
     return (
       <BasicTool
         {...props}
-        defaultOpen // kilocode_change
         icon="console"
         trigger={
           <div data-slot="basic-tool-tool-info-structured">
@@ -1756,20 +1766,11 @@ ToolRegistry.register({
 ToolRegistry.register({
   name: "edit",
   render(props) {
-    const data = useData() // kilocode_change
     const i18n = useI18n()
     const fileComponent = useFileComponent()
     const diagnostics = createMemo(() => getDiagnostics(props.metadata.diagnostics, props.input.filePath))
     const path = createMemo(() => props.metadata?.filediff?.file || props.input.filePath || "")
     const filename = () => getFilename(props.input.filePath ?? "")
-    // kilocode_change start
-    const handleFileClick = (e: MouseEvent) => {
-      if (!data.openFile || !props.input.filePath) return
-      e.stopPropagation()
-      data.openFile(props.input.filePath)
-    }
-    // kilocode_change end
-
     const pending = () => props.status === "pending" || props.status === "running"
     return (
       <div data-component="edit-tool">
@@ -1785,28 +1786,12 @@ ToolRegistry.register({
                     <TextShimmer text={i18n.t("ui.messagePart.title.edit")} active={pending()} />
                   </span>
                   <Show when={!pending()}>
-                    {/* kilocode_change start */}
-                    <span
-                      data-slot="message-part-title-filename"
-                      classList={{ clickable: !!data.openFile }}
-                      onClick={handleFileClick}
-                    >
-                      {filename()}
-                    </span>
-                    {/* kilocode_change end */}
+                    <span data-slot="message-part-title-filename">{filename()}</span>
                   </Show>
                 </div>
                 <Show when={!pending() && props.input.filePath?.includes("/")}>
                   <div data-slot="message-part-path">
-                    {/* kilocode_change start */}
-                    <span
-                      data-slot="message-part-directory"
-                      classList={{ clickable: !!data.openFile }}
-                      onClick={handleFileClick}
-                    >
-                      {getDirectory(props.input.filePath!)}
-                    </span>
-                    {/* kilocode_change end */}
+                    <span data-slot="message-part-directory">{getDirectory(props.input.filePath!)}</span>
                   </div>
                 </Show>
               </div>
@@ -1822,7 +1807,9 @@ ToolRegistry.register({
             <ToolFileAccordion
               path={path()}
               actions={
-                <Show when={!pending() && props.metadata.filediff}>{(diff) => <DiffChanges changes={diff()} />}</Show>
+                <Show when={!pending() && props.metadata.filediff}>
+                  <DiffChanges changes={props.metadata.filediff!} />
+                </Show>
               }
             >
               <div data-component="edit-content">
@@ -1851,20 +1838,11 @@ ToolRegistry.register({
 ToolRegistry.register({
   name: "write",
   render(props) {
-    const data = useData() // kilocode_change
     const i18n = useI18n()
     const fileComponent = useFileComponent()
     const diagnostics = createMemo(() => getDiagnostics(props.metadata.diagnostics, props.input.filePath))
     const path = createMemo(() => props.input.filePath || "")
     const filename = () => getFilename(props.input.filePath ?? "")
-    // kilocode_change start
-    const handleFileClick = (e: MouseEvent) => {
-      if (!data.openFile || !props.input.filePath) return
-      e.stopPropagation()
-      data.openFile(props.input.filePath)
-    }
-    // kilocode_change end
-
     const pending = () => props.status === "pending" || props.status === "running"
     return (
       <div data-component="write-tool">
@@ -1880,28 +1858,12 @@ ToolRegistry.register({
                     <TextShimmer text={i18n.t("ui.messagePart.title.write")} active={pending()} />
                   </span>
                   <Show when={!pending()}>
-                    {/* kilocode_change start */}
-                    <span
-                      data-slot="message-part-title-filename"
-                      classList={{ clickable: !!data.openFile }}
-                      onClick={handleFileClick}
-                    >
-                      {filename()}
-                    </span>
-                    {/* kilocode_change end */}
+                    <span data-slot="message-part-title-filename">{filename()}</span>
                   </Show>
                 </div>
                 <Show when={!pending() && props.input.filePath?.includes("/")}>
                   <div data-slot="message-part-path">
-                    {/* kilocode_change start */}
-                    <span
-                      data-slot="message-part-directory"
-                      classList={{ clickable: !!data.openFile }}
-                      onClick={handleFileClick}
-                    >
-                      {getDirectory(props.input.filePath!)}
-                    </span>
-                    {/* kilocode_change end */}
+                    <span data-slot="message-part-directory">{getDirectory(props.input.filePath!)}</span>
                   </div>
                 </Show>
               </div>
@@ -1937,8 +1899,8 @@ interface ApplyPatchFile {
   relativePath: string
   type: "add" | "update" | "delete" | "move"
   diff: string
-  before: string
-  after: string
+  before?: string
+  after?: string
   additions: number
   deletions: number
   movePath?: string
@@ -1947,7 +1909,6 @@ interface ApplyPatchFile {
 ToolRegistry.register({
   name: "apply_patch",
   render(props) {
-    const data = useData() // kilocode_change
     const i18n = useI18n()
     const fileComponent = useFileComponent()
     const files = createMemo(() => (props.metadata.files ?? []) as ApplyPatchFile[])
@@ -2044,19 +2005,6 @@ ToolRegistry.register({
                                         {i18n.t("ui.patch.action.moved")}
                                       </span>
                                     </Match>
-                                    {/* kilocode_change start */}
-                                    <span
-                                      data-slot="apply-patch-file-path"
-                                      classList={{ clickable: !!data.openFile }}
-                                      onClick={(e: MouseEvent) => {
-                                        if (!data.openFile) return
-                                        e.stopPropagation()
-                                        data.openFile(file.filePath)
-                                      }}
-                                    >
-                                      {file.relativePath}
-                                    </span>
-                                    {/* kilocode_change end */}
                                     <Match when={true}>
                                       <DiffChanges changes={{ additions: file.additions, deletions: file.deletions }} />
                                     </Match>
@@ -2067,7 +2015,7 @@ ToolRegistry.register({
                             </Accordion.Trigger>
                           </StickyAccordionHeader>
                           <Accordion.Content>
-                            <Show when={visible()}>
+                            <Show when={visible() && file.before !== undefined}>
                               <div data-component="apply-patch-file-diff">
                                 <Dynamic
                                   component={fileComponent}
@@ -2088,74 +2036,74 @@ ToolRegistry.register({
           </div>
         }
       >
-        {(file) => (
-          <div data-component="apply-patch-tool">
-            <BasicTool
-              {...props}
-              icon="code-lines"
-              defer
-              trigger={
-                <div data-component="edit-trigger">
-                  <div data-slot="message-part-title-area">
-                    <div data-slot="message-part-title">
-                      <span data-slot="message-part-title-text">
-                        <TextShimmer text={i18n.t("ui.tool.patch")} active={pending()} />
-                      </span>
-                      <Show when={!pending()}>
-                        <span data-slot="message-part-title-filename">{getFilename(file().relativePath)}</span>
-                      </Show>
-                    </div>
-                    <Show when={!pending() && file().relativePath.includes("/")}>
-                      <div data-slot="message-part-path">
-                        <span data-slot="message-part-directory">{getDirectory(file().relativePath)}</span>
-                      </div>
-                    </Show>
-                  </div>
-                  <div data-slot="message-part-actions">
+        <div data-component="apply-patch-tool">
+          <BasicTool
+            {...props}
+            icon="code-lines"
+            defer
+            trigger={
+              <div data-component="edit-trigger">
+                <div data-slot="message-part-title-area">
+                  <div data-slot="message-part-title">
+                    <span data-slot="message-part-title-text">
+                      <TextShimmer text={i18n.t("ui.tool.patch")} active={pending()} />
+                    </span>
                     <Show when={!pending()}>
-                      <DiffChanges changes={{ additions: file().additions, deletions: file().deletions }} />
+                      <span data-slot="message-part-title-filename">{getFilename(single()!.relativePath)}</span>
                     </Show>
                   </div>
+                  <Show when={!pending() && single()!.relativePath.includes("/")}>
+                    <div data-slot="message-part-path">
+                      <span data-slot="message-part-directory">{getDirectory(single()!.relativePath)}</span>
+                    </div>
+                  </Show>
                 </div>
+                <div data-slot="message-part-actions">
+                  <Show when={!pending()}>
+                    <DiffChanges changes={{ additions: single()!.additions, deletions: single()!.deletions }} />
+                  </Show>
+                </div>
+              </div>
+            }
+          >
+            <ToolFileAccordion
+              path={single()!.relativePath}
+              actions={
+                <Switch>
+                  <Match when={single()!.type === "add"}>
+                    <span data-slot="apply-patch-change" data-type="added">
+                      {i18n.t("ui.patch.action.created")}
+                    </span>
+                  </Match>
+                  <Match when={single()!.type === "delete"}>
+                    <span data-slot="apply-patch-change" data-type="removed">
+                      {i18n.t("ui.patch.action.deleted")}
+                    </span>
+                  </Match>
+                  <Match when={single()!.type === "move"}>
+                    <span data-slot="apply-patch-change" data-type="modified">
+                      {i18n.t("ui.patch.action.moved")}
+                    </span>
+                  </Match>
+                  <Match when={true}>
+                    <DiffChanges changes={{ additions: single()!.additions, deletions: single()!.deletions }} />
+                  </Match>
+                </Switch>
               }
             >
-              <ToolFileAccordion
-                path={file().relativePath}
-                actions={
-                  <Switch>
-                    <Match when={file().type === "add"}>
-                      <span data-slot="apply-patch-change" data-type="added">
-                        {i18n.t("ui.patch.action.created")}
-                      </span>
-                    </Match>
-                    <Match when={file().type === "delete"}>
-                      <span data-slot="apply-patch-change" data-type="removed">
-                        {i18n.t("ui.patch.action.deleted")}
-                      </span>
-                    </Match>
-                    <Match when={file().type === "move"}>
-                      <span data-slot="apply-patch-change" data-type="modified">
-                        {i18n.t("ui.patch.action.moved")}
-                      </span>
-                    </Match>
-                    <Match when={true}>
-                      <DiffChanges changes={{ additions: file().additions, deletions: file().deletions }} />
-                    </Match>
-                  </Switch>
-                }
-              >
+              <Show when={single()!.before !== undefined}>
                 <div data-component="apply-patch-file-diff">
                   <Dynamic
                     component={fileComponent}
                     mode="diff"
-                    before={{ name: file().filePath, contents: file().before }}
-                    after={{ name: file().movePath ?? file().filePath, contents: file().after }}
+                    before={{ name: single()!.filePath, contents: single()!.before }}
+                    after={{ name: single()!.movePath ?? single()!.filePath, contents: single()!.after }}
                   />
                 </div>
-              </ToolFileAccordion>
-            </BasicTool>
-          </div>
-        )}
+              </Show>
+            </ToolFileAccordion>
+          </BasicTool>
+        </div>
       </Show>
     )
   },

@@ -1,25 +1,30 @@
 # Settings Migration from Old Extension
 
 **Priority:** P1
-**Status:** 🔨 Partial (assigned)
 **Issue:** [#6089](https://github.com/Kilo-Org/kilocode/issues/6089)
-
-## Problem
-
-Users upgrading from the old Kilo Code extension have their settings stored in VS Code's `globalState` under the old extension's keys. The new extension uses the CLI's `opencode.json` for configuration. Without migration, users lose all their settings (API keys, model preferences, auto-approve rules, etc.) on upgrade.
 
 ## Remaining Work
 
-- On first activation, detect whether the old extension's settings exist in `vscode.ExtensionContext.globalState` or `vscode.workspace.getConfiguration('kilo-code')` (the old extension's config namespace)
-- Read relevant settings from the old extension: API keys, provider configuration, model preferences, auto-approve rules, custom instructions, etc.
-- Map old settings keys to their new CLI config equivalents in `opencode.json`
-- If the CLI config already has settings (user may have manually configured it), show a diff of what would be imported and ask the user to confirm before overwriting
-- Write approved settings to the CLI config via the `/global/config` endpoint or directly to `opencode.json`
-- Show the user what was migrated and what was not (e.g., settings that have no equivalent)
+- On first activation, detect whether old extension settings exist in `vscode.ExtensionContext.globalState` or `vscode.workspace.getConfiguration('kilo-code')`
+- Read relevant settings: API keys, provider configuration, model preferences, auto-approve rules, custom instructions
+- Map old settings keys to CLI config equivalents in `opencode.json`
+- If CLI config already has settings, show a diff and ask user to confirm before overwriting
+- Write approved settings to CLI config via `/global/config` endpoint or directly to `opencode.json`
+- Show what was migrated and what was not
 - Mark migration as complete in `globalState` so it doesn't run again
 
-## Implementation Notes
+## Agent Behaviour Tab Settings to Migrate
 
-- Old extension settings namespace: `kilo-code` (VS Code `package.json` `contributes.configuration` prefix)
-- The CLI config path is typically `~/.config/opencode/opencode.json` or equivalent
-- If the CLI is already configured, prefer showing a diff (VS Code diff editor via `vscode.commands.executeCommand('vscode.diff', ...)`) rather than silently overwriting
+Settings from the legacy "Agent Behaviour" tab (Modes, MCP Servers, Rules, Workflows, Skills sub-tabs):
+
+| Legacy Setting                                        | CLI Equivalent                                            | Notes                                                            |
+| ----------------------------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------- |
+| `customModes` (custom mode definitions)               | CLI agent config in `opencode.json`                       | Map `roleDefinition` → `prompt`, `groups` → CLI tool permissions |
+| `customModePrompts` (per-mode overrides)              | Per-agent `prompt`, `temperature`, etc.                   | Map each mode slug to CLI agent name                             |
+| `customInstructions` (global, shown in Modes sub-tab) | Rule files in `.kilocode/rules/` or `config.instructions` | May need a global instructions config key in CLI                 |
+| `modeApiConfigs` (per-mode model)                     | Per-agent `model`                                         | Map mode slug → agent name → model ID                            |
+| MCP server configs                                    | `config.mcp`                                              | CLI owns MCP config                                              |
+| `localRulesToggles` / `globalRulesToggles`            | `config.instructions`                                     | Toggle state doesn't map directly — CLI has path list            |
+| `localWorkflowToggles` / `globalWorkflowToggles`      | CLI custom commands (TBD)                                 | Workflow concept mapping needs clarification                     |
+
+See [Agent Behaviour Tab Parity](../agent-behaviour/) docs for detailed sub-tab comparisons.

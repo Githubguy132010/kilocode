@@ -30,9 +30,9 @@ function parse(tip: string): TipPart[] {
   return parts
 }
 
-export function Tips() {
+export function Tips(props: { tip?: string }) {
   const theme = useTheme().theme
-  const parts = parse(TIPS[Math.floor(Math.random() * TIPS.length)])
+  const parts = parse(props.tip ?? TIPS[Math.floor(Math.random() * TIPS.length)])
 
   return (
     <box flexDirection="row" maxWidth="100%">
@@ -134,7 +134,7 @@ const TIPS = [
   "Run {highlight}kilo debug config{/highlight} to troubleshoot configuration",
   "Use {highlight}--print-logs{/highlight} flag to see detailed logs in stderr",
   "Press {highlight}Ctrl+X G{/highlight} or {highlight}/timeline{/highlight} to jump to specific messages",
-  "Press {highlight}Ctrl+X S{/highlight} or {highlight}/status{/highlight} to see system status info",
+  "Press {highlight}Ctrl+X S{/highlight} or {highlight}/status{/highlight} to see config paths, MCP servers, and system info",
   "Enable {highlight}tui.scroll_acceleration{/highlight} for smooth macOS-style scrolling",
   "Toggle username display in chat via command palette ({highlight}Ctrl+P{/highlight})",
   "Commit your project's {highlight}AGENTS.md{/highlight} file to Git for team sharing",
@@ -142,4 +142,5 @@ const TIPS = [
   "Run {highlight}/help{/highlight} to show the help dialog",
   "Use {highlight}/rename{/highlight} to rename the current session",
   "Press {highlight}Ctrl+Z{/highlight} to suspend the terminal and return to your shell",
+  "Doing something often? Ask Kilo to save it as a {highlight}/command{/highlight}",
 ]

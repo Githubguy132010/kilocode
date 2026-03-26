@@ -1,7 +1,13 @@
-import { Component } from "solid-js"
+import { Component, createSignal, createEffect, on, Show } from "solid-js"
 import { Icon } from "@kilocode/kilo-ui/icon"
 import { Tabs } from "@kilocode/kilo-ui/tabs"
+import { Button } from "@kilocode/kilo-ui/button"
+import { showToast } from "@kilocode/kilo-ui/toast"
+import { useVSCode } from "../../context/vscode"
 import { useLanguage } from "../../context/language"
+import { useConfig } from "../../context/config"
+import { useSession } from "../../context/session"
+import ModelsTab from "./ModelsTab"
 import ProvidersTab from "./ProvidersTab"
 import AgentBehaviourTab from "./AgentBehaviourTab"
 import AutoApproveTab from "./AutoApproveTab"
@@ -19,15 +25,57 @@ import AboutKiloCodeTab from "./AboutKiloCodeTab"
 import { useServer } from "../../context/server"
 
 export interface SettingsProps {
+  tab?: string
+  onTabChange?: (tab: string) => void
   onMigrateClick?: () => void // legacy-migration
 }
 
 const Settings: Component<SettingsProps> = (props) => {
   const server = useServer()
   const language = useLanguage()
+  const vscode = useVSCode()
+  const { isDirty, saveConfig, discardConfig } = useConfig()
+  const session = useSession()
+  const [active, setActive] = createSignal(props.tab ?? "models")
+
+  const busyCount = () => Object.values(session.allStatusMap()).filter((s) => s.type === "busy").length
+
+  const handleSave = () => {
+    const busy = busyCount()
+    if (busy === 0) {
+      saveConfig()
+      return
+    }
+    const msg = busy === 1 ? language.t("settings.saveBar.warning.one") : language.t("settings.saveBar.warning.many")
+    showToast({
+      variant: "error",
+      title: msg,
+      persistent: true,
+      actions: [
+        { label: language.t("settings.saveBar.saveAnyway"), onClick: saveConfig },
+        { label: language.t("settings.saveBar.cancel"), onClick: "dismiss" },
+      ],
+    })
+  }
+
+  // Sync when the parent changes the tab prop (e.g. via navigate message)
+  createEffect(
+    on(
+      () => props.tab,
+      (tab) => {
+        if (tab) setActive(tab)
+      },
+    ),
+  )
+
+  const onTabChange = (tab: string) => {
+    setActive(tab)
+    props.onTabChange?.(tab)
+    vscode.postMessage({ type: "settingsTabChanged", tab })
+  }
 
   return (
-    <div style={{ display: "flex", "flex-direction": "column", height: "100%" }}>
+    <div style={{ display: "flex", "flex-direction": "column", height: "100%", "min-height": 0 }}>
       {/* Header */}
       <div
         style={{
@@ -42,8 +90,18 @@ const Settings: Component<SettingsProps> = (props) => {
       </div>
 
       {/* Settings tabs */}
-      <Tabs orientation="vertical" variant="settings" defaultValue="providers" style={{ flex: 1, overflow: "hidden" }}>
+      <Tabs
+        orientation="vertical"
+        variant="settings"
+        value={active()}
+        onChange={onTabChange}
+        style={{ flex: 1, overflow: "hidden" }}
+      >
         <Tabs.List>
+          <Tabs.Trigger value="models">
+            <Icon name="models" />
+            <span class="label">{language.t("settings.models.title")}</span>
+          </Tabs.Trigger>
           <Tabs.Trigger value="providers">
             <Icon name="providers" />
             <span class="label">{language.t("settings.providers.title")}</span>
@@ -102,6 +160,10 @@ const Settings: Component<SettingsProps> = (props) => {
           </Tabs.Trigger>
         </Tabs.List>
 
+        <Tabs.Content value="models">
+          <h3>{language.t("settings.models.title")}</h3>
+          <ModelsTab />
+        </Tabs.Content>
         <Tabs.Content value="providers">
           <h3>{language.t("settings.providers.title")}</h3>
           <ProvidersTab />
@@ -164,6 +226,21 @@ const Settings: Component<SettingsProps> = (props) => {
           />
         </Tabs.Content>
       </Tabs>
+
+      {/* Save bar — slides in when there are unsaved config changes */}
+      <div
+        class={`settings-save-bar${isDirty() ? " settings-save-bar--visible" : ""}`}
+        inert={!isDirty() || undefined}
+        aria-hidden={!isDirty()}
+      >
+        <span class="settings-save-bar-label">{language.t("settings.saveBar.unsavedChanges")}</span>
+        <Button variant="ghost" size="small" onClick={discardConfig}>
+          {language.t("settings.saveBar.discard")}
+        </Button>
+        <Button variant="primary" size="small" onClick={handleSave}>
+          {language.t("settings.saveBar.save")}
+        </Button>
+      </div>
     </div>
   )
 }

@@ -3,6 +3,15 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js"
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js"
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js"
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
+// kilocode_change start
+// The MCP SDK only sets windowsHide:true in Electron (checks `'type' in process`).
+// When running inside the VS Code extension on Windows, set process.type so the SDK
+// hides cmd.exe windows when spawning MCP servers. The extension passes KILO_PLATFORM=vscode
+// so we use that to scope this shim to the vscode context only.
+if (process.platform === "win32" && process.env.KILO_PLATFORM === "vscode" && !("type" in process)) {
+  ;(process as NodeJS.Process & { type: string }).type = "browser"
+}
+// kilocode_change end
 import { UnauthorizedError } from "@modelcontextprotocol/sdk/client/auth.js"
 import {
   CallToolResultSchema,
@@ -384,7 +393,7 @@ export namespace MCP {
       for (const { name, transport } of transports) {
         try {
           const client = new Client({
-            name: "opencode",
+            name: "kilo", // kilocode_change
             version: Installation.VERSION,
           })
           await withTimeout(client.connect(transport), connectTimeout)
@@ -420,7 +429,7 @@ export namespace MCP {
               // Show toast for needs_auth
               Bus.publish(TuiEvent.ToastShow, {
                 title: "MCP Authentication Required",
-                message: `Server "${key}" requires authentication. Run: opencode mcp auth ${key}`,
+                message: `Server "${key}" requires authentication. Run: kilo mcp auth ${key}`, // kilocode_change
                 variant: "warning",
                 duration: 8000,
               }).catch((e) => log.debug("failed to show toast", { error: e }))
@@ -463,7 +472,7 @@ export namespace MCP {
       const connectTimeout = mcp.timeout ?? DEFAULT_TIMEOUT
       try {
         const client = new Client({
-          name: "opencode",
+          name: "kilo", // kilocode_change
           version: Installation.VERSION,
         })
         await withTimeout(client.connect(transport), connectTimeout)
@@ -800,7 +809,7 @@ export namespace MCP {
     // Try to connect - this will trigger the OAuth flow
     try {
       const client = new Client({
-        name: "opencode",
+        name: "kilo", // kilocode_change
         version: Installation.VERSION,
       })
       await client.connect(transport)

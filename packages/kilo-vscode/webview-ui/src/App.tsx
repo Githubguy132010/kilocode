@@ -1,4 +1,4 @@
-import { Component, createSignal, createMemo, Switch, Match, Show, onMount, onCleanup } from "solid-js"
+import { Component, createSignal, createMemo, Switch, Match, onMount, onCleanup } from "solid-js"
 import { ThemeProvider } from "@kilocode/kilo-ui/theme"
 import { DialogProvider } from "@kilocode/kilo-ui/context/dialog"
 import { MarkedProvider } from "@kilocode/kilo-ui/context/marked"
@@ -19,7 +19,7 @@ import { ConfigProvider } from "./context/config"
 import { SessionProvider, useSession } from "./context/session"
 import { LanguageProvider } from "./context/language"
 import { ChatView } from "./components/chat"
-import { KiloNotifications } from "./components/chat/KiloNotifications"
+import { MarketplaceView } from "./components/marketplace"
 import { registerExpandedTaskTool } from "./components/chat/TaskToolExpanded"
 import { registerVscodeToolOverrides } from "./components/chat/VscodeToolOverrides"
 
@@ -28,8 +28,7 @@ import { registerVscodeToolOverrides } from "./components/chat/VscodeToolOverrid
 registerExpandedTaskTool()
 // Apply VS Code sidebar preferences to other tools (e.g. bash expanded by default).
 registerVscodeToolOverrides()
-import SessionList from "./components/history/SessionList"
-import CloudSessionList from "./components/history/CloudSessionList"
+import HistoryView from "./components/history/HistoryView"
 import { MigrationWizard } from "./components/migration" // legacy-migration
 import { NotificationsProvider } from "./context/notifications"
 import type { Message as SDKMessage, Part as SDKPart } from "@kilocode/sdk/v2"
@@ -39,7 +38,6 @@ type ViewType =
   | "newTask"
   | "marketplace"
   | "history"
-  | "cloudHistory"
   | "profile"
   | "settings"
   | "migration" // legacy-migration
@@ -48,30 +46,11 @@ const VALID_VIEWS = new Set<string>([
   "newTask",
   "marketplace",
   "history",
-  "cloudHistory",
   "profile",
   "settings",
   "migration", // legacy-migration
   "subAgentViewer",
 ])
-
-const DummyView: Component<{ title: string }> = (props) => {
-  return (
-    <div
-      style={{
-        display: "flex",
-        "justify-content": "center",
-        "align-items": "center",
-        height: "100%",
-        "min-height": "200px",
-        "font-size": "24px",
-        color: "var(--vscode-foreground)",
-      }}
-    >
-      <h1>{props.title}</h1>
-    </div>
-  )
-}
 
 /**
  * Bridge our session store to the DataProvider's expected Data shape.
@@ -84,25 +63,16 @@ export const DataBridge: Component<{ children: any }> = (props) => {
 
   const data = createMemo(() => {
     const id = session.currentSessionID()
-    const allParts = session.allParts()
-    // Expose ALL session messages (including child sessions from sub-agents),
-    // not just the current session. This lets VscodeSessionTurn and
-    // TaskToolExpanded read child session data from the DataProvider store.
-    const allMessages = Object.fromEntries(
-      Object.entries(session.allMessages() as Record<string, SDKMessage[]>)
-        .filter(([, msgs]) => (msgs as SDKMessage[]).length > 0)
-        .map(([sid, msgs]) => [sid, msgs as SDKMessage[]]),
-    )
+    const family = session.familyData(id)
     return {
       session: session.sessions().map((s) => ({ ...s, id: s.id, role: "user" as const })) as unknown as any[],
-      session_status: session.allStatusMap() as unknown as Record<string, any>,
+      session_status: family.status as unknown as Record<string, any>,
       session_diff: {} as Record<string, any[]>,
-      message: allMessages,
-      part: Object.fromEntries(
-        Object.entries(allParts)
-          .filter(([, parts]) => (parts as SDKPart[]).length > 0)
-          .map(([msgId, parts]) => [msgId, parts as unknown as SDKPart[]]),
-      ),
+      // Restrict chat data to the selected session family (self + subagents).
+      // This keeps unrelated tracked sessions from invalidating the visible
+      // chat tree during streaming or background updates.
+      message: family.messages as Record<string, SDKMessage[]>,
+      part: family.parts as Record<string, SDKPart[]>,
       permission: (() => {
         const grouped: Record<string, any[]> = {}
         for (const p of session.permissions()) {
@@ -139,6 +109,10 @@ export const DataBridge: Component<{ children: any }> = (props) => {
     vscode.postMessage({ type: "openFile", filePath, line, column })
   }
 
+  const openUrl = (url: string) => {
+    vscode.postMessage({ type: "openExternal", url })
+  }
+
   const directory = () => {
     const dir = server.workspaceDirectory()
     if (!dir) return ""
@@ -154,6 +128,7 @@ export const DataBridge: Component<{ children: any }> = (props) => {
       onQuestionReply={reply}
       onQuestionReject={reject}
       onOpenFile={open}
+      onOpenUrl={openUrl}
     >
       {props.children}
     </DataProvider>
@@ -176,6 +151,7 @@ export const LanguageBridge: Component<{ children: any }> = (props) => {
 // Inner app component that uses the contexts
 const AppContent: Component = () => {
   const [currentView, setCurrentView] = createSignal<ViewType>("newTask")
+  const [settingsTab, setSettingsTab] = createSignal<string | undefined>()
   const [migrationReturnView, setMigrationReturnView] = createSignal<ViewType>("newTask") // legacy-migration
   const session = useSession()
   const server = useServer()
@@ -192,16 +168,30 @@ const AppContent: Component = () => {
       case "historyButtonClicked":
         setCurrentView("history")
         break
-      case "cloudHistoryButtonClicked":
-        setCurrentView("cloudHistory")
-        break
       case "profileButtonClicked":
         setCurrentView("profile")
         break
       case "settingsButtonClicked":
         setCurrentView("settings")
         break
+      case "cycleAgentMode":
+        if (document.hasFocus()) cycleAgent(1)
+        break
+      case "cyclePreviousAgentMode":
+        if (document.hasFocus()) cycleAgent(-1)
+        break
     }
+  }
+
+  const cycleAgent = (direction: 1 | -1) => {
+    const available = session.agents().filter((a) => a.mode !== "subagent" && !a.hidden)
+    if (available.length <= 1) return
+    const current = session.selectedAgent()
+    const idx = available.findIndex((a) => a.name === current)
+    const raw = idx + direction
+    const next = raw < 0 ? available.length - 1 : raw >= available.length ? 0 : raw
+    const agent = available[next]
+    if (agent) session.selectAgent(agent.name)
   }
 
   onMount(() => {
@@ -212,7 +202,8 @@ const AppContent: Component = () => {
         handleViewAction(message.action)
       }
       if (message?.type === "navigate" && message.view && VALID_VIEWS.has(message.view)) {
-        console.log("[Kilo New] App: 🧭 navigate:", message.view)
+        console.log("[Kilo New] App: 🧭 navigate:", message.view, message.tab ? `tab=${message.tab}` : "")
+        if (message.tab) setSettingsTab(message.tab)
         setCurrentView(message.view as ViewType)
       }
       if (message?.type === "openCloudSession" && message.sessionId) {
@@ -237,26 +228,19 @@ const AppContent: Component = () => {
 
   return (
     <div class="container">
-      <Switch fallback={<ChatView />}>
+      <Switch fallback={<ChatView continueInWorktree />}>
         <Match when={currentView() === "newTask"}>
-          <Show when={!session.currentSessionID()}>
-            <KiloNotifications />
-          </Show>
-          <ChatView onSelectSession={handleSelectSession} />
+          <ChatView
+            onSelectSession={handleSelectSession}
+            onShowHistory={() => setCurrentView("history")}
+            continueInWorktree
+          />
         </Match>
         <Match when={currentView() === "marketplace"}>
-          <DummyView title="Marketplace" />
+          <MarketplaceView />
         </Match>
         <Match when={currentView() === "history"}>
-          <SessionList onSelectSession={handleSelectSession} />
-        </Match>
-        <Match when={currentView() === "cloudHistory"}>
-          <CloudSessionList
-            onSelectSession={(cloudSessionId) => {
-              session.selectCloudSession(cloudSessionId)
-              setCurrentView("newTask")
-            }}
-          />
+          <HistoryView onSelectSession={handleSelectSession} onBack={() => setCurrentView("newTask")} />
         </Match>
         <Match when={currentView() === "profile"}>
           <ProfileView
@@ -267,6 +251,8 @@ const AppContent: Component = () => {
         </Match>
         <Match when={currentView() === "settings"}>
           <Settings
+            tab={settingsTab()}
+            onTabChange={setSettingsTab}
             onMigrateClick={() => {
               setMigrationReturnView("settings")
               setCurrentView("migration")

@@ -22,7 +22,6 @@ import {
   calcDebounceDelay,
   MatchingSuggestionWithFillIn as _MatchingSuggestionWithFillIn,
 } from "./inline-utils"
-import { HoleFiller } from "./HoleFiller"
 import { FimPromptBuilder } from "./FillInTheMiddle"
 import { AutocompleteModel } from "../AutocompleteModel"
 import { ContextRetrievalService } from "../continuedev/core/autocomplete/context/ContextRetrievalService"
@@ -34,6 +33,7 @@ import { postprocessAutocompleteSuggestion } from "./uselessSuggestionFilter"
 import { shouldSkipAutocomplete } from "./contextualSkip"
 import { FileIgnoreController } from "../shims/FileIgnoreController"
 import { AutocompleteTelemetry } from "./AutocompleteTelemetry"
+import { ErrorBackoff } from "./ErrorBackoff"
 
 const MAX_SUGGESTIONS_HISTORY = 20
 
@@ -119,7 +119,6 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
   public suggestionsHistory: FillInAtCursorSuggestion[] = []
   /** Tracks all pending/in-flight requests */
   private pendingRequests: PendingRequest[] = []
-  private holeFiller: HoleFiller
   private fimPromptBuilder: FimPromptBuilder
   private model: AutocompleteModel
   private costTrackingCallback: CostTrackingCallback
@@ -137,6 +136,12 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
   private telemetry: AutocompleteTelemetry | null
   /** Information about the last suggestion shown to the user */
   private lastSuggestion: LastSuggestionInfo | null = null
+  /** Circuit breaker / exponential backoff for API errors */
+  public readonly backoff = new ErrorBackoff()
+  /** Optional callback fired once when a fatal (non-retriable) error is first detected */
+  private onFatalError: ((status: number | null) => void) | null = null
+  /** Whether the fatal error notification has already been fired (avoid repeating) */
+  private fatalNotified = false
 
   constructor(
     context: vscode.ExtensionContext,
@@ -145,11 +150,13 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
     getSettings: () => AutocompleteServiceSettings | null,
     workspacePath: string,
     telemetry: AutocompleteTelemetry | null = null,
+    onFatalError?: (status: number | null) => void,
   ) {
     this.telemetry = telemetry
     this.model = model
     this.costTrackingCallback = costTrackingCallback
     this.getSettings = getSettings
+    this.onFatalError = onFatalError ?? null
 
     this.ignoreController = (async () => {
       const ignoreController = new FileIgnoreController(workspacePath)
@@ -165,15 +172,15 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
       model,
       ignoreController: this.ignoreController,
     }
-    this.holeFiller = new HoleFiller(contextProvider)
     this.fimPromptBuilder = new FimPromptBuilder(contextProvider)
 
     this.recentlyVisitedRangesService = new RecentlyVisitedRangesService(ide)
     this.recentlyEditedTracker = new RecentlyEditedTracker(ide)
 
-    this.acceptedCommand = vscode.commands.registerCommand(INLINE_COMPLETION_ACCEPTED_COMMAND, () =>
-      this.telemetry?.captureAcceptSuggestion(this.lastSuggestion?.length),
-    )
+    this.acceptedCommand = vscode.commands.registerCommand(INLINE_COMPLETION_ACCEPTED_COMMAND, () => {
+      this.telemetry?.captureAcceptSuggestion(this.lastSuggestion?.length)
+      vscode.commands.executeCommand("setContext", "kilo-code.new.autocomplete.hasSuggestions", false)
+    })
   }
 
   public updateSuggestions(fillInAtCursor: FillInAtCursorSuggestion): void {
@@ -217,10 +224,10 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
     const { prefix, suffix } = extractPrefixSuffix(document, position)
     const languageId = document.languageId
 
-    // Determine strategy based on model capabilities and call only the appropriate prompt builder
-    const prompt = this.model.supportsFim()
-      ? await this.fimPromptBuilder.getFimPrompts(autocompleteInput, this.model.getModelName() ?? "codestral")
-      : await this.holeFiller.getPrompts(autocompleteInput, languageId)
+    const prompt = await this.fimPromptBuilder.getFimPrompts(
+      autocompleteInput,
+      this.model.getModelName() ?? "codestral",
+    )
 
     return { prompt, prefix, suffix }
   }
@@ -276,6 +283,15 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
     }
   }
 
+  /**
+   * Reset error backoff and allow fatal notifications to fire again.
+   * Call this when auth state changes (login, reconnect, org switch).
+   */
+  public resetBackoff(): void {
+    this.backoff.reset()
+    this.fatalNotified = false
+  }
+
   public dispose(): void {
     if (this.debounceTimer !== null) {
       clearTimeout(this.debounceTimer)
@@ -315,6 +331,8 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
     _context: vscode.InlineCompletionContext,
     _token: vscode.CancellationToken,
   ): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList> {
+    vscode.commands.executeCommand("setContext", "kilo-code.new.autocomplete.hasSuggestions", false)
+
     // Build telemetry context
     const telemetryContext: AutocompleteContext = {
       languageId: document.languageId,
@@ -328,6 +346,24 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
       // bail if no model is available or no valid API credentials configured
       // this prevents errors when autocomplete is enabled but no provider is set up
       return []
+    }
+
+    // Circuit breaker / backoff: skip requests when the API is returning errors.
+    // This prevents flooding the API with thousands of failed requests when
+    // credits are depleted (402), auth is invalid (401/403), or the server
+    // is rate-limiting (429) / having issues (5xx).
+    if (this.backoff.blocked()) {
+      // For 402 (credits depleted), periodically check the balance endpoint
+      // instead of sending a probe FIM request. If the user has added credits,
+      // reset the backoff so autocomplete resumes.
+      if (this.backoff.getFatalStatus() === 402 && this.backoff.shouldProbe()) {
+        const funded = await this.model.hasBalance()
+        if (funded) {
+          this.backoff.reset()
+          this.fatalNotified = false
+        }
+      }
+      if (this.backoff.blocked()) return []
     }
 
     if (!document?.uri?.fsPath) {
@@ -372,6 +408,7 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
         }
         this.telemetry?.captureCacheHit(matchingResult.matchType, telemetryContext, matchingResult.text.length)
         this.telemetry?.startVisibilityTracking(matchingResult.fillInAtCursor, "cache", telemetryContext)
+        vscode.commands.executeCommand("setContext", "kilo-code.new.autocomplete.hasSuggestions", true)
         return stringToInlineCompletions(matchingResult.text, position)
       }
 
@@ -385,9 +422,6 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
 
       const { prompt, prefix: promptPrefix, suffix: promptSuffix } = await this.getPrompt(document, position)
 
-      // Update context with strategy now that we know it
-      telemetryContext.strategy = prompt.strategy
-
       await this.debouncedFetchAndCacheSuggestion(prompt, promptPrefix, promptSuffix, document.languageId)
 
       const cachedResult = applyFirstLineOnly(findMatchingSuggestion(prefix, suffix, this.suggestionsHistory), prefix)
@@ -398,6 +432,7 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
         }
         this.telemetry?.captureLlmSuggestionReturned(telemetryContext, cachedResult.text.length)
         this.telemetry?.startVisibilityTracking(cachedResult.fillInAtCursor, "llm", telemetryContext)
+        vscode.commands.executeCommand("setContext", "kilo-code.new.autocomplete.hasSuggestions", true)
       } else {
         this.telemetry?.cancelVisibilityTracking() // No suggestion to show - cancel any pending visibility tracking
       }
@@ -520,7 +555,6 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
       languageId,
       modelId: this.model?.getModelName(),
       provider: this.model?.getProviderDisplayName(),
-      strategy: prompt.strategy,
     }
 
     // Defense-in-depth: credentials may become invalid between the provider gate and the actual
@@ -535,10 +569,12 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
       const curriedProcessSuggestion = (text: string) =>
         this.processSuggestion(text, prefix, suffix, this.model, telemetryContext, languageId)
 
-      const result =
-        prompt.strategy === "fim"
-          ? await this.fimPromptBuilder.getFromFIM(this.model, prompt, curriedProcessSuggestion, controller.signal)
-          : await this.holeFiller.getFromChat(this.model, prompt, curriedProcessSuggestion)
+      const result = await this.fimPromptBuilder.getFromFIM(
+        this.model,
+        prompt,
+        curriedProcessSuggestion,
+        controller.signal,
+      )
 
       const latencyMs = performance.now() - startTime
 
@@ -557,6 +593,10 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
 
       this.costTrackingCallback(result.cost, result.inputTokens, result.outputTokens)
 
+      // Successful response — reset any backoff / circuit breaker state
+      this.backoff.success()
+      this.fatalNotified = false
+
       // Always update suggestions, even if text is empty (for caching)
       this.updateSuggestions(result.suggestion)
     } catch (error) {
@@ -571,6 +611,15 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
         },
         telemetryContext,
       )
+
+      // Update circuit breaker / backoff state based on the error kind
+      const kind = this.backoff.failure(error)
+
+      // Notify once when a fatal error (402/401/403) is first detected
+      if (kind === "fatal" && !this.fatalNotified) {
+        this.fatalNotified = true
+        this.onFatalError?.(this.backoff.getFatalStatus())
+      }
     }
   }
 }

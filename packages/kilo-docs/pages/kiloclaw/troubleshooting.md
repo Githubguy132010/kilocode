@@ -33,6 +33,10 @@ No. Redeploy does **not** delete your files, git repos, or cron jobs. It stops t
 3. Check for pending [pairing requests](/docs/kiloclaw/chat-platforms#pairing-requests) — the user may need to be approved
 4. Try running **OpenClaw Doctor**
 
+### Accessing and Restoring Config Files
+
+You can directly access the files in /root/.openclaw/ on the [KiloClaw Dashboard](https://app.kilo.ai/claw) using the file browser of the edit files dialog. This can be a useful way to examine or update the config files (especially `openclaw.json`) if you run into an issue. There may also be backups in the form of `openclaw.bak` files that you can manually restore from if needed.
+
 ### The gateway shows "Crashed"
 
 The OpenClaw process is automatically restarted when it crashes. Check the Gateway Process tab on your dashboard for the exit code and restart count. If it keeps crashing:
@@ -67,17 +71,27 @@ You can change the model in two ways:
 
 ### Can I access the filesystem?
 
-Direct filesystem access is not available at this time. You can interact with files through your OpenClaw agent using its built-in file tools.
+You can access instance files in `/root/.openclaw/` directly from the [KiloClaw Dashboard](https://app.kilo.ai/claw). This is useful for examining or restoring config files — see [Accessing and Restoring Config Files](#accessing-and-restoring-config-files) above. You can also interact with files through your OpenClaw agent using its built-in file tools.
 
 ### Can I access my KiloClaw via SSH?
 
 For security reasons, SSH access is currently disabled for all KiloClaw instances. Our primary goal is to provide a secure environment for all users, and restricting direct SSH access is one of the many measures we take to ensure the platform remains safe and protected for everyone.
 
-### How can I update my OpenClaw?
+### Can I install tailscale on my KiloClaw instance?
 
-Do **not** click **Update Now** inside the OpenClaw Control UI — this is not supported for KiloClaw instances and may break your setup.
+Not at this time.
 
-Updates are managed by the KiloClaw platform team to ensure stability. When a new version is available, it will be announced in the **Changelog** on your dashboard. To apply the update, click **Upgrade & Redeploy** from the [KiloClaw Dashboard](/docs/kiloclaw/dashboard#redeploy).
+### Can I update the version of Node on my instance?
+
+Not at this time.
+
+### How do I upgrade the OpenClaw version? Can I upgrade it myself?
+
+Updates are managed by the KiloClaw platform team to ensure stability and dependency availability. When a new version is available, it will be announced in the **Changelog** on your dashboard.
+
+To apply the update, click **Upgrade & Redeploy** from the [KiloClaw Dashboard](https://app.kilo.ai/claw). Do **not** click **Update Now** inside the OpenClaw Control UI — this is not supported for KiloClaw instances and may break your setup.
+
+If you need to roll back, use the [version pinning](/docs/kiloclaw/version-pinning) dialog in the Settings tab.
 
 ## Architecture Notes
 

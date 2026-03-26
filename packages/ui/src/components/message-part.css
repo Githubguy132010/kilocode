@@ -257,14 +257,14 @@
     gap: 12px;
   }
 
-  /* kilocode_change: always show copy button for the final turn response */
-  [data-slot="text-part-copy-wrapper"][data-is-turn-copy] {
+  &:hover [data-slot="text-part-copy-wrapper"],
+  &:focus-within [data-slot="text-part-copy-wrapper"] {
     opacity: 1;
     pointer-events: auto;
   }
 
-  &:hover [data-slot="text-part-copy-wrapper"],
-  &:focus-within [data-slot="text-part-copy-wrapper"] {
+  /* kilocode_change: always show copy button for the final turn response */
+  [data-slot="text-part-copy-wrapper"][data-is-turn-copy] {
     opacity: 1;
     pointer-events: auto;
   }
@@ -528,6 +528,7 @@
 
   [data-slot="message-part-title-filename"] {
     /* No text-transform - preserve original filename casing */
+    font-weight: var(--font-weight-regular);
 
     /* kilocode_change start */
     &.clickable {
@@ -540,7 +541,6 @@
       }
     }
     /* kilocode_change end */
-    font-weight: var(--font-weight-regular);
   }
 
   [data-slot="message-part-path"] {
@@ -569,6 +569,18 @@
       }
     }
     /* kilocode_change end */
+  }
+
+  [data-slot="message-part-filename"] {
+    color: var(--text-strong);
+    flex-shrink: 0;
+  }
+
+  [data-slot="message-part-actions"] {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    justify-content: flex-end;
   }
 
   [data-slot="message-part-filename"] {
@@ -630,6 +642,46 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+[data-component="exa-tool-output"] {
+  width: 100%;
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+[data-slot="basic-tool-tool-subtitle"].exa-tool-query {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-slot="exa-tool-links"] {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+[data-slot="exa-tool-link"] {
+  display: block;
+  max-width: 100%;
+  color: var(--text-interactive-base);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &:hover {
+    color: var(--text-interactive-base);
+  }
+
+  &:visited {
+    color: var(--text-interactive-base);
+  }
 }
 
 [data-component="todos"] {

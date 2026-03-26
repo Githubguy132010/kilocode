@@ -6,6 +6,7 @@ import type { Provider } from "./provider"
 import type { ModelsDev } from "./models"
 import { iife } from "@/util/iife"
 import { Flag } from "@/flag/flag"
+import { kiloProviderOptions } from "@/kilocode/provider-options"
 
 type Modality = NonNullable<ModelsDev.Model["modalities"]>["input"][number]
 
@@ -251,9 +252,54 @@ export namespace ProviderTransform {
     })
   }
 
+  // kilocode_change - function added
+  function fixDuplicateReasoning(msgs: ModelMessage[], model: Provider.Model) {
+    for (const msg of msgs) {
+      if (!Array.isArray(msg.content)) {
+        continue
+      }
+      const encryptedDataSet = new Set<string>()
+      const textSet = new Set<string>()
+      for (const part of msg.content) {
+        const openrouterProviderOptions = part.providerOptions?.openrouter as
+          | {
+              reasoning_details?: { data?: string; text?: string; signature?: string }[]
+            }
+          | undefined
+        if (!openrouterProviderOptions || !openrouterProviderOptions.reasoning_details) {
+          continue
+        }
+        openrouterProviderOptions.reasoning_details = openrouterProviderOptions.reasoning_details.filter((rd) => {
+          if (rd.data) {
+            if (!encryptedDataSet.has(rd.data)) {
+              encryptedDataSet.add(rd.data)
+              return true
+            }
+            return false
+          }
+          if (rd.text) {
+            if ((model.family === "claude" || model.id.includes("claude")) && !rd.signature) return false
+            if (!textSet.has(rd.text)) {
+              textSet.add(rd.text)
+              return true
+            }
+            return false
+          }
+          return true
+        })
+      }
+    }
+  }
+
   export function message(msgs: ModelMessage[], model: Provider.Model, options: Record<string, unknown>) {
     msgs = unsupportedParts(msgs, model)
     msgs = normalizeMessages(msgs, model, options)
+
+    // kilocode_change - workaround for @openrouter/ai-sdk-provider v1 duplicating reasoning
+    // fixed in https://github.com/OpenRouterTeam/ai-sdk-provider/pull/344/
+    if (model.api.npm === "@openrouter/ai-sdk-provider") {
+      fixDuplicateReasoning(msgs, model)
+    }
 
     if (
       (model.providerID === "anthropic" ||
@@ -458,7 +504,9 @@ export namespace ProviderTransform {
         const copilotEfforts = iife(() => {
           if (id.includes("5.1-codex-max") || id.includes("5.2") || id.includes("5.3"))
             return [...WIDELY_SUPPORTED_EFFORTS, "xhigh"]
-          return WIDELY_SUPPORTED_EFFORTS
+          const arr = [...WIDELY_SUPPORTED_EFFORTS]
+          if (id.includes("gpt-5") && model.release_date >= "2025-12-04") arr.push("xhigh")
+          return arr
         })
         return Object.fromEntries(
           copilotEfforts.map((effort) => [
@@ -888,6 +936,12 @@ export namespace ProviderTransform {
 
       return result
     }
+
+    // kilocode_change start
+    if (model.api.npm === "@kilocode/kilo-gateway") {
+      return kiloProviderOptions(options)
+    }
+    // kilocode_change end
 
     const key = sdkKey(model.api.npm) ?? model.providerID
     return { [key]: options }

@@ -3,6 +3,7 @@ import { tui } from "./app"
 import { Rpc } from "@/util/rpc"
 import { type rpc } from "./worker"
 import path from "path"
+import { text as streamText } from "node:stream/consumers"
 import { fileURLToPath } from "url"
 import { UI } from "@/cli/ui"
 import { Log } from "@/util/log"
@@ -44,6 +45,9 @@ function createWorkerFetch(client: RpcClient): typeof fetch {
 function createEventSource(client: RpcClient): EventSource {
   return {
     on: (handler) => client.on<Event>("event", handler),
+    setWorkspace: (workspaceID) => {
+      void client.call("setWorkspace", { workspaceID })
+    },
   }
 }
 
@@ -55,7 +59,7 @@ async function target() {
 }
 
 async function input(value?: string) {
-  const piped = process.stdin.isTTY ? undefined : await Bun.stdin.text()
+  const piped = process.stdin.isTTY ? undefined : await streamText(process.stdin)
   if (!value) return piped
   if (!piped) return value
   return piped + "\n" + value
@@ -128,16 +132,20 @@ export const TuiThreadCommand = cmd({
       }
       // kilocode_change end
 
-      // Resolve relative paths against PWD to preserve behavior when using --cwd flag
-      const root = process.env.PWD ?? process.cwd()
-      const cwd = args.project ? path.resolve(root, args.project) : process.cwd()
+      // Resolve relative --project paths from PWD, then use the real cwd after
+      // chdir so the thread and worker share the same directory key.
+      const root = Filesystem.resolve(process.env.PWD ?? process.cwd())
+      const next = args.project
+        ? Filesystem.resolve(path.isAbsolute(args.project) ? args.project : path.join(root, args.project))
+        : Filesystem.resolve(process.cwd())
       const file = await target()
       try {
-        process.chdir(cwd)
+        process.chdir(next)
       } catch {
-        UI.error("Failed to change directory to " + cwd)
+        UI.error("Failed to change directory to " + next)
         return
       }
+      const cwd = Filesystem.resolve(process.cwd())
 
       const worker = new Worker(file, {
         env: Object.fromEntries(
@@ -307,7 +315,6 @@ export const TuiThreadCommand = cmd({
             prompt,
             fork: args.fork,
           },
-          onExit: stop,
         })
       } finally {
         await stop()

@@ -13,8 +13,13 @@ import { Tooltip, TooltipKeybind } from "@kilocode/kilo-ui/tooltip"
 import type { DiffLineAnnotation, AnnotationSide, SelectedLineRange } from "@pierre/diffs"
 import type { WorktreeFileDiff } from "../src/types/messages"
 import { useLanguage } from "../src/context/language"
-import { getDirectory, getFilename, sanitizeReviewComments, type ReviewComment } from "./review-comments"
-import { buildReviewAnnotation, type AnnotationLabels, type AnnotationMeta } from "./review-annotations"
+import { getDirectory, getFilename, lineCount, sanitizeReviewComments, type ReviewComment } from "./review-comments"
+import {
+  buildFileAnnotations,
+  buildReviewAnnotation,
+  type AnnotationLabels,
+  type AnnotationMeta,
+} from "./review-annotations"
 import { LONG_DIFF_MARKER_FILE_COUNT, initialOpenFiles, isLargeDiffFile } from "./diff-open-policy"
 import { DiffEndMarker } from "./DiffEndMarker"
 
@@ -220,7 +225,7 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
           return
         }
         const content = currentDraft.side === "deletions" ? diff.before : diff.after
-        const max = content.length === 0 ? 0 : content.split("\n").length
+        const max = lineCount(content)
         if (currentDraft.line < 1 || currentDraft.line > max) {
           setDraft(null)
           draftMeta = null
@@ -242,22 +247,9 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
   })
 
   const annotationsForFile = (file: string): DiffLineAnnotation<AnnotationMeta>[] => {
-    const fileComments = commentsByFile().get(file) ?? []
-    const result: DiffLineAnnotation<AnnotationMeta>[] = fileComments.map((c) => ({
-      side: c.side,
-      lineNumber: c.line,
-      metadata: { type: "comment" as const, comment: c, file: c.file, side: c.side, line: c.line },
-    }))
-
-    const d = draft()
-    if (d && d.file === file) {
-      // Reuse stable reference for draft to prevent pierre cache invalidation
-      if (!draftMeta || draftMeta.file !== d.file || draftMeta.side !== d.side || draftMeta.line !== d.line) {
-        draftMeta = { type: "draft", comment: null, file: d.file, side: d.side, line: d.line }
-      }
-      result.push({ side: d.side, lineNumber: d.line, metadata: draftMeta })
-    }
-    return result
+    const result = buildFileAnnotations(file, commentsByFile().get(file) ?? [], editing(), draft(), draftMeta)
+    draftMeta = result.draftMeta
+    return result.annotations
   }
 
   const buildAnnotation = (annotation: DiffLineAnnotation<AnnotationMeta>): HTMLElement | undefined => {
@@ -292,7 +284,9 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
   const sendAllToChat = () => {
     const all = comments()
     if (all.length === 0) return
-    window.dispatchEvent(new MessageEvent("message", { data: { type: "appendReviewComments", comments: all } }))
+    window.dispatchEvent(
+      new MessageEvent("message", { data: { type: "appendReviewComments", comments: all, autoSend: true } }),
+    )
     preserveScroll(() => setComments([]))
     props.onSendAll?.()
   }
