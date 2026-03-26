@@ -389,7 +389,7 @@ export namespace SessionProcessor {
             } else {
               const retry = SessionRetry.retryable(error)
               if (retry !== undefined) {
-                if (await SessionNetwork.shouldPrompt({ err: e })) {
+                if (SessionNetwork.disconnected(e)) {
                   const msg = SessionNetwork.message(e)
                   const wait = SessionNetwork.ask({
                     sessionID: input.sessionID,
@@ -406,7 +406,11 @@ export namespace SessionProcessor {
                     })
                   }
                   await wait.catch((err) => {
-                    if (err instanceof SessionNetwork.RejectedError) blocked = true
+                    if (err instanceof SessionNetwork.RejectedError) {
+                      blocked = true
+                      return
+                    }
+                    throw err
                   })
                   if (blocked) {
                     input.assistantMessage.error = error
@@ -416,11 +420,10 @@ export namespace SessionProcessor {
                     })
                     SessionStatus.set(input.sessionID, { type: "idle" })
                     break
-                  } else {
-                    attempt = 0
-                    SessionStatus.set(input.sessionID, { type: "retry", attempt: 1, message: retry, next: Date.now() })
-                    continue
                   }
+                  attempt = 0
+                  SessionStatus.set(input.sessionID, { type: "retry", attempt: 1, message: retry, next: Date.now() })
+                  continue
                 }
                 attempt++
                 const delay = SessionRetry.delay(attempt, error.name === "APIError" ? error : undefined)
