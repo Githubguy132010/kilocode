@@ -1,4 +1,5 @@
-import { Component, createSignal, createMemo, createEffect, For, Show } from "solid-js"
+import { createSignal, createMemo, createEffect, For, Show } from "solid-js"
+import type { Component } from "solid-js"
 import { Select } from "@kilocode/kilo-ui/select"
 import { TextField } from "@kilocode/kilo-ui/text-field"
 import { Card } from "@kilocode/kilo-ui/card"
@@ -13,6 +14,7 @@ import { useLanguage } from "../../context/language"
 import type { AgentInfo, SkillInfo } from "../../types/messages"
 import ModeEditView from "./ModeEditView"
 import ModeCreateView from "./ModeCreateView"
+import McpCreateView from "./McpCreateView"
 import McpEditView from "./McpEditView"
 import WorkflowsTab from "./agent-behaviour/WorkflowsTab"
 import { parseImport, MAX_IMPORT_SIZE } from "./mode-io"
@@ -58,6 +60,7 @@ const AgentBehaviourTab: Component = () => {
   const [editingAgent, setEditingAgent] = createSignal<string>("")
 
   // MCP view state
+  const [creatingMcp, setCreatingMcp] = createSignal(false)
   const [editingMcp, setEditingMcp] = createSignal<string>("")
 
   // Fetch skills whenever the skills subtab becomes active
@@ -478,6 +481,10 @@ const AgentBehaviourTab: Component = () => {
       setExpanded((prev) => ({ ...prev, [name]: !prev[name] }))
     }
 
+    if (creatingMcp()) {
+      return <McpCreateView taken={mcpEntries().map(([name]) => name)} onBack={() => setCreatingMcp(false)} />
+    }
+
     if (editingMcp()) {
       return (
         <McpEditView
@@ -493,6 +500,20 @@ const AgentBehaviourTab: Component = () => {
 
     return (
       <div>
+        <div
+          style={{
+            display: "flex",
+            "align-items": "center",
+            "justify-content": "space-between",
+            "margin-bottom": "8px",
+          }}
+        >
+          <div data-slot="settings-row-label-title">{language.t("settings.agentBehaviour.mcpServers.title")}</div>
+          <Button variant="secondary" size="small" onClick={() => setCreatingMcp(true)}>
+            {language.t("settings.agentBehaviour.addMcp")}
+          </Button>
+        </div>
+
         <Show
           when={mcpEntries().length > 0}
           fallback={
@@ -934,6 +955,7 @@ const AgentBehaviourTab: Component = () => {
                   setAgentView("list")
                   setEditingAgent("")
                 }
+                setCreatingMcp(false)
                 setEditingMcp("")
               }}
               style={{

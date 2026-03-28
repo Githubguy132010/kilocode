@@ -58,6 +58,15 @@ export class MarketplaceService {
     return result
   }
 
+  async addMcpDirect(
+    name: string,
+    config: Record<string, unknown>,
+    scope: "project" | "global",
+    workspace?: string,
+  ): Promise<InstallResult> {
+    return this.installer.addMcpDirect(name, config, scope, workspace)
+  }
+
   dispose(): void {
     this.api.dispose()
   }

@@ -645,6 +645,11 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
         case "removeMcp":
           this.handleRemoveMcp(message.name).catch((e) => console.error("[Kilo New] handleRemoveMcp failed:", e))
           break
+        case "addMcp":
+          this.handleAddMcp(message.name, message.config, message.scope).catch((e) =>
+            console.error("[Kilo New] handleAddMcp failed:", e),
+          )
+          break
 
         case "questionReply":
           await handleQuestionReply(this.questionCtx, message.requestID, message.answers)
@@ -1661,6 +1666,24 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     } else {
       console.error("[Kilo New] KiloProvider: Failed to remove MCP server:", name)
     }
+  }
+
+  private async handleAddMcp(
+    name: string,
+    config: Record<string, unknown>,
+    scope: "project" | "global",
+  ): Promise<void> {
+    const workspace = this.getProjectDirectory(this.currentSession?.id)
+    const result = await this.getMarketplace().addMcpDirect(name, config, scope, workspace)
+    if (result.success) {
+      await this.invalidateAfterMarketplaceChange(scope)
+    }
+    this.postMessage({
+      type: "addMcpResult",
+      success: result.success,
+      name,
+      error: result.error,
+    })
   }
 
   /**

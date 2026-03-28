@@ -63,6 +63,28 @@ export class MarketplaceInstaller {
     return { success: true, slug: item.id }
   }
 
+  async addMcpDirect(
+    name: string,
+    entry: Record<string, unknown>,
+    scope: "project" | "global",
+    workspace?: string,
+  ): Promise<InstallResult> {
+    if (scope === "project" && !workspace) {
+      return { success: false, slug: name, error: "No workspace directory for project-scope install" }
+    }
+
+    const config = await this.readConfig(scope, workspace)
+    if (!config.mcp) config.mcp = {}
+
+    if (config.mcp[name]) {
+      return { success: false, slug: name, error: "MCP server already installed. Remove it first." }
+    }
+
+    config.mcp[name] = normalizeMcpEntry(entry)
+    await this.writeConfig(scope, workspace, config)
+    return { success: true, slug: name }
+  }
+
   private resolveMcpContent(item: McpMarketplaceItem, options: InstallMarketplaceItemOptions): string | undefined {
     if (typeof item.content === "string") return item.content
     if (!Array.isArray(item.content) || item.content.length === 0) return undefined
@@ -71,7 +93,7 @@ export class MarketplaceInstaller {
       const found = item.content.find((m: McpInstallationMethod) => m.name === name)
       if (found) return found.content
     }
-    return item.content[0].content
+    return item.content[0]?.content
   }
 
   private buildMcpEntry(content: string, params?: Record<string, unknown>): Record<string, unknown> {

@@ -351,6 +351,14 @@ export interface McpConfig {
   url?: string
   headers?: Record<string, string>
   enabled?: boolean
+  timeout?: number
+  oauth?: McpOAuthConfig | false
+}
+
+export interface McpOAuthConfig {
+  clientId?: string
+  clientSecret?: string
+  scope?: string
 }
 
 export interface CommandConfig {
@@ -720,6 +728,13 @@ export interface ConfigLoadedMessage {
 export interface ConfigUpdatedMessage {
   type: "configUpdated"
   config: Config
+}
+
+export interface AddMcpResultMessage {
+  type: "addMcpResult"
+  success: boolean
+  name: string
+  error?: string
 }
 
 export interface GlobalConfigLoadedMessage {
@@ -1277,6 +1292,7 @@ export type ExtensionMessage =
   | BrowserSettingsLoadedMessage
   | ConfigLoadedMessage
   | ConfigUpdatedMessage
+  | AddMcpResultMessage
   | GlobalConfigLoadedMessage
   | NotificationSettingsLoadedMessage
   | NotificationsLoadedMessage
@@ -1518,6 +1534,13 @@ export interface RemoveModeMessage {
 export interface RemoveMcpMessage {
   type: "removeMcp"
   name: string
+}
+
+export interface AddMcpMessage {
+  type: "addMcp"
+  name: string
+  config: McpConfig
+  scope: "project" | "global"
 }
 
 export interface SetLanguageRequest {
@@ -2007,6 +2030,7 @@ export type WebviewMessage =
   | SendCommandRequest
   | RemoveSkillMessage
   | RemoveModeMessage
+  | AddMcpMessage
   | RemoveMcpMessage
   | SetLanguageRequest
   | QuestionReplyRequest
