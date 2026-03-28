@@ -762,6 +762,20 @@ export const dict = {
   "provider.custom.models.name.placeholder": "Nom d'affichage",
   "provider.custom.models.remove": "Supprimer le modèle",
   "provider.custom.models.add": "Ajouter un modèle",
+  "provider.custom.models.fetch": "Récupérer les modèles",
+  "provider.custom.models.fetching": "Récupération\u2026",
+  "provider.custom.models.fetch.error": "Échec de la récupération des modèles : {{error}}",
+  "provider.custom.models.fetch.authError": "Échec de l'authentification. Vérifiez la clé API ci-dessus et réessayez.",
+  "provider.custom.models.fetch.empty": "Aucun modèle trouvé sur ce serveur.",
+  "provider.custom.models.fetch.added": "{{count}} modèle(s) ajouté(s).",
+  "provider.custom.models.fetch.allExist": "Tous les modèles récupérés sont déjà ajoutés.",
+  "provider.custom.models.fetch.selectAll": "Tout sélectionner",
+  "provider.custom.models.fetch.deselectAll": "Tout désélectionner",
+  "provider.custom.models.fetch.found": "{{count}} modèles trouvés",
+  "provider.custom.models.fetch.showing": "Affichage de {{shown}} sur {{total}}",
+  "provider.custom.models.fetch.search": "Rechercher des modèles\u2026",
+  "provider.custom.models.fetch.add": "Ajouter {{count}} modèle(s)",
+  "provider.custom.edit.title": "Modifier le fournisseur",
   "provider.custom.headers.label": "En-têtes (optionnel)",
   "provider.custom.headers.key.label": "En-tête",
   "provider.custom.headers.key.placeholder": "Header-Name",
@@ -923,8 +937,7 @@ export const dict = {
   "settings.autocomplete.title": "Autocomplétion",
   "settings.notifications.title": "Notifications",
   "settings.context.title": "Contexte",
-  "settings.terminal.title": "Terminal",
-  "settings.prompts.title": "Prompts",
+
   "settings.experimental.title": "Expérimental",
   "settings.language.title": "Langue",
   "settings.aboutKiloCode.title": "À propos de Kilo Code",
@@ -977,6 +990,20 @@ export const dict = {
   "settings.aboutKiloCode.resetSettings.description":
     "Réinitialiser tous les paramètres de l'extension Kilo Code à leurs valeurs par défaut. Cela n'affecte pas la configuration CLI ou backend.",
   "settings.aboutKiloCode.resetSettings.button": "Réinitialiser tous les paramètres",
+  "settings.aboutKiloCode.settingsTransfer.title": "Transfert des paramètres",
+  "settings.aboutKiloCode.settingsTransfer.description":
+    "Exportez ou importez vos paramètres pour les transférer entre instances VS Code.",
+  "settings.aboutKiloCode.exportSettings": "Exporter",
+  "settings.aboutKiloCode.importSettings": "Importer",
+  "settings.aboutKiloCode.importSettings.invalidJson":
+    "Fichier JSON invalide. Veuillez sélectionner un fichier de paramètres valide.",
+  "settings.aboutKiloCode.importSettings.invalidConfig": "Le fichier ne contient pas de paramètres Kilo valides.",
+  "settings.aboutKiloCode.importSettings.tooLarge":
+    "Le fichier est trop volumineux. Les fichiers de paramètres doivent faire moins de 1 MB.",
+  "settings.aboutKiloCode.importSettings.newerVersion":
+    "Ce fichier a été exporté depuis une version plus récente de Kilo. Certains paramètres pourraient être ignorés.",
+  "settings.aboutKiloCode.importSettings.success":
+    "Paramètres importés. Vérifiez les modifications ci-dessus, puis cliquez sur Enregistrer.",
 
   "settings.agentBehaviour.subtab.modes": "Modes",
   "settings.agentBehaviour.subtab.agents": "Agents",
@@ -1002,8 +1029,7 @@ export const dict = {
 
   "common.add": "Ajouter",
   "common.choose": "Choisir…",
-  "settings.notImplemented": "Cette section n'est pas encore implémentée.",
-  "settings.notImplemented.description": "Elle contiendra des options de configuration et du texte explicatif.",
+
   "settings.autocomplete.autoTrigger.title": "Activer la complétion automatique en ligne",
   "settings.autocomplete.autoTrigger.description":
     "Afficher automatiquement les suggestions de complétion lors de la saisie",
@@ -1156,7 +1182,7 @@ export const dict = {
     "Aucune commande personnalisée configurée. Ajoutez des commandes à opencode.json pour les voir ici.",
   "settings.agentBehaviour.workflows.detail.description": "Description",
   "settings.agentBehaviour.workflows.detail.template": "Modèle",
-  "settings.agentBehaviour.notImplemented": "Pas encore implémenté.",
+
   "settings.autoApprove.description":
     "Définissez comment les outils sont autorisés à s'exécuter. La plupart des outils sont définis sur Autoriser par défaut. doom_loop et external_directory sont définis sur Demander par défaut.",
   "settings.autoApprove.level.allow": "Autoriser",
@@ -1213,7 +1239,8 @@ export const dict = {
   "settings.providers.defaultModel.title": "Modèle par défaut",
   "settings.providers.defaultModel.description": "Modèle principal pour les conversations",
   "settings.providers.smallModel.title": "Petit modèle",
-  "settings.providers.smallModel.description": "Modèle léger pour la génération de titres et tâches rapides",
+  "settings.providers.smallModel.description":
+    "Modèle léger pour la génération de titres, de messages de commit, l'amélioration de prompts et d'autres tâches rapides",
   "settings.providers.disabled": "Fournisseurs désactivés",
   "settings.providers.disabled.description": "Fournisseurs à masquer de la liste",
   "settings.providers.enabled": "Fournisseurs activés (liste blanche)",

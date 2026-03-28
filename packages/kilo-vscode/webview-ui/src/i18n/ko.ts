@@ -751,6 +751,20 @@ export const dict = {
   "provider.custom.models.name.placeholder": "표시 이름",
   "provider.custom.models.remove": "모델 제거",
   "provider.custom.models.add": "모델 추가",
+  "provider.custom.models.fetch": "모델 가져오기",
+  "provider.custom.models.fetching": "가져오는 중\u2026",
+  "provider.custom.models.fetch.error": "모델을 가져오지 못했습니다: {{error}}",
+  "provider.custom.models.fetch.authError": "인증에 실패했습니다. 위의 API 키를 확인하고 다시 시도하세요.",
+  "provider.custom.models.fetch.empty": "이 서버에서 모델을 찾을 수 없습니다.",
+  "provider.custom.models.fetch.added": "{{count}}개 모델이 추가되었습니다.",
+  "provider.custom.models.fetch.allExist": "가져온 모든 모델이 이미 추가되어 있습니다.",
+  "provider.custom.models.fetch.selectAll": "모두 선택",
+  "provider.custom.models.fetch.deselectAll": "모두 선택 해제",
+  "provider.custom.models.fetch.found": "{{count}}개 모델 발견",
+  "provider.custom.models.fetch.showing": "{{total}}개 중 {{shown}}개 표시",
+  "provider.custom.models.fetch.search": "모델 검색\u2026",
+  "provider.custom.models.fetch.add": "{{count}}개 모델 추가",
+  "provider.custom.edit.title": "공급자 편집",
   "provider.custom.headers.label": "헤더 (선택사항)",
   "provider.custom.headers.key.label": "헤더",
   "provider.custom.headers.key.placeholder": "Header-Name",
@@ -908,8 +922,7 @@ export const dict = {
   "settings.autocomplete.title": "자동 완성",
   "settings.notifications.title": "알림",
   "settings.context.title": "컨텍스트",
-  "settings.terminal.title": "터미널",
-  "settings.prompts.title": "프롬프트",
+
   "settings.experimental.title": "실험적",
   "settings.language.title": "언어",
   "settings.aboutKiloCode.title": "Kilo Code 정보",
@@ -960,6 +973,18 @@ export const dict = {
   "settings.aboutKiloCode.resetSettings.description":
     "Kilo Code 확장 프로그램의 모든 설정을 기본값으로 초기화합니다. CLI 또는 백엔드 구성에는 영향을 미치지 않습니다.",
   "settings.aboutKiloCode.resetSettings.button": "모든 설정 초기화",
+  "settings.aboutKiloCode.settingsTransfer.title": "설정 이전",
+  "settings.aboutKiloCode.settingsTransfer.description":
+    "VS Code 인스턴스 간에 설정을 전송하려면 내보내기 또는 가져오기하세요.",
+  "settings.aboutKiloCode.exportSettings": "내보내기",
+  "settings.aboutKiloCode.importSettings": "가져오기",
+  "settings.aboutKiloCode.importSettings.invalidJson":
+    "유효하지 않은 JSON 파일입니다. 올바른 설정 파일을 선택해 주세요.",
+  "settings.aboutKiloCode.importSettings.invalidConfig": "파일에 유효한 Kilo 설정이 포함되어 있지 않습니다.",
+  "settings.aboutKiloCode.importSettings.tooLarge": "파일이 너무 큽니다. 설정 파일은 1 MB 이하여야 합니다.",
+  "settings.aboutKiloCode.importSettings.newerVersion":
+    "이 파일은 더 최신 버전의 Kilo에서 내보낸 것입니다. 일부 설정이 무시될 수 있습니다.",
+  "settings.aboutKiloCode.importSettings.success": "설정을 가져왔습니다. 위의 변경 사항을 확인한 후 저장을 클릭하세요.",
 
   "settings.agentBehaviour.subtab.modes": "모드",
   "settings.agentBehaviour.subtab.agents": "Agents",
@@ -983,8 +1008,7 @@ export const dict = {
 
   "common.add": "추가",
   "common.choose": "선택…",
-  "settings.notImplemented": "이 섹션은 아직 구현되지 않았습니다.",
-  "settings.notImplemented.description": "선택한 설정 카테고리와 관련된 구성 옵션 및 설명 텍스트가 포함될 예정입니다.",
+
   "settings.autocomplete.autoTrigger.title": "자동 인라인 완성 활성화",
   "settings.autocomplete.autoTrigger.description": "입력 시 인라인 완성 제안을 자동으로 표시",
   "settings.autocomplete.smartKeybinding.title": "스마트 인라인 작업 키바인딩 활성화",
@@ -1125,7 +1149,7 @@ export const dict = {
     "구성된 사용자 정의 명령이 없습니다. opencode.json에 명령을 추가하면 여기에 표시됩니다.",
   "settings.agentBehaviour.workflows.detail.description": "설명",
   "settings.agentBehaviour.workflows.detail.template": "템플릿",
-  "settings.agentBehaviour.notImplemented": "아직 구현되지 않았습니다.",
+
   "settings.autoApprove.description":
     "도구 실행 허용 방식을 정의합니다. 대부분의 도구 기본값은 '허용'입니다. doom_loop 및 external_directory의 기본값은 '확인'입니다.",
   "settings.autoApprove.level.allow": "허용",
@@ -1173,7 +1197,8 @@ export const dict = {
   "settings.providers.defaultModel.title": "기본 모델",
   "settings.providers.defaultModel.description": "대화의 기본 모델",
   "settings.providers.smallModel.title": "소형 모델",
-  "settings.providers.smallModel.description": "제목 생성 및 기타 빠른 작업을 위한 경량 모델",
+  "settings.providers.smallModel.description":
+    "제목 생성, 커밋 메시지 생성, 프롬프트 개선 및 기타 빠른 작업을 위한 경량 모델",
   "settings.providers.disabled": "비활성화된 공급자",
   "settings.providers.disabled.description": "공급자 목록에서 숨길 공급자",
   "settings.providers.enabled": "활성화된 공급자 (허용 목록)",

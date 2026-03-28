@@ -748,6 +748,20 @@ export const dict = {
   "provider.custom.models.name.placeholder": "ชื่อที่แสดง",
   "provider.custom.models.remove": "ลบโมเดล",
   "provider.custom.models.add": "เพิ่มโมเดล",
+  "provider.custom.models.fetch": "ดึงโมเดล",
+  "provider.custom.models.fetching": "กำลังดึง\u2026",
+  "provider.custom.models.fetch.error": "ดึงโมเดลล้มเหลว: {{error}}",
+  "provider.custom.models.fetch.authError": "การยืนยันตัวตนล้มเหลว ตรวจสอบคีย์ API ด้านบนแล้วลองอีกครั้ง",
+  "provider.custom.models.fetch.empty": "ไม่พบโมเดลบนเซิร์ฟเวอร์นี้",
+  "provider.custom.models.fetch.added": "เพิ่มแล้ว {{count}} โมเดล",
+  "provider.custom.models.fetch.allExist": "โมเดลที่ดึงมาทั้งหมดถูกเพิ่มไปแล้ว",
+  "provider.custom.models.fetch.selectAll": "เลือกทั้งหมด",
+  "provider.custom.models.fetch.deselectAll": "ยกเลิกการเลือกทั้งหมด",
+  "provider.custom.models.fetch.found": "พบ {{count}} โมเดล",
+  "provider.custom.models.fetch.showing": "แสดง {{shown}} จาก {{total}}",
+  "provider.custom.models.fetch.search": "ค้นหาโมเดล\u2026",
+  "provider.custom.models.fetch.add": "เพิ่ม {{count}} โมเดล",
+  "provider.custom.edit.title": "แก้ไขผู้ให้บริการ",
   "provider.custom.headers.label": "ส่วนหัว (ไม่จำเป็น)",
   "provider.custom.headers.key.label": "ส่วนหัว",
   "provider.custom.headers.key.placeholder": "Header-Name",
@@ -905,8 +919,7 @@ export const dict = {
   "settings.autocomplete.title": "เติมข้อความอัตโนมัติ",
   "settings.notifications.title": "การแจ้งเตือน",
   "settings.context.title": "บริบท",
-  "settings.terminal.title": "เทอร์มินัล",
-  "settings.prompts.title": "พรอมต์",
+
   "settings.experimental.title": "ทดลอง",
   "settings.language.title": "ภาษา",
   "settings.aboutKiloCode.title": "เกี่ยวกับ Kilo Code",
@@ -956,6 +969,17 @@ export const dict = {
   "settings.aboutKiloCode.resetSettings.description":
     "รีเซ็ตการตั้งค่าส่วนขยาย Kilo Code ทั้งหมดเป็นค่าเริ่มต้น ไม่ส่งผลกระทบต่อการกำหนดค่า CLI หรือแบ็กเอนด์",
   "settings.aboutKiloCode.resetSettings.button": "รีเซ็ตการตั้งค่าทั้งหมด",
+  "settings.aboutKiloCode.settingsTransfer.title": "ถ่ายโอนการตั้งค่า",
+  "settings.aboutKiloCode.settingsTransfer.description":
+    "ส่งออกหรือนำเข้าการตั้งค่าเพื่อถ่ายโอนระหว่างอินสแตนซ์ VS Code",
+  "settings.aboutKiloCode.exportSettings": "ส่งออก",
+  "settings.aboutKiloCode.importSettings": "นำเข้า",
+  "settings.aboutKiloCode.importSettings.invalidJson": "ไฟล์ JSON ไม่ถูกต้อง กรุณาเลือกไฟล์การตั้งค่าที่ถูกต้อง",
+  "settings.aboutKiloCode.importSettings.invalidConfig": "ไฟล์ไม่มีการตั้งค่า Kilo ที่ถูกต้อง",
+  "settings.aboutKiloCode.importSettings.tooLarge": "ไฟล์มีขนาดใหญ่เกินไป ไฟล์การตั้งค่าต้องมีขนาดไม่เกิน 1 MB",
+  "settings.aboutKiloCode.importSettings.newerVersion":
+    "ไฟล์นี้ถูกส่งออกจาก Kilo เวอร์ชันใหม่กว่า การตั้งค่าบางรายการอาจถูกข้ามไป",
+  "settings.aboutKiloCode.importSettings.success": "นำเข้าการตั้งค่าแล้ว ตรวจสอบการเปลี่ยนแปลงด้านบน จากนั้นคลิกบันทึก",
 
   "settings.agentBehaviour.subtab.modes": "โหมด",
   "settings.agentBehaviour.subtab.agents": "Agents",
@@ -979,8 +1003,7 @@ export const dict = {
 
   "common.add": "เพิ่ม",
   "common.choose": "เลือก…",
-  "settings.notImplemented": "ส่วนนี้ยังไม่ได้ใช้งาน",
-  "settings.notImplemented.description": "จะมีตัวเลือกการกำหนดค่าและข้อความอธิบาย",
+
   "settings.autocomplete.autoTrigger.title": "เปิดใช้งานการเติมอัตโนมัติแบบอินไลน์",
   "settings.autocomplete.autoTrigger.description": "แสดงข้อเสนอแนะการเติมอัตโนมัติระหว่างพิมพ์",
   "settings.autocomplete.smartKeybinding.title": "เปิดใช้งานปุ่มลัดงานอินไลน์อัจฉริยะ",
@@ -1122,7 +1145,7 @@ export const dict = {
     "ไม่มีคำสั่งแบบกำหนดเองที่กำหนดค่าไว้ เพิ่มคำสั่งใน opencode.json เพื่อดูที่นี่",
   "settings.agentBehaviour.workflows.detail.description": "คำอธิบาย",
   "settings.agentBehaviour.workflows.detail.template": "เทมเพลต",
-  "settings.agentBehaviour.notImplemented": "ยังไม่ได้ใช้งาน",
+
   "settings.autoApprove.description":
     "กำหนดวิธีอนุญาตการทำงานของเครื่องมือ โดยค่าเริ่มต้นเครื่องมือส่วนใหญ่คืออนุญาต ส่วน doom_loop และ external_directory ค่าเริ่มต้นคือถาม",
   "settings.autoApprove.level.allow": "อนุญาต",
@@ -1170,7 +1193,8 @@ export const dict = {
   "settings.providers.defaultModel.title": "โมเดลเริ่มต้น",
   "settings.providers.defaultModel.description": "โมเดลหลักสำหรับบทสนทนา",
   "settings.providers.smallModel.title": "โมเดลขนาดเล็ก",
-  "settings.providers.smallModel.description": "โมเดลน้ำหนักเบาสำหรับสร้างชื่อและงานด่วน",
+  "settings.providers.smallModel.description":
+    "โมเดลน้ำหนักเบาสำหรับสร้างชื่อ สร้างข้อความคอมมิต ปรับปรุงพรอมต์ และงานด่วนอื่นๆ",
   "settings.providers.disabled": "ผู้ให้บริการที่ปิดใช้งาน",
   "settings.providers.disabled.description": "ผู้ให้บริการที่จะซ่อนจากรายการ",
   "settings.providers.enabled": "ผู้ให้บริการที่เปิดใช้งาน (รายการที่อนุญาต)",

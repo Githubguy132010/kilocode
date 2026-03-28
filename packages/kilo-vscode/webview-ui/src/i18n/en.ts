@@ -752,6 +752,20 @@ export const dict = {
   "provider.custom.models.name.placeholder": "Display Name",
   "provider.custom.models.remove": "Remove model",
   "provider.custom.models.add": "Add model",
+  "provider.custom.models.fetch": "Fetch models",
+  "provider.custom.models.fetching": "Fetching\u2026",
+  "provider.custom.models.fetch.error": "Failed to fetch models: {{error}}",
+  "provider.custom.models.fetch.authError": "Authentication failed. Check the API key above and try again.",
+  "provider.custom.models.fetch.empty": "No models found on this server.",
+  "provider.custom.models.fetch.added": "Added {{count}} model(s).",
+  "provider.custom.models.fetch.allExist": "All fetched models are already added.",
+  "provider.custom.models.fetch.selectAll": "Select all",
+  "provider.custom.models.fetch.deselectAll": "Deselect all",
+  "provider.custom.models.fetch.found": "{{count}} models found",
+  "provider.custom.models.fetch.showing": "Showing {{shown}} of {{total}}",
+  "provider.custom.models.fetch.search": "Search models\u2026",
+  "provider.custom.models.fetch.add": "Add {{count}} model(s)",
+  "provider.custom.edit.title": "Edit provider",
   "provider.custom.headers.label": "Headers (optional)",
   "provider.custom.headers.key.label": "Header",
   "provider.custom.headers.key.placeholder": "Header-Name",
@@ -909,8 +923,7 @@ export const dict = {
   "settings.autocomplete.title": "Autocomplete",
   "settings.notifications.title": "Notifications",
   "settings.context.title": "Context",
-  "settings.terminal.title": "Terminal",
-  "settings.prompts.title": "Prompts",
+
   "settings.experimental.title": "Experimental",
   "settings.language.title": "Language",
   "settings.aboutKiloCode.title": "About Kilo Code",
@@ -961,6 +974,17 @@ export const dict = {
   "settings.aboutKiloCode.resetSettings.description":
     "Reset all Kilo Code extension settings to their default values. This does not affect CLI or backend configuration.",
   "settings.aboutKiloCode.resetSettings.button": "Reset All Settings",
+  "settings.aboutKiloCode.settingsTransfer.title": "Settings Transfer",
+  "settings.aboutKiloCode.settingsTransfer.description":
+    "Export or import your settings to transfer them between VS Code instances.",
+  "settings.aboutKiloCode.exportSettings": "Export",
+  "settings.aboutKiloCode.importSettings": "Import",
+  "settings.aboutKiloCode.importSettings.invalidJson": "Invalid JSON file. Please select a valid settings file.",
+  "settings.aboutKiloCode.importSettings.invalidConfig": "File does not contain valid Kilo settings.",
+  "settings.aboutKiloCode.importSettings.tooLarge": "File is too large. Settings files must be under 1 MB.",
+  "settings.aboutKiloCode.importSettings.newerVersion":
+    "This file was exported from a newer version of Kilo. Some settings may be ignored.",
+  "settings.aboutKiloCode.importSettings.success": "Settings imported. Review the changes above, then click Save.",
 
   "settings.agentBehaviour.subtab.modes": "Modes",
   "settings.agentBehaviour.subtab.agents": "Agents",
@@ -986,10 +1010,6 @@ export const dict = {
 
   "common.add": "Add",
   "common.choose": "Choose…",
-
-  "settings.notImplemented": "This section is not implemented yet.",
-  "settings.notImplemented.description":
-    "It will contain configuration options and explanatory text related to the selected settings category. During reimplementation, use this space to validate layout, spacing, scrolling behavior, and navigation state before wiring up real controls.",
 
   "settings.autocomplete.autoTrigger.title": "Enable automatic inline completions",
   "settings.autocomplete.autoTrigger.description": "Automatically show inline completion suggestions as you type",
@@ -1103,7 +1123,7 @@ export const dict = {
     "No custom commands configured. Add commands to your opencode.json to see them here.",
   "settings.agentBehaviour.workflows.detail.description": "Description",
   "settings.agentBehaviour.workflows.detail.template": "Template",
-  "settings.agentBehaviour.notImplemented": "Not yet implemented.",
+
   "settings.agentBehaviour.createMode": "Create New Mode",
   "settings.agentBehaviour.createMode.name": "Name",
   "settings.agentBehaviour.createMode.name.placeholder": "e.g. reviewer",
@@ -1190,7 +1210,8 @@ export const dict = {
   "settings.providers.defaultModel.title": "Default Model",
   "settings.providers.defaultModel.description": "Primary model for conversations",
   "settings.providers.smallModel.title": "Small Model",
-  "settings.providers.smallModel.description": "Lightweight model for title generation and other quick tasks",
+  "settings.providers.smallModel.description":
+    "Lightweight model for title generation, commit message generation, prompt enhancement, and other quick tasks",
   "settings.providers.modeModels": "Model per Mode",
   "settings.providers.modeModels.description":
     "Override the default model for specific modes. If not set, the global default model is used.",

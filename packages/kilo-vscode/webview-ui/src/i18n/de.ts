@@ -762,6 +762,21 @@ export const dict = {
   "provider.custom.models.name.placeholder": "Anzeigename",
   "provider.custom.models.remove": "Modell entfernen",
   "provider.custom.models.add": "Modell hinzufügen",
+  "provider.custom.models.fetch": "Modelle abrufen",
+  "provider.custom.models.fetching": "Abrufen\u2026",
+  "provider.custom.models.fetch.error": "Modelle konnten nicht abgerufen werden: {{error}}",
+  "provider.custom.models.fetch.authError":
+    "Authentifizierung fehlgeschlagen. Überprüfen Sie den API-Schlüssel oben und versuchen Sie es erneut.",
+  "provider.custom.models.fetch.empty": "Keine Modelle auf diesem Server gefunden.",
+  "provider.custom.models.fetch.added": "{{count}} Modell(e) hinzugefügt.",
+  "provider.custom.models.fetch.allExist": "Alle abgerufenen Modelle sind bereits hinzugefügt.",
+  "provider.custom.models.fetch.selectAll": "Alle auswählen",
+  "provider.custom.models.fetch.deselectAll": "Alle abwählen",
+  "provider.custom.models.fetch.found": "{{count}} Modelle gefunden",
+  "provider.custom.models.fetch.showing": "{{shown}} von {{total}} angezeigt",
+  "provider.custom.models.fetch.search": "Modelle suchen\u2026",
+  "provider.custom.models.fetch.add": "{{count}} Modell(e) hinzufügen",
+  "provider.custom.edit.title": "Anbieter bearbeiten",
   "provider.custom.headers.label": "Header (optional)",
   "provider.custom.headers.key.label": "Header",
   "provider.custom.headers.key.placeholder": "Header-Name",
@@ -920,8 +935,7 @@ export const dict = {
   "settings.autocomplete.title": "Autovervollständigung",
   "settings.notifications.title": "Benachrichtigungen",
   "settings.context.title": "Kontext",
-  "settings.terminal.title": "Terminal",
-  "settings.prompts.title": "Prompts",
+
   "settings.experimental.title": "Experimentell",
   "settings.language.title": "Sprache",
   "settings.aboutKiloCode.title": "Über Kilo Code",
@@ -974,6 +988,20 @@ export const dict = {
   "settings.aboutKiloCode.resetSettings.description":
     "Alle Kilo Code-Erweiterungseinstellungen auf Standardwerte zurücksetzen. Dies hat keinen Einfluss auf die CLI- oder Backend-Konfiguration.",
   "settings.aboutKiloCode.resetSettings.button": "Alle Einstellungen zurücksetzen",
+  "settings.aboutKiloCode.settingsTransfer.title": "Einstellungen übertragen",
+  "settings.aboutKiloCode.settingsTransfer.description":
+    "Exportieren oder importieren Sie Ihre Einstellungen, um sie zwischen VS Code-Instanzen zu übertragen.",
+  "settings.aboutKiloCode.exportSettings": "Exportieren",
+  "settings.aboutKiloCode.importSettings": "Importieren",
+  "settings.aboutKiloCode.importSettings.invalidJson":
+    "Ungültige JSON-Datei. Bitte wählen Sie eine gültige Einstellungsdatei aus.",
+  "settings.aboutKiloCode.importSettings.invalidConfig": "Die Datei enthält keine gültigen Kilo-Einstellungen.",
+  "settings.aboutKiloCode.importSettings.tooLarge":
+    "Die Datei ist zu groß. Einstellungsdateien müssen kleiner als 1 MB sein.",
+  "settings.aboutKiloCode.importSettings.newerVersion":
+    "Diese Datei wurde mit einer neueren Version von Kilo exportiert. Einige Einstellungen werden möglicherweise ignoriert.",
+  "settings.aboutKiloCode.importSettings.success":
+    "Einstellungen importiert. Überprüfen Sie die obigen Änderungen und klicken Sie dann auf Speichern.",
 
   "settings.agentBehaviour.subtab.modes": "Modi",
   "settings.agentBehaviour.subtab.agents": "Agents",
@@ -999,9 +1027,7 @@ export const dict = {
 
   "common.add": "Hinzufügen",
   "common.choose": "Auswählen…",
-  "settings.notImplemented": "Dieser Bereich ist noch nicht implementiert.",
-  "settings.notImplemented.description":
-    "Er wird Konfigurationsoptionen und erklärende Texte zur ausgewählten Einstellungskategorie enthalten.",
+
   "settings.autocomplete.autoTrigger.title": "Automatische Inline-Vervollständigung aktivieren",
   "settings.autocomplete.autoTrigger.description":
     "Inline-Vervollständigungsvorschläge beim Tippen automatisch anzeigen",
@@ -1152,7 +1178,7 @@ export const dict = {
     "Keine benutzerdefinierten Befehle konfiguriert. Fügen Sie Befehle zu opencode.json hinzu, um sie hier zu sehen.",
   "settings.agentBehaviour.workflows.detail.description": "Beschreibung",
   "settings.agentBehaviour.workflows.detail.template": "Vorlage",
-  "settings.agentBehaviour.notImplemented": "Noch nicht implementiert.",
+
   "settings.autoApprove.description":
     "Legen Sie fest, wie Tools ausgeführt werden dürfen. Die meisten Tools sind standardmäßig auf Zulassen eingestellt. doom_loop und external_directory sind standardmäßig auf Fragen eingestellt.",
   "settings.autoApprove.level.allow": "Erlauben",
@@ -1208,7 +1234,8 @@ export const dict = {
   "settings.providers.defaultModel.title": "Standardmodell",
   "settings.providers.defaultModel.description": "Primäres Modell für Gespräche",
   "settings.providers.smallModel.title": "Kleines Modell",
-  "settings.providers.smallModel.description": "Leichtgewichtiges Modell für Titelgenerierung und schnelle Aufgaben",
+  "settings.providers.smallModel.description":
+    "Leichtgewichtiges Modell für Titelgenerierung, Commit-Nachrichten, Prompt-Verbesserung und andere schnelle Aufgaben",
   "settings.providers.disabled": "Deaktivierte Anbieter",
   "settings.providers.disabled.description": "Anbieter aus der Anbieterliste ausblenden",
   "settings.providers.enabled": "Aktivierte Anbieter (Whitelist)",

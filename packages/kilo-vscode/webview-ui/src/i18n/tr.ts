@@ -753,6 +753,21 @@ export const dict = {
   "provider.custom.models.name.placeholder": "Görünen Ad",
   "provider.custom.models.remove": "Modeli kaldır",
   "provider.custom.models.add": "Model ekle",
+  "provider.custom.models.fetch": "Modelleri getir",
+  "provider.custom.models.fetching": "Getiriliyor\u2026",
+  "provider.custom.models.fetch.error": "Modeller getirilemedi: {{error}}",
+  "provider.custom.models.fetch.authError":
+    "Kimlik doğrulama başarısız oldu. Yukarıdaki API anahtarını kontrol edin ve tekrar deneyin.",
+  "provider.custom.models.fetch.empty": "Bu sunucuda model bulunamadı.",
+  "provider.custom.models.fetch.added": "{{count}} model eklendi.",
+  "provider.custom.models.fetch.allExist": "Getirilen tüm modeller zaten eklenmiş.",
+  "provider.custom.models.fetch.selectAll": "Tümünü seç",
+  "provider.custom.models.fetch.deselectAll": "Tümünün seçimini kaldır",
+  "provider.custom.models.fetch.found": "{{count}} model bulundu",
+  "provider.custom.models.fetch.showing": "{{total}} modelden {{shown}} tanesi gösteriliyor",
+  "provider.custom.models.fetch.search": "Model ara\u2026",
+  "provider.custom.models.fetch.add": "{{count}} model ekle",
+  "provider.custom.edit.title": "Sağlayıcıyı düzenle",
   "provider.custom.headers.label": "Başlıklar (isteğe bağlı)",
   "provider.custom.headers.key.label": "Başlık",
   "provider.custom.headers.key.placeholder": "Başlık-Adı",
@@ -911,8 +926,7 @@ export const dict = {
   "settings.autocomplete.title": "Otomatik Tamamlama",
   "settings.notifications.title": "Bildirimler",
   "settings.context.title": "Bağlam",
-  "settings.terminal.title": "Terminal",
-  "settings.prompts.title": "Komutlar",
+
   "settings.experimental.title": "Deneysel",
   "settings.language.title": "Dil",
   "settings.aboutKiloCode.title": "Kilo Code Hakkında",
@@ -964,6 +978,18 @@ export const dict = {
   "settings.aboutKiloCode.resetSettings.description":
     "Tüm Kilo Code uzantı ayarlarını varsayılan değerlerine sıfırla. Bu, CLI veya arka uç yapılandırmasını etkilemez.",
   "settings.aboutKiloCode.resetSettings.button": "Tüm Ayarları Sıfırla",
+  "settings.aboutKiloCode.settingsTransfer.title": "Ayar Aktarımı",
+  "settings.aboutKiloCode.settingsTransfer.description":
+    "Ayarlarınızı VS Code örnekleri arasında aktarmak için dışa veya içe aktarın.",
+  "settings.aboutKiloCode.exportSettings": "Dışa Aktar",
+  "settings.aboutKiloCode.importSettings": "İçe Aktar",
+  "settings.aboutKiloCode.importSettings.invalidJson": "Geçersiz JSON dosyası. Lütfen geçerli bir ayar dosyası seçin.",
+  "settings.aboutKiloCode.importSettings.invalidConfig": "Dosya geçerli Kilo ayarları içermiyor.",
+  "settings.aboutKiloCode.importSettings.tooLarge": "Dosya çok büyük. Ayar dosyaları 1 MB altında olmalıdır.",
+  "settings.aboutKiloCode.importSettings.newerVersion":
+    "Bu dosya Kilo'nun daha yeni bir sürümünden dışa aktarılmış. Bazı ayarlar göz ardı edilebilir.",
+  "settings.aboutKiloCode.importSettings.success":
+    "Ayarlar içe aktarıldı. Yukarıdaki değişiklikleri gözden geçirin, ardından Kaydet'e tıklayın.",
 
   "settings.agentBehaviour.subtab.modes": "Modlar",
   "settings.agentBehaviour.subtab.agents": "Ajanlar",
@@ -988,10 +1014,6 @@ export const dict = {
 
   "common.add": "Ekle",
   "common.choose": "Seç…",
-
-  "settings.notImplemented": "Bu bölüm henüz uygulanmadı.",
-  "settings.notImplemented.description":
-    "Seçilen ayar kategorisiyle ilgili yapılandırma seçenekleri ve açıklayıcı metin içerecek. Yeniden uygulama sırasında gerçek kontrolleri bağlamadan önce düzen, boşluk, kaydırma davranışı ve gezinme durumunu doğrulamak için bu alanı kullanın.",
 
   "settings.autocomplete.autoTrigger.title": "Otomatik satır içi tamamlamaları etkinleştir",
   "settings.autocomplete.autoTrigger.description": "Yazarken satır içi tamamlama önerilerini otomatik göster",
@@ -1117,7 +1139,6 @@ export const dict = {
     "Yapılandırılmış özel komut yok. Burada görmek için opencode.json dosyasına komutlar ekleyin.",
   "settings.agentBehaviour.workflows.detail.description": "Açıklama",
   "settings.agentBehaviour.workflows.detail.template": "Şablon",
-  "settings.agentBehaviour.notImplemented": "Henüz uygulanmadı.",
 
   "settings.autoApprove.description":
     "Araçların nasıl çalıştırılacağını tanımlayın. Çoğu araç varsayılan olarak İzin Ver'dir. doom_loop ve external_directory varsayılan olarak Sor'dur.",
@@ -1176,7 +1197,8 @@ export const dict = {
   "settings.providers.defaultModel.title": "Varsayılan Model",
   "settings.providers.defaultModel.description": "Sohbetler için birincil model",
   "settings.providers.smallModel.title": "Küçük Model",
-  "settings.providers.smallModel.description": "Başlık oluşturma ve diğer hızlı görevler için hafif model",
+  "settings.providers.smallModel.description":
+    "Başlık oluşturma, commit mesajı oluşturma, komut istemi iyileştirme ve diğer hızlı görevler için hafif model",
   "settings.providers.modeModels": "Mod Başına Model",
   "settings.providers.modeModels.description":
     "Belirli modlar için varsayılan modeli geçersiz kılın. Ayarlanmadıysa genel varsayılan model kullanılır.",

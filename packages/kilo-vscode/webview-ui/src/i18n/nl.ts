@@ -750,6 +750,21 @@ export const dict = {
   "provider.custom.models.name.placeholder": "Weergavenaam",
   "provider.custom.models.remove": "Model verwijderen",
   "provider.custom.models.add": "Model toevoegen",
+  "provider.custom.models.fetch": "Modellen ophalen",
+  "provider.custom.models.fetching": "Ophalen\u2026",
+  "provider.custom.models.fetch.error": "Kan modellen niet ophalen: {{error}}",
+  "provider.custom.models.fetch.authError":
+    "Authenticatie mislukt. Controleer de API-sleutel hierboven en probeer het opnieuw.",
+  "provider.custom.models.fetch.empty": "Geen modellen gevonden op deze server.",
+  "provider.custom.models.fetch.added": "{{count}} model(len) toegevoegd.",
+  "provider.custom.models.fetch.allExist": "Alle opgehaalde modellen zijn al toegevoegd.",
+  "provider.custom.models.fetch.selectAll": "Alles selecteren",
+  "provider.custom.models.fetch.deselectAll": "Alles deselecteren",
+  "provider.custom.models.fetch.found": "{{count}} modellen gevonden",
+  "provider.custom.models.fetch.showing": "{{shown}} van {{total}} weergegeven",
+  "provider.custom.models.fetch.search": "Modellen zoeken\u2026",
+  "provider.custom.models.fetch.add": "{{count}} model(len) toevoegen",
+  "provider.custom.edit.title": "Provider bewerken",
   "provider.custom.headers.label": "Headers (optioneel)",
   "provider.custom.headers.key.label": "Header",
   "provider.custom.headers.key.placeholder": "Header-Naam",
@@ -908,8 +923,7 @@ export const dict = {
   "settings.autocomplete.title": "Automatisch Aanvullen",
   "settings.notifications.title": "Meldingen",
   "settings.context.title": "Context",
-  "settings.terminal.title": "Terminal",
-  "settings.prompts.title": "Prompts",
+
   "settings.experimental.title": "Experimenteel",
   "settings.language.title": "Taal",
   "settings.aboutKiloCode.title": "Over Kilo Code",
@@ -961,6 +975,20 @@ export const dict = {
   "settings.aboutKiloCode.resetSettings.description":
     "Reset alle instellingen van de Kilo Code extensie naar hun standaardwaarden. Dit heeft geen invloed op CLI of backend configuratie.",
   "settings.aboutKiloCode.resetSettings.button": "Alle instellingen resetten",
+  "settings.aboutKiloCode.settingsTransfer.title": "Instellingen overdragen",
+  "settings.aboutKiloCode.settingsTransfer.description":
+    "Exporteer of importeer uw instellingen om ze tussen VS Code-instanties over te dragen.",
+  "settings.aboutKiloCode.exportSettings": "Exporteren",
+  "settings.aboutKiloCode.importSettings": "Importeren",
+  "settings.aboutKiloCode.importSettings.invalidJson":
+    "Ongeldig JSON-bestand. Selecteer een geldig instellingenbestand.",
+  "settings.aboutKiloCode.importSettings.invalidConfig": "Het bestand bevat geen geldige Kilo-instellingen.",
+  "settings.aboutKiloCode.importSettings.tooLarge":
+    "Het bestand is te groot. Instellingenbestanden moeten kleiner zijn dan 1 MB.",
+  "settings.aboutKiloCode.importSettings.newerVersion":
+    "Dit bestand is geëxporteerd vanuit een nieuwere versie van Kilo. Sommige instellingen worden mogelijk genegeerd.",
+  "settings.aboutKiloCode.importSettings.success":
+    "Instellingen geïmporteerd. Controleer de bovenstaande wijzigingen en klik vervolgens op Opslaan.",
 
   "settings.agentBehaviour.subtab.modes": "Modi",
   "settings.agentBehaviour.subtab.agents": "Agents",
@@ -985,10 +1013,6 @@ export const dict = {
 
   "common.add": "Toevoegen",
   "common.choose": "Kies…",
-
-  "settings.notImplemented": "Dit gedeelte is nog niet geïmplementeerd.",
-  "settings.notImplemented.description":
-    "Het zal configuratie-opties en verklarende tekst bevatten gerelateerd aan de geselecteerde instellingencategorie. Gebruik deze ruimte tijdens het opnieuw implementeren om lay-out, spatiëring, scrollgedrag en navigatiestatus te valideren voordat de daadwerkelijke besturingselementen worden gekoppeld.",
 
   "settings.autocomplete.autoTrigger.title": "Automatische inline aanvullingen inschakelen",
   "settings.autocomplete.autoTrigger.description":
@@ -1119,7 +1143,6 @@ export const dict = {
     "Geen aangepaste commando's geconfigureerd. Voeg commando's toe aan opencode.json om ze hier te zien.",
   "settings.agentBehaviour.workflows.detail.description": "Beschrijving",
   "settings.agentBehaviour.workflows.detail.template": "Sjabloon",
-  "settings.agentBehaviour.notImplemented": "Nog niet geïmplementeerd.",
 
   "settings.autoApprove.description":
     "Definieer hoe tools mogen worden uitgevoerd. De meeste tools staan standaard op Toestaan. doom_loop en external_directory staan standaard op Vragen.",
@@ -1181,7 +1204,7 @@ export const dict = {
   "settings.providers.defaultModel.description": "Primair model voor gesprekken",
   "settings.providers.smallModel.title": "Klein Model",
   "settings.providers.smallModel.description":
-    "Lichtgewicht model voor het genereren van titels en andere snelle taken",
+    "Lichtgewicht model voor het genereren van titels, commit-berichten, promptverbetering en andere snelle taken",
   "settings.providers.modeModels": "Model per Modus",
   "settings.providers.modeModels.description":
     "Overschrijf het standaard model voor specifieke modi. Indien niet ingesteld, wordt het globale standaard model gebruikt.",

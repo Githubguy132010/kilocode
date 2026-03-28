@@ -758,6 +758,20 @@ export const dict = {
   "provider.custom.models.name.placeholder": "Отображаемое имя",
   "provider.custom.models.remove": "Удалить модель",
   "provider.custom.models.add": "Добавить модель",
+  "provider.custom.models.fetch": "Получить модели",
+  "provider.custom.models.fetching": "Загрузка\u2026",
+  "provider.custom.models.fetch.error": "Не удалось получить модели: {{error}}",
+  "provider.custom.models.fetch.authError": "Ошибка аутентификации. Проверьте API-ключ выше и попробуйте снова.",
+  "provider.custom.models.fetch.empty": "На этом сервере модели не найдены.",
+  "provider.custom.models.fetch.added": "Добавлено {{count}} модель(ей).",
+  "provider.custom.models.fetch.allExist": "Все полученные модели уже добавлены.",
+  "provider.custom.models.fetch.selectAll": "Выбрать все",
+  "provider.custom.models.fetch.deselectAll": "Снять выбор",
+  "provider.custom.models.fetch.found": "Найдено {{count}} моделей",
+  "provider.custom.models.fetch.showing": "Показано {{shown}} из {{total}}",
+  "provider.custom.models.fetch.search": "Поиск моделей\u2026",
+  "provider.custom.models.fetch.add": "Добавить {{count}} модель(ей)",
+  "provider.custom.edit.title": "Редактировать провайдера",
   "provider.custom.headers.label": "Заголовки (необязательно)",
   "provider.custom.headers.key.label": "Заголовок",
   "provider.custom.headers.key.placeholder": "Header-Name",
@@ -916,8 +930,7 @@ export const dict = {
   "settings.autocomplete.title": "Автодополнение",
   "settings.notifications.title": "Уведомления",
   "settings.context.title": "Контекст",
-  "settings.terminal.title": "Терминал",
-  "settings.prompts.title": "Промпты",
+
   "settings.experimental.title": "Экспериментальное",
   "settings.language.title": "Язык",
   "settings.aboutKiloCode.title": "О Kilo Code",
@@ -968,6 +981,18 @@ export const dict = {
   "settings.aboutKiloCode.resetSettings.description":
     "Сбросить все настройки расширения Kilo Code до значений по умолчанию. Это не влияет на конфигурацию CLI или бэкенда.",
   "settings.aboutKiloCode.resetSettings.button": "Сбросить все настройки",
+  "settings.aboutKiloCode.settingsTransfer.title": "Перенос настроек",
+  "settings.aboutKiloCode.settingsTransfer.description":
+    "Экспортируйте или импортируйте настройки для переноса между экземплярами VS Code.",
+  "settings.aboutKiloCode.exportSettings": "Экспорт",
+  "settings.aboutKiloCode.importSettings": "Импорт",
+  "settings.aboutKiloCode.importSettings.invalidJson": "Недопустимый файл JSON. Выберите корректный файл настроек.",
+  "settings.aboutKiloCode.importSettings.invalidConfig": "Файл не содержит допустимых настроек Kilo.",
+  "settings.aboutKiloCode.importSettings.tooLarge": "Файл слишком большой. Файлы настроек должны быть менее 1 MB.",
+  "settings.aboutKiloCode.importSettings.newerVersion":
+    "Этот файл был экспортирован из более новой версии Kilo. Некоторые настройки могут быть проигнорированы.",
+  "settings.aboutKiloCode.importSettings.success":
+    "Настройки импортированы. Просмотрите изменения выше и нажмите «Сохранить».",
 
   "settings.agentBehaviour.subtab.modes": "Режимы",
   "settings.agentBehaviour.subtab.agents": "Agents",
@@ -992,8 +1017,7 @@ export const dict = {
 
   "common.add": "Добавить",
   "common.choose": "Выбрать…",
-  "settings.notImplemented": "Этот раздел ещё не реализован.",
-  "settings.notImplemented.description": "Здесь будут параметры конфигурации и пояснительный текст.",
+
   "settings.autocomplete.autoTrigger.title": "Включить автоматическое встроенное дополнение",
   "settings.autocomplete.autoTrigger.description": "Автоматически показывать предложения дополнения при вводе",
   "settings.autocomplete.smartKeybinding.title": "Включить умную клавишу встроенной задачи",
@@ -1138,7 +1162,7 @@ export const dict = {
     "Пользовательские команды не настроены. Добавьте команды в opencode.json, чтобы увидеть их здесь.",
   "settings.agentBehaviour.workflows.detail.description": "Описание",
   "settings.agentBehaviour.workflows.detail.template": "Шаблон",
-  "settings.agentBehaviour.notImplemented": "Ещё не реализовано.",
+
   "settings.autoApprove.description":
     "Определите правила запуска инструментов. Большинство инструментов по умолчанию Разрешены. Для doom_loop и external_directory по умолчанию установлено Спрашивать.",
   "settings.autoApprove.level.allow": "Разрешить",
@@ -1193,7 +1217,8 @@ export const dict = {
   "settings.providers.defaultModel.title": "Модель по умолчанию",
   "settings.providers.defaultModel.description": "Основная модель для разговоров",
   "settings.providers.smallModel.title": "Малая модель",
-  "settings.providers.smallModel.description": "Лёгкая модель для генерации заголовков и быстрых задач",
+  "settings.providers.smallModel.description":
+    "Лёгкая модель для генерации заголовков, сообщений коммитов, улучшения промптов и других быстрых задач",
   "settings.providers.disabled": "Отключённые провайдеры",
   "settings.providers.disabled.description": "Провайдеры для скрытия из списка",
   "settings.providers.enabled": "Включённые провайдеры (белый список)",

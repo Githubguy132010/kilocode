@@ -757,6 +757,21 @@ export const dict = {
   "provider.custom.models.name.placeholder": "Naziv za prikaz",
   "provider.custom.models.remove": "Ukloni model",
   "provider.custom.models.add": "Dodaj model",
+  "provider.custom.models.fetch": "Preuzmi modele",
+  "provider.custom.models.fetching": "Preuzimanje\u2026",
+  "provider.custom.models.fetch.error": "Preuzimanje modela nije uspjelo: {{error}}",
+  "provider.custom.models.fetch.authError":
+    "Autentifikacija nije uspjela. Provjerite API ključ iznad i pokušajte ponovo.",
+  "provider.custom.models.fetch.empty": "Nisu pronađeni modeli na ovom serveru.",
+  "provider.custom.models.fetch.added": "Dodano {{count}} model(a).",
+  "provider.custom.models.fetch.allExist": "Svi preuzeti modeli su već dodani.",
+  "provider.custom.models.fetch.selectAll": "Odaberi sve",
+  "provider.custom.models.fetch.deselectAll": "Poništi odabir",
+  "provider.custom.models.fetch.found": "{{count}} modela pronađeno",
+  "provider.custom.models.fetch.showing": "Prikazano {{shown}} od {{total}}",
+  "provider.custom.models.fetch.search": "Pretraži modele\u2026",
+  "provider.custom.models.fetch.add": "Dodaj {{count}} model(a)",
+  "provider.custom.edit.title": "Uredi provajdera",
   "provider.custom.headers.label": "Zaglavlja (opcionalno)",
   "provider.custom.headers.key.label": "Zaglavlje",
   "provider.custom.headers.key.placeholder": "Header-Name",
@@ -915,8 +930,7 @@ export const dict = {
   "settings.autocomplete.title": "Automatsko dovršavanje",
   "settings.notifications.title": "Obavještenja",
   "settings.context.title": "Kontekst",
-  "settings.terminal.title": "Terminal",
-  "settings.prompts.title": "Upiti",
+
   "settings.experimental.title": "Eksperimentalno",
   "settings.language.title": "Jezik",
   "settings.aboutKiloCode.title": "O Kilo Code-u",
@@ -967,6 +981,18 @@ export const dict = {
   "settings.aboutKiloCode.resetSettings.description":
     "Resetujte sve postavke Kilo Code ekstenzije na zadane vrijednosti. Ovo ne utiče na CLI ili backend konfiguraciju.",
   "settings.aboutKiloCode.resetSettings.button": "Resetuj sve postavke",
+  "settings.aboutKiloCode.settingsTransfer.title": "Prijenos postavki",
+  "settings.aboutKiloCode.settingsTransfer.description":
+    "Izvezite ili uvezite postavke za prijenos između VS Code instanci.",
+  "settings.aboutKiloCode.exportSettings": "Izvezi",
+  "settings.aboutKiloCode.importSettings": "Uvezi",
+  "settings.aboutKiloCode.importSettings.invalidJson": "Nevažeći JSON fajl. Odaberite važeći fajl s postavkama.",
+  "settings.aboutKiloCode.importSettings.invalidConfig": "Fajl ne sadrži važeće Kilo postavke.",
+  "settings.aboutKiloCode.importSettings.tooLarge": "Fajl je prevelik. Fajlovi s postavkama moraju biti manji od 1 MB.",
+  "settings.aboutKiloCode.importSettings.newerVersion":
+    "Ovaj fajl je izvezen iz novije verzije Kilo-a. Neke postavke mogu biti zanemarene.",
+  "settings.aboutKiloCode.importSettings.success":
+    "Postavke su uvezene. Pregledajte promjene iznad, a zatim kliknite Sačuvaj.",
 
   "settings.agentBehaviour.subtab.modes": "Modovi",
   "settings.agentBehaviour.subtab.agents": "Agents",
@@ -991,8 +1017,7 @@ export const dict = {
 
   "common.add": "Dodaj",
   "common.choose": "Odaberi…",
-  "settings.notImplemented": "Ovaj dio još nije implementiran.",
-  "settings.notImplemented.description": "Sadržavat će opcije konfiguracije i objašnjenje.",
+
   "settings.autocomplete.autoTrigger.title": "Omogući automatsko inline dovršavanje",
   "settings.autocomplete.autoTrigger.description": "Automatski prikaži prijedloge inline dovršavanja tokom tipkanja",
   "settings.autocomplete.smartKeybinding.title": "Omogući pametnu prečicu inline zadatka",
@@ -1136,7 +1161,7 @@ export const dict = {
     "Nema konfiguriranih prilagođenih komandi. Dodajte komande u opencode.json da ih vidite ovdje.",
   "settings.agentBehaviour.workflows.detail.description": "Opis",
   "settings.agentBehaviour.workflows.detail.template": "Predložak",
-  "settings.agentBehaviour.notImplemented": "Još nije implementirano.",
+
   "settings.autoApprove.description":
     "Definišite kako je dozvoljeno pokretanje alata. Većina alata je podrazumijevano na Dozvoli. doom_loop i external_directory su podrazumijevano na Pitaj.",
   "settings.autoApprove.level.allow": "Dozvoli",
@@ -1193,7 +1218,8 @@ export const dict = {
   "settings.providers.defaultModel.title": "Zadani model",
   "settings.providers.defaultModel.description": "Primarni model za razgovore",
   "settings.providers.smallModel.title": "Mali model",
-  "settings.providers.smallModel.description": "Lagani model za generiranje naslova i brze zadatke",
+  "settings.providers.smallModel.description":
+    "Lagani model za generiranje naslova, commit poruka, poboljšanje promptova i druge brze zadatke",
   "settings.providers.disabled": "Onemogućeni pružatelji",
   "settings.providers.disabled.description": "Pružatelji za skrivanje s popisa",
   "settings.providers.enabled": "Omogućeni pružatelji (bijela lista)",

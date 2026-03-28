@@ -745,6 +745,20 @@ export const dict = {
   "provider.custom.models.name.placeholder": "الاسم المعروض",
   "provider.custom.models.remove": "إزالة النموذج",
   "provider.custom.models.add": "إضافة نموذج",
+  "provider.custom.models.fetch": "جلب النماذج",
+  "provider.custom.models.fetching": "جارٍ الجلب\u2026",
+  "provider.custom.models.fetch.error": "فشل جلب النماذج: {{error}}",
+  "provider.custom.models.fetch.authError": "فشلت المصادقة. تحقق من مفتاح API أعلاه وحاول مرة أخرى.",
+  "provider.custom.models.fetch.empty": "لم يتم العثور على نماذج على هذا الخادم.",
+  "provider.custom.models.fetch.added": "تمت إضافة {{count}} نموذج(نماذج).",
+  "provider.custom.models.fetch.allExist": "جميع النماذج المجلوبة مضافة بالفعل.",
+  "provider.custom.models.fetch.selectAll": "تحديد الكل",
+  "provider.custom.models.fetch.deselectAll": "إلغاء تحديد الكل",
+  "provider.custom.models.fetch.found": "تم العثور على {{count}} نموذج",
+  "provider.custom.models.fetch.showing": "عرض {{shown}} من {{total}}",
+  "provider.custom.models.fetch.search": "البحث في النماذج\u2026",
+  "provider.custom.models.fetch.add": "إضافة {{count}} نموذج(نماذج)",
+  "provider.custom.edit.title": "تعديل المزود",
   "provider.custom.headers.label": "الرؤوس (اختياري)",
   "provider.custom.headers.key.label": "الرأس",
   "provider.custom.headers.key.placeholder": "Header-Name",
@@ -903,8 +917,7 @@ export const dict = {
   "settings.autocomplete.title": "الإكمال التلقائي",
   "settings.notifications.title": "الإشعارات",
   "settings.context.title": "السياق",
-  "settings.terminal.title": "المحطة الطرفية",
-  "settings.prompts.title": "الموجهات",
+
   "settings.experimental.title": "تجريبي",
   "settings.language.title": "اللغة",
   "settings.aboutKiloCode.title": "حول Kilo Code",
@@ -955,6 +968,16 @@ export const dict = {
   "settings.aboutKiloCode.resetSettings.description":
     "إعادة تعيين جميع إعدادات إضافة Kilo Code إلى قيمها الافتراضية. لا يؤثر هذا على تكوين CLI أو الواجهة الخلفية.",
   "settings.aboutKiloCode.resetSettings.button": "إعادة تعيين جميع الإعدادات",
+  "settings.aboutKiloCode.settingsTransfer.title": "نقل الإعدادات",
+  "settings.aboutKiloCode.settingsTransfer.description": "تصدير أو استيراد إعداداتك لنقلها بين نُسخ VS Code.",
+  "settings.aboutKiloCode.exportSettings": "تصدير",
+  "settings.aboutKiloCode.importSettings": "استيراد",
+  "settings.aboutKiloCode.importSettings.invalidJson": "ملف JSON غير صالح. يرجى اختيار ملف إعدادات صالح.",
+  "settings.aboutKiloCode.importSettings.invalidConfig": "الملف لا يحتوي على إعدادات Kilo صالحة.",
+  "settings.aboutKiloCode.importSettings.tooLarge": "الملف كبير جدًا. يجب أن تكون ملفات الإعدادات أقل من 1 MB.",
+  "settings.aboutKiloCode.importSettings.newerVersion":
+    "تم تصدير هذا الملف من إصدار أحدث من Kilo. قد يتم تجاهل بعض الإعدادات.",
+  "settings.aboutKiloCode.importSettings.success": "تم استيراد الإعدادات. راجع التغييرات أعلاه، ثم انقر على حفظ.",
 
   "settings.agentBehaviour.subtab.modes": "الأوضاع",
   "settings.agentBehaviour.subtab.agents": "Agents",
@@ -978,8 +1001,7 @@ export const dict = {
 
   "common.add": "إضافة",
   "common.choose": "اختر…",
-  "settings.notImplemented": "هذا القسم لم يتم تنفيذه بعد.",
-  "settings.notImplemented.description": "سيحتوي على خيارات التكوين والنص التوضيحي.",
+
   "settings.autocomplete.autoTrigger.title": "تمكين الإكمال التلقائي المضمّن",
   "settings.autocomplete.autoTrigger.description": "عرض اقتراحات الإكمال المضمّن تلقائياً أثناء الكتابة",
   "settings.autocomplete.smartKeybinding.title": "تمكين اختصار المهمة المضمّنة الذكي",
@@ -1120,7 +1142,7 @@ export const dict = {
   "settings.agentBehaviour.workflows.empty": "لم يتم تهيئة أوامر مخصصة. أضف أوامر إلى opencode.json لرؤيتها هنا.",
   "settings.agentBehaviour.workflows.detail.description": "الوصف",
   "settings.agentBehaviour.workflows.detail.template": "القالب",
-  "settings.agentBehaviour.notImplemented": "لم يتم التنفيذ بعد.",
+
   "settings.autoApprove.description":
     "تحديد كيفية السماح بتشغيل الأدوات. معظم الأدوات معينة افتراضياً على السماح. doom_loop و external_directory معينة افتراضياً على السؤال.",
   "settings.autoApprove.level.allow": "سماح",
@@ -1170,7 +1192,8 @@ export const dict = {
   "settings.providers.defaultModel.title": "النموذج الافتراضي",
   "settings.providers.defaultModel.description": "النموذج الأساسي للمحادثات",
   "settings.providers.smallModel.title": "نموذج صغير",
-  "settings.providers.smallModel.description": "نموذج خفيف لتوليد العناوين والمهام السريعة",
+  "settings.providers.smallModel.description":
+    "نموذج خفيف لتوليد العناوين ورسائل الـ commit وتحسين المطالبات والمهام السريعة الأخرى",
   "settings.providers.disabled": "مزودون معطلون",
   "settings.providers.disabled.description": "مزودون لإخفائهم من القائمة",
   "settings.providers.enabled": "مزودون مفعلون (قائمة بيضاء)",
