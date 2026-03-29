@@ -1360,6 +1360,12 @@ export interface AbortRequest {
   sessionID: string
 }
 
+export interface AbortPartRequest {
+  type: "abortPart"
+  sessionID: string
+  partID: string
+}
+
 export interface RevertSessionRequest {
   type: "revertSession"
   sessionID: string
@@ -1981,6 +1987,7 @@ export interface ContinueInWorktreeProgressMessage {
 export type WebviewMessage =
   | SendMessageRequest
   | AbortRequest
+  | AbortPartRequest
   | RevertSessionRequest
   | UnrevertSessionRequest
   | PermissionResponseRequest

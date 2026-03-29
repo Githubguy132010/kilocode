@@ -163,6 +163,7 @@ interface SessionContextValue {
   sendMessage: (text: string, providerID?: string, modelID?: string, files?: FileAttachment[]) => void
   sendCommand: (command: string, args: string, providerID?: string, modelID?: string, files?: FileAttachment[]) => void
   abort: () => void
+  abortPart: (sessionID: string, partID: string) => void
   compact: () => void
   respondToPermission: (
     permissionId: string,
@@ -1336,6 +1337,14 @@ export const SessionProvider: ParentComponent = (props) => {
     })
   }
 
+  function abortPart(sessionID: string, partID: string) {
+    vscode.postMessage({
+      type: "abortPart",
+      sessionID,
+      partID,
+    })
+  }
+
   function compact() {
     if (!server.isConnected()) {
       console.warn("[Kilo New] Cannot compact: not connected")
@@ -1668,6 +1677,7 @@ export const SessionProvider: ParentComponent = (props) => {
     sendMessage,
     sendCommand,
     abort,
+    abortPart,
     compact,
     respondToPermission,
     replyToQuestion,

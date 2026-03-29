@@ -505,6 +505,9 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
         case "abort":
           await this.handleAbort(message.sessionID)
           break
+        case "abortPart":
+          await this.handleAbortPart(message.sessionID, message.partID)
+          break
         case "revertSession":
           this.handleRevertSession(message.sessionID, message.messageID).catch((e) =>
             console.error("[Kilo New] handleRevertSession failed:", e),
@@ -2118,6 +2121,16 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       await this.client.session.abort({ sessionID: targetSessionID, directory: workspaceDir }, { throwOnError: true })
     } catch (error) {
       console.error("[Kilo New] KiloProvider: Failed to abort session:", error)
+    }
+  }
+
+  private async handleAbortPart(sessionID: string, partID: string): Promise<void> {
+    if (!this.client) return
+    try {
+      const workspaceDir = this.getWorkspaceDirectory(sessionID)
+      await this.client.session.abortPart({ sessionID, directory: workspaceDir, partID }, { throwOnError: true })
+    } catch (error) {
+      console.error("[Kilo New] KiloProvider: Failed to abort part:", error)
     }
   }
 
