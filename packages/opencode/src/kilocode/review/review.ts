@@ -365,7 +365,10 @@ export namespace Review {
       const paths = untracked.stdout.toString().split("\0").filter(Boolean)
       for (const p of paths) {
         // --no-index exits 1 when files differ, which is expected
-        const fd = await $`git diff --no-index -- /dev/null ${p}`.cwd(Instance.directory).quiet().nothrow()
+        const fd = await $`git -c core.quotepath=false diff --no-index -- /dev/null ${p}`
+          .cwd(Instance.directory)
+          .quiet()
+          .nothrow()
         const out = fd.stdout.toString()
         if (out) raw += out
       }
