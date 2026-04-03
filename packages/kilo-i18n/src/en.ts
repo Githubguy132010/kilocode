@@ -17,6 +17,7 @@ export const dict = {
   // Reasoning block label
   "ui.permission.run": "Run",
   "ui.reasoning.label": "Reasoning",
+  "ui.sessionTurn.status.done": "Finished",
 
   // Marketplace
   "marketplace.tab.skills": "Skills",

@@ -4,10 +4,17 @@
  * Matches the v1.0.25 working indicator UX.
  */
 
-import { Component, Show, createSignal, createEffect, onCleanup } from "solid-js"
+/** @jsxImportSource solid-js */
+
+import { Show, createSignal, createEffect, onCleanup } from "solid-js"
+import type { Component } from "solid-js"
+import { Icon } from "@kilocode/kilo-ui/icon"
 import { Spinner } from "@kilocode/kilo-ui/spinner"
 import { useSession } from "../../context/session"
 import { useLanguage } from "../../context/language"
+
+const DoneIcon = Icon as unknown as Component<{ name: string; size?: string }>
+const BusySpinner = Spinner as unknown as Component<{ class?: string }>
 
 export const WorkingIndicator: Component = () => {
   const session = useSession()
@@ -15,6 +22,7 @@ export const WorkingIndicator: Component = () => {
 
   const [elapsed, setElapsed] = createSignal(0)
   const [retryCountdown, setRetryCountdown] = createSignal(0)
+  const [done, setDone] = createSignal<{ text: string; elapsed?: number }>()
 
   createEffect(() => {
     const since = session.busySince()
@@ -24,6 +32,8 @@ export const WorkingIndicator: Component = () => {
       setElapsed(0)
       return
     }
+
+    setDone(undefined)
 
     setElapsed(Math.floor((Date.now() - since) / 1000))
 
@@ -80,13 +90,48 @@ export const WorkingIndicator: Component = () => {
     return perms.length > 0 || questions.length > 0
   }
 
+  createEffect(() => {
+    const status = session.status()
+    const since = session.busySince()
+    if (status !== "idle" || !since || blocked()) return
+
+    const text = (() => {
+      const summary = session.summary()
+      if (!summary) return language.t("ui.sessionTurn.status.done")
+      return language.t("ui.sessionTurn.status.done")
+    })()
+
+    setDone({
+      text,
+      elapsed: Math.max(1, Math.floor((Date.now() - since) / 1000)),
+    })
+
+    const id = setTimeout(() => setDone(undefined), 6000)
+    onCleanup(() => clearTimeout(id))
+  })
+
   return (
-    <Show when={session.status() !== "idle" && !blocked()}>
-      <div class="working-indicator">
-        <Spinner />
-        <span class="working-text">{statusText()}</span>
-        <Show when={elapsed() > 0}>
-          <span class="working-elapsed">{formatElapsed()}</span>
+    <Show when={!blocked() && (session.status() !== "idle" || done())}>
+      <div class="working-indicator" data-state={session.status() !== "idle" ? "working" : "done"}>
+        <Show
+          when={session.status() !== "idle"}
+          fallback={
+            <>
+              <span class="working-icon working-icon-done" aria-hidden="true">
+                <DoneIcon name="check" size="small" />
+              </span>
+              <span class="working-text working-text-done">{done()?.text}</span>
+              <Show when={done()?.elapsed}>
+                <span class="working-elapsed">{done()?.elapsed}s</span>
+              </Show>
+            </>
+          }
+        >
+          <BusySpinner />
+          <span class="working-text">{statusText()}</span>
+          <Show when={elapsed() > 0}>
+            <span class="working-elapsed">{formatElapsed()}</span>
+          </Show>
         </Show>
       </div>
     </Show>

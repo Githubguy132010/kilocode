@@ -2230,9 +2230,37 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
+  padding: 8px 12px;
   font-size: 12px;
   color: var(--vscode-descriptionForeground);
+  margin: 6px 0 0;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: color-mix(in srgb, var(--vscode-editorWidget-background, transparent) 55%, transparent);
+}
+
+.working-indicator[data-state="working"] {
+  border-color: color-mix(in srgb, var(--vscode-focusBorder, #3794ff) 22%, transparent);
+}
+
+.working-indicator[data-state="done"] {
+  color: var(--vscode-testing-iconPassed, #89d185);
+  border-color: color-mix(in srgb, var(--vscode-testing-iconPassed, #89d185) 35%, transparent);
+  background: color-mix(in srgb, var(--vscode-testing-iconPassed, #89d185) 12%, transparent);
+}
+
+.working-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.working-icon-done {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--vscode-testing-iconPassed, #89d185) 18%, transparent);
 }
 
 .working-text {
@@ -2241,6 +2269,10 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.working-text-done {
+  font-weight: 500;
 }
 
 .working-elapsed {

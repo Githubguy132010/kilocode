@@ -12,6 +12,7 @@ import { StoryProviders, mockSessionValue } from "./StoryProviders"
 import { ChatView } from "../components/chat/ChatView"
 import { TaskHeader } from "../components/chat/TaskHeader"
 import { QuestionDock } from "../components/chat/QuestionDock"
+import { WorkingIndicator } from "../components/shared/WorkingIndicator"
 import { SessionContext } from "../context/session"
 import { ServerContext } from "../context/server"
 import type { QuestionRequest, TodoItem } from "../types/messages"
@@ -110,6 +111,38 @@ export const ChatViewWithMessages: Story = {
           </div>
         </SessionContext.Provider>
       </StoryProviders>
+    )
+  },
+}
+
+export const WorkingIndicatorStates: Story = {
+  name: "ChatView - working indicator states",
+  render: () => {
+    const now = Date.now()
+    const busy = {
+      ...mockSessionValue({ id: SESSION_ID, status: "busy" }),
+      statusText: () => "Reviewing edits",
+      busySince: () => now - 21_000,
+    }
+    const done = {
+      ...mockSessionValue({ id: SESSION_ID, status: "idle" }),
+      summary: () => "Finished",
+      busySince: () => now - 14_000,
+    }
+
+    return (
+      <div style={{ display: "grid", gap: "12px", width: "380px" }}>
+        <StoryProviders sessionID={SESSION_ID} status="busy" noPadding>
+          <SessionContext.Provider value={busy as any}>
+            <WorkingIndicator />
+          </SessionContext.Provider>
+        </StoryProviders>
+        <StoryProviders sessionID={SESSION_ID} status="idle" noPadding>
+          <SessionContext.Provider value={done as any}>
+            <WorkingIndicator />
+          </SessionContext.Provider>
+        </StoryProviders>
+      </div>
     )
   },
 }
