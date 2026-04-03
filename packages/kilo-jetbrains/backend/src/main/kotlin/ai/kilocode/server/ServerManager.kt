@@ -48,6 +48,7 @@ class ServerManager(private val cs: CoroutineScope) : Disposable {
   private val mutex = Mutex()
   private var pending: Deferred<ServerState>? = null
   private var process: Process? = null
+  private var hook: Thread? = null
 
   fun process(): Process? = process
 
@@ -70,6 +71,7 @@ class ServerManager(private val cs: CoroutineScope) : Disposable {
       if (process != proc) return@withLock
       process = null
       pending = null
+      uninstall()
     }
   }
 
@@ -142,6 +144,7 @@ class ServerManager(private val cs: CoroutineScope) : Disposable {
       LOG.info("Spawning: ${cli.absolutePath} serve --port 0")
       val proc = builder.start()
       process = proc
+      install(proc)
 
       val stderr = StringBuilder()
 
@@ -171,6 +174,7 @@ class ServerManager(private val cs: CoroutineScope) : Disposable {
       val code = proc.waitFor()
       val details = synchronized(stderr) { stderr.toString().trim() }
       process = null
+      uninstall()
       ServerState.Error(
         message = "CLI process exited with code $code before announcing a port",
         details = details.ifEmpty { null },
@@ -181,14 +185,60 @@ class ServerManager(private val cs: CoroutineScope) : Disposable {
     val proc = process ?: return
     process = null
     pending = null
+    uninstall()
 
-    LOG.info("Disposing — killing CLI process (pid ${proc.pid()})")
+    kill(proc, "Disposing")
+  }
+
+  private fun install(proc: Process) {
+    uninstall()
+
+    val next = Thread({
+      LOG.info("Shutdown hook — killing CLI process tree (pid ${proc.pid()})")
+      kill(proc, "Shutdown hook", wait = false)
+    }, "kilo-cli-shutdown")
+
+    val ok = runCatching {
+      Runtime.getRuntime().addShutdownHook(next)
+    }
+
+    if (ok.isFailure) {
+      LOG.warn("Failed to install CLI shutdown hook", ok.exceptionOrNull())
+      return
+    }
+
+    hook = next
+  }
+
+  private fun uninstall() {
+    val curr = hook ?: return
+    hook = null
+
+    val ok = runCatching {
+      Runtime.getRuntime().removeShutdownHook(curr)
+    }
+
+    if (ok.isFailure) {
+      LOG.info("Skipping CLI shutdown hook removal: ${ok.exceptionOrNull()?.message}")
+    }
+  }
+
+  private fun kill(proc: Process, source: String, wait: Boolean = true) {
+    LOG.info("$source — killing CLI process tree (pid ${proc.pid()})")
+    children(proc).forEach { it.destroy() }
     proc.destroy()
+
+    if (!wait) return
 
     if (!proc.waitFor(KILL_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
       LOG.warn("CLI process did not exit after SIGTERM, sending SIGKILL")
+      children(proc).forEach { it.destroyForcibly() }
       proc.destroyForcibly()
     }
+  }
+
+  private fun children(proc: Process): List<ProcessHandle> {
+    return proc.toHandle().descendants().toList().asReversed()
   }
 
   private fun platform(): String {
