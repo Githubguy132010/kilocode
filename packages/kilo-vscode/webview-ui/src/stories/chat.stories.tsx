@@ -250,6 +250,14 @@ const MOCK_NOTIFICATION = {
   action: { actionText: "Learn more", actionURL: "https://kilo.ai/docs" },
 }
 
+const LONG_NOTIFICATION = {
+  id: "notif-2",
+  title: "Keep Kilo Gateway available when your current provider hits rate limits during a long session",
+  message:
+    "Switch to Bring Your Own Key so longer notifications, setup guidance, and model suggestions stay fully readable inside the card even when the webview is narrow or the copy includes longer troubleshooting details.",
+  action: { actionText: "Read setup guide", actionURL: "https://kilo.ai/docs" },
+}
+
 /** Mock server context with profile data so AccountSwitcher is visible */
 const mockServer = {
   connectionState: () => "connected" as const,
@@ -280,6 +288,19 @@ export const WelcomeWithSwitcherAndNotification: Story = {
     <StoryProviders sessionID={SESSION_ID} status="idle" noPadding notifications={[MOCK_NOTIFICATION]}>
       <ServerContext.Provider value={mockServer as any}>
         <div style={{ width: "100%", height: "600px", display: "flex", "flex-direction": "column" }}>
+          <ChatView />
+        </div>
+      </ServerContext.Provider>
+    </StoryProviders>
+  ),
+}
+
+export const WelcomeWithLongNotification: Story = {
+  name: "Welcome — long notification copy",
+  render: () => (
+    <StoryProviders sessionID={SESSION_ID} status="idle" noPadding notifications={[LONG_NOTIFICATION]}>
+      <ServerContext.Provider value={mockServer as any}>
+        <div style={{ width: "280px", height: "600px", display: "flex", "flex-direction": "column" }}>
           <ChatView />
         </div>
       </ServerContext.Provider>
