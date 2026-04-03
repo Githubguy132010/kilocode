@@ -70,7 +70,7 @@ class KiloConnectionService(private val cs: CoroutineScope) : Disposable {
 
         setState(ConnectionState.Connecting)
 
-        val cliService = service<KiloCliService>()
+        val cliService = service<ServerManager>()
         val processState = cliService.init()
 
         if (processState is KiloProcessState.Error) {

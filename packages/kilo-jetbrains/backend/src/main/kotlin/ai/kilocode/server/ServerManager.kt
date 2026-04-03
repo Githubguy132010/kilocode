@@ -30,10 +30,10 @@ import java.util.concurrent.TimeUnit
  * CLI process is ever spawned.
  */
 @Service(Service.Level.APP)
-class KiloCliService(private val cs: CoroutineScope) : Disposable {
+class ServerManager(private val cs: CoroutineScope) : Disposable {
 
     companion object {
-        private val LOG = Logger.getInstance(KiloCliService::class.java)
+        private val LOG = Logger.getInstance(ServerManager::class.java)
         private const val STARTUP_TIMEOUT_MS = 30_000L
         private const val KILL_TIMEOUT_SECONDS = 5L
         private val PORT_REGEX = Regex("""listening on http://[\w.]+:(\d+)""")

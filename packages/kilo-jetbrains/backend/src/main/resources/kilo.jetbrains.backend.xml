@@ -6,6 +6,6 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <applicationService
-            serviceImplementation="ai.kilocode.server.KiloCliService"/>
+            serviceImplementation="ai.kilocode.server.ServerManager"/>
     </extensions>
 </idea-plugin>
