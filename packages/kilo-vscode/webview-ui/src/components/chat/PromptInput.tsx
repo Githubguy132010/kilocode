@@ -22,6 +22,7 @@ import { useFileMention } from "../../hooks/useFileMention"
 import { useSlashCommand } from "../../hooks/useSlashCommand"
 import { useGhostText } from "../../hooks/useGhostText"
 import { useImageAttachments, type ImageAttachment } from "../../hooks/useImageAttachments"
+import { ACCEPTED_IMAGE_TYPES } from "../../hooks/image-attachments-utils"
 import { convertToMentionPath } from "../../utils/path-mentions"
 import { usePromptHistory } from "../../hooks/usePromptHistory"
 import { WandSparkles } from "@kilocode/kilo-ui/lucide"
@@ -168,6 +169,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     ))
   }
 
+  let fileRef: HTMLInputElement | undefined
   let textareaRef: HTMLTextAreaElement | undefined
   let highlightRef: HTMLDivElement | undefined
   let dropdownRef: HTMLDivElement | undefined
@@ -548,6 +550,8 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     vscode.postMessage({ type: "enhancePrompt", text: draft, requestId: `enhance-${draftKey()}-${enhanceCounter}` })
   }
 
+  const pick = () => fileRef?.click()
+
   const handleSend = () => {
     const draft = text().trim()
 
@@ -621,6 +625,19 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       onDragLeave={imageAttach.handleDragLeave}
       onDrop={imageAttach.handleDrop}
     >
+      <input
+        ref={fileRef}
+        type="file"
+        accept={ACCEPTED_IMAGE_TYPES.join(",")}
+        multiple
+        style={{ display: "none" }}
+        onChange={(e) => {
+          const files = e.currentTarget.files
+          if (!files) return
+          for (const file of Array.from(files)) imageAttach.add(file)
+          e.currentTarget.value = ""
+        }}
+      />
       <Show when={reviewComments().length > 0}>
         <div class="prompt-review-comments">
           <div class="prompt-review-comments-header">
@@ -839,6 +856,19 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
           </Show>
         </div>
         <div class="prompt-input-hint-actions">
+          <Tooltip value={language.t("prompt.action.attachFile")} placement="top">
+            <Button variant="ghost" size="small" onClick={pick} aria-label={language.t("prompt.action.attachFile")}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path
+                  d="M5.5 8.5l3.82-3.82a2.25 2.25 0 113.18 3.18L7.8 12.56a3.5 3.5 0 11-4.95-4.95l4.6-4.6"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </Button>
+          </Tooltip>
           <Tooltip value={language.t("prompt.action.enhance")} placement="top">
             <Button
               variant="ghost"
