@@ -2679,6 +2679,79 @@ body.vscode-light
   width: 100%;
 }
 
+.session-turn-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  max-width: 100%;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.session-turn-status[data-state="working"] {
+  color: var(--vscode-textLink-foreground, #3794ff);
+  border-color: color-mix(in srgb, var(--vscode-textLink-foreground, #3794ff) 22%, transparent);
+  background: color-mix(in srgb, var(--vscode-textLink-foreground, #3794ff) 10%, transparent);
+}
+
+.session-turn-status[data-state="done"] {
+  color: var(--vscode-testing-iconPassed, #89d185);
+  border-color: color-mix(in srgb, var(--vscode-testing-iconPassed, #89d185) 28%, transparent);
+  background: color-mix(in srgb, var(--vscode-testing-iconPassed, #89d185) 10%, transparent);
+}
+
+.session-turn-status[data-state="error"] {
+  color: var(--vscode-errorForeground, #f48771);
+  border-color: color-mix(in srgb, var(--vscode-errorForeground, #f48771) 24%, transparent);
+  background: color-mix(in srgb, var(--vscode-errorForeground, #f48771) 10%, transparent);
+}
+
+.session-turn-status-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+}
+
+.session-turn-status-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: currentColor;
+  box-shadow: 0 0 0 0 currentColor;
+  animation: session-turn-status-pulse 1.6s ease-out infinite;
+}
+
+.session-turn-status-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@keyframes session-turn-status-pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 35%, transparent);
+  }
+
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 8px transparent;
+  }
+
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
 .vscode-session-turn-diffs {
   width: 100%;
 }

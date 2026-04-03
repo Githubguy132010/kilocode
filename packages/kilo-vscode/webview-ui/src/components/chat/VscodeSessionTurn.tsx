@@ -1,3 +1,5 @@
+/** @jsxImportSource solid-js */
+
 /**
  * VscodeSessionTurn component
  * Custom replacement for the upstream SessionTurn, designed for the VS Code sidebar.
@@ -9,7 +11,8 @@
  * - Simpler flat structure without overflow containers
  */
 
-import { Component, createMemo, For, Show, createSignal, createEffect, on } from "solid-js"
+import { createMemo, For, Show, createSignal, createEffect, on } from "solid-js"
+import type { Component } from "solid-js"
 import { Dynamic } from "solid-js/web"
 import { UserMessageDisplay } from "@kilocode/kilo-ui/message-part"
 import { Collapsible } from "@kilocode/kilo-ui/collapsible"
@@ -104,6 +107,30 @@ export const VscodeSessionTurn: Component<VscodeSessionTurnProps> = (props) => {
     () => assistantMessages().find((m) => m.error && m.error.name !== "MessageAbortedError")?.error,
   )
 
+  const active = createMemo(() => {
+    if (session.status() === "idle") return false
+    const msgs = assistantMessages()
+    if (msgs.length === 0) return false
+    const last = msgs[msgs.length - 1]
+    return last?.id === session.messages().at(-1)?.id
+  })
+
+  const status = createMemo(() => {
+    if (active()) {
+      return {
+        state: "working",
+        text: session.statusText() ?? language.t("ui.sessionTurn.status.thinking"),
+      } as const
+    }
+
+    if (assistantMessages().length === 0) return undefined
+
+    return {
+      state: error() ? "error" : "done",
+      text: error() ? language.t("session.status.writingResponse") : language.t("ui.sessionTurn.status.done"),
+    } as const
+  })
+
   // Diffs from message summary
   const diffs = createMemo(() => {
     const rawDiffs = (message() as unknown as { summary?: { diffs?: unknown[] } } | undefined)?.summary?.diffs
@@ -186,6 +213,18 @@ export const VscodeSessionTurn: Component<VscodeSessionTurnProps> = (props) => {
               <For each={assistantMessages()}>
                 {(msg) => <AssistantMessage message={msg} showAssistantCopyPartID={showAssistantCopyPartID()} />}
               </For>
+              <Show when={status()}>
+                {(item) => (
+                  <div class="session-turn-status" data-state={item().state} role="status" aria-live="polite">
+                    <span class="session-turn-status-icon" aria-hidden="true">
+                      <Show when={item().state === "working"} fallback={<Icon name="check" size="small" />}>
+                        <div class="session-turn-status-pulse" />
+                      </Show>
+                    </span>
+                    <span class="session-turn-status-text">{item().text}</span>
+                  </div>
+                )}
+              </Show>
             </div>
           </Show>
 

@@ -8,10 +8,11 @@
  */
 
 import type { Meta, StoryObj } from "storybook-solidjs-vite"
-import { StoryProviders, mockSessionValue } from "./StoryProviders"
+import { StoryProviders, defaultMockData, mockSessionValue } from "./StoryProviders"
 import { ChatView } from "../components/chat/ChatView"
 import { TaskHeader } from "../components/chat/TaskHeader"
 import { QuestionDock } from "../components/chat/QuestionDock"
+import { VscodeSessionTurn } from "../components/chat/VscodeSessionTurn"
 import { WorkingIndicator } from "../components/shared/WorkingIndicator"
 import { SessionContext } from "../context/session"
 import { ServerContext } from "../context/server"
@@ -140,6 +141,61 @@ export const WorkingIndicatorStates: Story = {
         <StoryProviders sessionID={SESSION_ID} status="idle" noPadding>
           <SessionContext.Provider value={done as any}>
             <WorkingIndicator />
+          </SessionContext.Provider>
+        </StoryProviders>
+      </div>
+    )
+  },
+}
+
+export const TurnStatusStates: Story = {
+  name: "ChatView - turn status states",
+  render: () => {
+    const user = {
+      id: "msg-user-001",
+      sessionID: SESSION_ID,
+      role: "user",
+      createdAt: new Date().toISOString(),
+      time: { created: Date.now() - 18_000 },
+    }
+    const assistant = {
+      id: "msg-assistant-001",
+      sessionID: SESSION_ID,
+      role: "assistant",
+      createdAt: new Date().toISOString(),
+      parentID: user.id,
+      time: { created: Date.now() - 16_000 },
+    }
+    const data = {
+      ...defaultMockData,
+      message: {
+        [SESSION_ID]: [user, assistant],
+      },
+      part: {
+        [user.id]: [{ id: "part-user-001", type: "text", text: "Ship the UI improvement" }],
+        [assistant.id]: [{ id: "part-assistant-001", type: "text", text: "I updated the turn status badge." }],
+      },
+    }
+    const busy = {
+      ...mockSessionValue({ id: SESSION_ID, status: "busy" }),
+      messages: () => [user, assistant],
+      statusText: () => "Running commands",
+    }
+    const done = {
+      ...mockSessionValue({ id: SESSION_ID, status: "idle" }),
+      messages: () => [user, assistant],
+    }
+
+    return (
+      <div style={{ display: "grid", gap: "16px", width: "640px" }}>
+        <StoryProviders sessionID={SESSION_ID} status="busy" data={data}>
+          <SessionContext.Provider value={busy as any}>
+            <VscodeSessionTurn sessionID={SESSION_ID} messageID={user.id} />
+          </SessionContext.Provider>
+        </StoryProviders>
+        <StoryProviders sessionID={SESSION_ID} status="idle" data={data}>
+          <SessionContext.Provider value={done as any}>
+            <VscodeSessionTurn sessionID={SESSION_ID} messageID={user.id} />
           </SessionContext.Provider>
         </StoryProviders>
       </div>
