@@ -80,11 +80,15 @@ export const WorkingIndicator: Component = () => {
     return perms.length > 0 || questions.length > 0
   }
 
+  const retry = () => session.statusInfo().type === "retry"
+
   return (
     <Show when={session.status() !== "idle" && !blocked()}>
-      <div class="working-indicator">
+      <div class="working-indicator" classList={{ "working-indicator-wrap": retry() }}>
         <Spinner />
-        <span class="working-text">{statusText()}</span>
+        <span class="working-text" classList={{ "working-text-wrap": retry() }}>
+          {statusText()}
+        </span>
         <Show when={elapsed() > 0}>
           <span class="working-elapsed">{formatElapsed()}</span>
         </Show>

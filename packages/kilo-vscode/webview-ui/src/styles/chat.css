@@ -2235,12 +2235,23 @@
   color: var(--vscode-descriptionForeground);
 }
 
+.working-indicator-wrap {
+  align-items: flex-start;
+}
+
 .working-text {
   flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.working-text-wrap {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .working-elapsed {
