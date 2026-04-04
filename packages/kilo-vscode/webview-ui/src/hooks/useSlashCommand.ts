@@ -2,7 +2,7 @@ import { createSignal, onCleanup, onMount } from "solid-js"
 import type { Accessor } from "solid-js"
 import type { SlashCommandInfo, WebviewMessage, ExtensionMessage } from "../types/messages"
 
-export const SLASH_PATTERN = /^\/(\S*)$/
+export const SLASH_PATTERN = /(^|[\s\n])\/([\S]*)$/
 
 interface VSCodeContext {
   postMessage: (message: WebviewMessage) => void
@@ -18,6 +18,7 @@ export interface SlashCommand {
   index: Accessor<number>
   show: Accessor<boolean>
   commands: Accessor<SlashCommandEntry[]>
+  slashStart: Accessor<number>
   onInput: (val: string, cursor: number) => void
   onKeyDown: (
     e: KeyboardEvent,
@@ -39,6 +40,7 @@ export function useSlashCommand(vscode: VSCodeContext, exclude?: Set<string>): S
   const [server, setServer] = createSignal<SlashCommandInfo[]>([])
   const [query, setQuery] = createSignal<string | null>(null)
   const [index, setIndex] = createSignal(0)
+  const [slashStart, setSlashStart] = createSignal(0)
 
   const all: SlashCommandEntry[] = [
     {
@@ -145,7 +147,8 @@ export function useSlashCommand(vscode: VSCodeContext, exclude?: Set<string>): S
     const before = val.substring(0, cursor)
     const match = before.match(SLASH_PATTERN)
     if (match) {
-      setQuery(match[1])
+      setSlashStart(match.index! + match[1].length)
+      setQuery(match[2])
       setIndex(0)
     } else {
       close()
@@ -166,10 +169,13 @@ export function useSlashCommand(vscode: VSCodeContext, exclude?: Set<string>): S
       cmd.action()
       return
     }
-    const text = `/${cmd.name} `
+    const start = slashStart()
+    const end = start + 1 + (query()?.length ?? 0)
+    const replacement = `/${cmd.name} `
+    const text = textarea.value.substring(0, start) + replacement + textarea.value.substring(end)
     textarea.value = text
     setText(text)
-    const pos = text.length
+    const pos = start + replacement.length
     textarea.setSelectionRange(pos, pos)
     textarea.focus()
     close()
@@ -219,6 +225,7 @@ export function useSlashCommand(vscode: VSCodeContext, exclude?: Set<string>): S
     index,
     show,
     commands,
+    slashStart,
     onInput,
     onKeyDown,
     select,
