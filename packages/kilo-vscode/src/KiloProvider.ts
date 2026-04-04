@@ -1557,7 +1557,18 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     const key = typeof msg.apiKey === "string" ? msg.apiKey : undefined
     const headers = msg.headers && typeof msg.headers === "object" ? (msg.headers as Record<string, string>) : undefined
     try {
-      const models = await fetchOpenAIModels({ baseURL: url, apiKey: key, headers })
+      const models = await fetchOpenAIModels({
+        baseURL: url,
+        apiKey: key,
+        headers,
+        onRetry: (retry) => {
+          this.postMessage({
+            type: "customProviderModelsFetched",
+            requestId: rid,
+            status: `Rate limited, retrying (${retry.attempt}/${retry.maxRetries}) in ${Math.ceil(retry.nextDelayMs / 1000)}s...`,
+          })
+        },
+      })
       this.postMessage({ type: "customProviderModelsFetched", requestId: rid, models })
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to fetch models"

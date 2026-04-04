@@ -1246,6 +1246,8 @@ export interface ProviderActionErrorMessage {
 export interface CustomProviderModelsFetchedMessage {
   type: "customProviderModelsFetched"
   requestId: string
+  /** Present while backend is retrying after HTTP 429 */
+  status?: string
   models?: Array<{ id: string; name: string }>
   error?: string
   /** True when error was HTTP 401/403 — hints the user to check their API key */

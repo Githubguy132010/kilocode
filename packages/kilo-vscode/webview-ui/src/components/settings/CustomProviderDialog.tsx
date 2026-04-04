@@ -335,10 +335,16 @@ const CustomProviderDialog = (props: CustomProviderDialogProps) => {
     const unsub = vscode.onMessage((msg: ExtensionMessage) => {
       if (msg.type !== "customProviderModelsFetched") return
       if (!("requestId" in msg) || msg.requestId !== rid) return
-      unsub()
 
       // Stale response — a newer fetch was triggered while this one was in-flight
       if (version !== fetchVersion) return
+
+      if (msg.status) {
+        setFetchStatus(msg.status)
+        return
+      }
+
+      unsub()
 
       setFetching(false)
 
