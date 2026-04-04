@@ -170,7 +170,10 @@ export function useSlashCommand(vscode: VSCodeContext, exclude?: Set<string>): S
       return
     }
     const start = slashStart()
-    const end = start + 1 + (query()?.length ?? 0)
+    // Scan forward from start to find the end of the full slash token,
+    // regardless of where the cursor currently sits inside it.
+    let end = start
+    while (end < textarea.value.length && !/[\s\n]/.test(textarea.value[end])) end++
     const replacement = `/${cmd.name} `
     const text = textarea.value.substring(0, start) + replacement + textarea.value.substring(end)
     textarea.value = text
