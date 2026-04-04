@@ -206,7 +206,15 @@ export type WebviewMessage =
       type: "messageCreated"
       message: Record<string, unknown>
     }
-  | { type: "sessionStatus"; sessionID: string; status: string; attempt?: number; message?: string; next?: number }
+  | {
+      type: "sessionStatus"
+      sessionID: string
+      status: string
+      attempt?: number
+      message?: string
+      next?: number
+      details?: string
+    }
   | {
       type: "permissionRequest"
       permission: {
@@ -278,7 +286,9 @@ export function mapSSEEventToWebviewMessage(event: Event, sessionID: string | un
         type: "sessionStatus",
         sessionID: event.properties.sessionID,
         status: info.type,
-        ...(info.type === "retry" ? { attempt: info.attempt, message: info.message, next: info.next } : {}),
+        ...(info.type === "retry"
+          ? { attempt: info.attempt, message: info.message, next: info.next, details: info.details }
+          : {}),
       }
     }
     case "permission.asked":

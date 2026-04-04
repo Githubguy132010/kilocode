@@ -5,7 +5,10 @@
  */
 
 import { Component, Show, createSignal, createEffect, onCleanup } from "solid-js"
+import { Collapsible } from "@kilocode/kilo-ui/collapsible"
+import { IconButton } from "@kilocode/kilo-ui/icon-button"
 import { Spinner } from "@kilocode/kilo-ui/spinner"
+import { showToast } from "@kilocode/kilo-ui/toast"
 import { useSession } from "../../context/session"
 import { useLanguage } from "../../context/language"
 
@@ -15,6 +18,8 @@ export const WorkingIndicator: Component = () => {
 
   const [elapsed, setElapsed] = createSignal(0)
   const [retryCountdown, setRetryCountdown] = createSignal(0)
+  const [open, setOpen] = createSignal(false)
+  const [copied, setCopied] = createSignal<"message" | "details">()
 
   createEffect(() => {
     const since = session.busySince()
@@ -38,6 +43,7 @@ export const WorkingIndicator: Component = () => {
     const info = session.statusInfo()
     if (info.type !== "retry") {
       setRetryCountdown(0)
+      setOpen(false)
       return
     }
 
@@ -57,10 +63,22 @@ export const WorkingIndicator: Component = () => {
     const info = session.statusInfo()
     if (info.type === "retry") {
       const countdown = retryCountdown()
-      const retryMsg = info.message || language.t("session.status.retry")
-      return countdown > 0 ? `${retryMsg} (${countdown}s)` : retryMsg
+      const msg = info.message || language.t("session.status.retry")
+      return countdown > 0 ? `${msg} (${countdown}s)` : msg
     }
     return session.statusText() ?? language.t("ui.sessionTurn.status.thinking")
+  }
+
+  const retryMsg = () => {
+    const info = session.statusInfo()
+    if (info.type !== "retry") return undefined
+    return info.message || language.t("session.status.retry")
+  }
+
+  const retryDetails = () => {
+    const info = session.statusInfo()
+    if (info.type !== "retry") return undefined
+    return info.details
   }
 
   const formatElapsed = () => {
@@ -82,15 +100,80 @@ export const WorkingIndicator: Component = () => {
 
   const retry = () => session.statusInfo().type === "retry"
 
+  const copy = (text: string, kind: "message" | "details") => {
+    void navigator.clipboard.writeText(text).then(() => {
+      setCopied(kind)
+      showToast({ variant: "success", title: language.t("deviceAuth.toast.errorCopied") })
+      setTimeout(() => setCopied(undefined), 2000)
+    })
+  }
+
+  const copyDetails = () => {
+    const text = retryDetails()
+    if (!text) return
+    copy(text, "details")
+  }
+
   return (
     <Show when={session.status() !== "idle" && !blocked()}>
-      <div class="working-indicator" classList={{ "working-indicator-wrap": retry() }}>
+      <div
+        class="working-indicator"
+        classList={{
+          "working-indicator-wrap": retry(),
+          "working-indicator-details": retry() && !!retryDetails(),
+        }}
+      >
         <Spinner />
-        <span class="working-text" classList={{ "working-text-wrap": retry() }}>
-          {statusText()}
-        </span>
-        <Show when={elapsed() > 0}>
-          <span class="working-elapsed">{formatElapsed()}</span>
+        <Show
+          when={retry()}
+          fallback={
+            <>
+              <span class="working-text">{statusText()}</span>
+              <Show when={elapsed() > 0}>
+                <span class="working-elapsed">{formatElapsed()}</span>
+              </Show>
+            </>
+          }
+        >
+          <div class="working-body">
+            <div class="working-row">
+              <span class="working-text working-text-wrap">{statusText()}</span>
+              <Show when={elapsed() > 0}>
+                <span class="working-elapsed">{formatElapsed()}</span>
+              </Show>
+            </div>
+            <div class="working-actions">
+              <IconButton
+                icon={copied() === "message" ? "check-small" : "copy"}
+                size="small"
+                variant="ghost"
+                aria-label={language.t("ui.permission.copyCommand")}
+                onClick={() => copy(retryMsg() ?? statusText(), "message")}
+              />
+              <Show when={retryDetails()}>
+                <Collapsible open={open()} onOpenChange={setOpen} variant="ghost">
+                  <Collapsible.Trigger class="working-details-trigger">
+                    <span>{language.t("error.details.show")}</span>
+                    <Collapsible.Arrow />
+                  </Collapsible.Trigger>
+                  <Collapsible.Content>
+                    <div class="working-details-box">
+                      <div class="working-details-actions">
+                        <IconButton
+                          icon={copied() === "details" ? "check-small" : "copy"}
+                          size="small"
+                          variant="ghost"
+                          aria-label={language.t("ui.permission.copyCommand")}
+                          onClick={copyDetails}
+                        />
+                      </div>
+                      <pre class="working-details-pre">{retryDetails()}</pre>
+                    </div>
+                  </Collapsible.Content>
+                </Collapsible>
+              </Show>
+            </div>
+          </div>
         </Show>
       </div>
     </Show>
