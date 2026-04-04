@@ -337,7 +337,10 @@ const CustomProviderDialog = (props: CustomProviderDialogProps) => {
       if (!("requestId" in msg) || msg.requestId !== rid) return
 
       // Stale response — a newer fetch was triggered while this one was in-flight
-      if (version !== fetchVersion) return
+      if (version !== fetchVersion) {
+        unsub()
+        return
+      }
 
       if (msg.status) {
         setFetchStatus(msg.status)
