@@ -11,11 +11,22 @@ interface ReportInput {
   version?: string
 }
 
-function stamp(msg?: Message | AssistantMessage) {
+const basicLabel = {
+  time: "Date/time",
+  version: "Extension version",
+  provider: "Provider",
+  model: "Model",
+} as const
+
+function time(msg?: Message | AssistantMessage) {
   const ts = msg?.time?.completed ?? msg?.time?.created
-  if (typeof ts === "number" && Number.isFinite(ts)) return new Date(ts).toISOString()
-  if (msg?.createdAt) return msg.createdAt
-  return new Date().toISOString()
+  if (typeof ts === "number" && Number.isFinite(ts)) return ts
+  if (msg?.createdAt) return Date.parse(msg.createdAt)
+  return Date.now()
+}
+
+function iso(msg?: Message | AssistantMessage) {
+  return new Date(time(msg)).toISOString()
 }
 
 function text(error: ErrorType) {
@@ -69,10 +80,10 @@ function content(msg: Message, getParts: (id: string) => Part[]) {
 
 export function buildBasicErrorInfo(input: ReportInput) {
   return [
-    `Date/time: ${stamp(input.assistant)}`,
-    `Extension version: ${input.version ?? "unknown"}`,
-    `Provider: ${provider(input.assistant)}`,
-    `Model: ${model(input.assistant)}`,
+    `${basicLabel.time}: ${iso(input.assistant)}`,
+    `${basicLabel.version}: ${input.version ?? "unknown"}`,
+    `${basicLabel.provider}: ${provider(input.assistant)}`,
+    `${basicLabel.model}: ${model(input.assistant)}`,
     "",
     text(input.error),
   ].join("\n")
@@ -81,7 +92,7 @@ export function buildBasicErrorInfo(input: ReportInput) {
 export function buildDetailedErrorReport(input: ReportInput) {
   const report = {
     error: {
-      timestamp: stamp(input.assistant),
+      timestamp: iso(input.assistant),
       version: input.version ?? "unknown",
       provider: provider(input.assistant),
       model: model(input.assistant),
@@ -91,7 +102,7 @@ export function buildDetailedErrorReport(input: ReportInput) {
     history: input.history.map((msg) => ({
       role: msg.role,
       content: content(msg, input.getParts),
-      ts: msg.time?.created ?? Date.parse(stamp(msg)),
+      ts: time(msg),
     })),
   }
 

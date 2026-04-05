@@ -21,6 +21,32 @@ import { Flag } from "@/flag/flag" // kilocode_change
 export namespace SessionProcessor {
   const DOOM_LOOP_THRESHOLD = 3
   const log = Log.create({ service: "session.processor" })
+  const secret = /token|key|secret|auth|cookie/i
+
+  function redact(data: Record<string, unknown>) {
+    return Object.fromEntries(
+      Object.entries(data).map(([key, value]) => {
+        if (secret.test(key)) return [key, "[redacted]"]
+        return [key, value]
+      }),
+    )
+  }
+
+  function details(error: ReturnType<typeof MessageV2.fromError>) {
+    const data = error.data && typeof error.data === "object" ? (error.data as Record<string, unknown>) : undefined
+    const next = data
+      ? {
+          ...(typeof data.message === "string" ? { message: data.message } : {}),
+          ...(typeof data.statusCode === "number" ? { statusCode: data.statusCode } : {}),
+          ...(typeof data.isRetryable === "boolean" ? { isRetryable: data.isRetryable } : {}),
+          ...(typeof data.responseBody === "string" ? { responseBody: data.responseBody } : {}),
+          ...(data.metadata && typeof data.metadata === "object"
+            ? { metadata: redact(data.metadata as Record<string, unknown>) }
+            : {}),
+        }
+      : undefined
+    return JSON.stringify({ name: error.name, ...(next && Object.keys(next).length > 0 ? { data: next } : {}) }, null, 2)
+  }
 
   export type Info = Awaited<ReturnType<typeof create>>
   export type Result = Awaited<ReturnType<Info["process"]>>
@@ -424,7 +450,7 @@ export namespace SessionProcessor {
                   attempt,
                   message: retry,
                   next: Date.now() + delay,
-                  details: JSON.stringify(error, null, 2),
+                  details: details(error),
                 })
                 await SessionRetry.sleep(delay, input.abort).catch(() => {})
                 continue

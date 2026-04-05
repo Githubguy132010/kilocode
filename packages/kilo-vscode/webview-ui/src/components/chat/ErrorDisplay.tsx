@@ -62,13 +62,13 @@ export const ErrorDisplay: Component<ErrorDisplayProps> = (props) => {
   }
 
   const download = () => {
-    const blob = new Blob([report()], { type: "application/json" })
+    const blob = new Blob([report()], { type: "text/plain" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
     a.download = `kilo-error-${Date.now()}.jsonc`
     a.click()
-    URL.revokeObjectURL(url)
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
 
   return (
