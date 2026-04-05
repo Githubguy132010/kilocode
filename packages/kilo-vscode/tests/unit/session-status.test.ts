@@ -31,7 +31,7 @@ describe("seedSessionStatuses", () => {
     const client = createClient({
       data: {
         s1: { type: "busy" },
-        s2: { type: "retry", attempt: 3, message: "rate limited", next: 5000 },
+        s2: { type: "retry", attempt: 3, message: "rate limited", next: 5000, details: '{"status":429}' },
       },
     })
     const map = new Map<string, SessionStatus["type"]>()
@@ -43,7 +43,15 @@ describe("seedSessionStatuses", () => {
     expect(map.get("s2")).toBe("retry")
     expect(msgs).toEqual([
       { type: "sessionStatus", sessionID: "s1", status: "busy" },
-      { type: "sessionStatus", sessionID: "s2", status: "retry", attempt: 3, message: "rate limited", next: 5000 },
+      {
+        type: "sessionStatus",
+        sessionID: "s2",
+        status: "retry",
+        attempt: 3,
+        message: "rate limited",
+        next: 5000,
+        details: '{"status":429}',
+      },
     ])
   })
 
@@ -164,7 +172,10 @@ describe("seedSessionStatuses", () => {
 
   it("still seeds server entries when reconcile=false", async () => {
     const client = createClient({
-      data: { s1: { type: "busy" }, s2: { type: "retry", attempt: 1, message: "err", next: 1000 } },
+      data: {
+        s1: { type: "busy" },
+        s2: { type: "retry", attempt: 1, message: "err", next: 1000, details: '{"error":"err"}' },
+      },
     })
     const map = new Map<string, SessionStatus["type"]>()
     const { msgs, post } = collect()
@@ -175,7 +186,15 @@ describe("seedSessionStatuses", () => {
     expect(map.get("s2")).toBe("retry")
     expect(msgs).toEqual([
       { type: "sessionStatus", sessionID: "s1", status: "busy" },
-      { type: "sessionStatus", sessionID: "s2", status: "retry", attempt: 1, message: "err", next: 1000 },
+      {
+        type: "sessionStatus",
+        sessionID: "s2",
+        status: "retry",
+        attempt: 1,
+        message: "err",
+        next: 1000,
+        details: '{"error":"err"}',
+      },
     ])
   })
 

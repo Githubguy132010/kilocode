@@ -100,9 +100,21 @@ export const VscodeSessionTurn: Component<VscodeSessionTurnProps> = (props) => {
 
   const interrupted = createMemo(() => assistantMessages().some((m) => m.error?.name === "MessageAbortedError"))
 
-  const error = createMemo(
-    () => assistantMessages().find((m) => m.error && m.error.name !== "MessageAbortedError")?.error,
-  )
+  const failed = createMemo(() => assistantMessages().find((m) => m.error && m.error.name !== "MessageAbortedError"))
+
+  const error = createMemo(() => failed()?.error)
+
+  const history = createMemo(() => {
+    const msg = message()
+    const err = failed()
+    if (!msg) return [] as SDKMessage[]
+    if (!err) return [msg]
+    const list = assistantMessages()
+    const idx = list.findIndex((item) => item.id === err.id)
+    return idx === -1 ? [msg] : [msg, ...list.slice(0, idx + 1)]
+  })
+
+  const getMessageParts = (id: string) => (data.store.part?.[id] ?? emptyParts) as SDKPart[]
 
   // Diffs from message summary
   const diffs = createMemo(() => {
@@ -286,7 +298,13 @@ export const VscodeSessionTurn: Component<VscodeSessionTurnProps> = (props) => {
 
           {/* Error handling */}
           <Show when={error()}>
-            <ErrorDisplay error={error()!} onLogin={server.startLogin} />
+            <ErrorDisplay
+              error={error()!}
+              assistant={failed()}
+              history={history()}
+              getParts={getMessageParts}
+              onLogin={server.startLogin}
+            />
           </Show>
         </div>
       )}

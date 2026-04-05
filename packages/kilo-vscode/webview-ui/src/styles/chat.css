@@ -2235,12 +2235,79 @@
   color: var(--vscode-descriptionForeground);
 }
 
+.working-indicator-wrap {
+  align-items: flex-start;
+}
+
+.working-indicator-details {
+  align-items: stretch;
+}
+
+.working-body {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.working-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
 .working-text {
   flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.working-text-wrap {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.working-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.working-details-trigger {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--vscode-textLink-foreground);
+  cursor: pointer;
+}
+
+.working-details-box {
+  margin-top: 6px;
+  border: 1px solid var(--border-weak-base, var(--vscode-panel-border));
+  border-radius: 6px;
+  background: var(--vscode-textCodeBlock-background, var(--vscode-editorWidget-background));
+}
+
+.working-details-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 4px 4px 0;
+}
+
+.working-details-pre {
+  margin: 0;
+  padding: 8px 10px 10px;
+  max-height: 180px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--vscode-foreground);
 }
 
 .working-elapsed {
