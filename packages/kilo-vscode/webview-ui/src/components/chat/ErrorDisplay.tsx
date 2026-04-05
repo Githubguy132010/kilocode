@@ -68,6 +68,7 @@ export const ErrorDisplay: Component<ErrorDisplayProps> = (props) => {
     a.href = url
     a.download = `kilo-error-${Date.now()}.jsonc`
     a.click()
+    a.remove()
     setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
 

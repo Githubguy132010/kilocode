@@ -23,11 +23,13 @@ export namespace SessionProcessor {
   const log = Log.create({ service: "session.processor" })
   const secret = /token|key|secret|auth|cookie/i
 
-  function redact(data: Record<string, unknown>) {
+  function redact(value: unknown): unknown {
+    if (Array.isArray(value)) return value.map(redact)
+    if (!value || typeof value !== "object") return value
     return Object.fromEntries(
-      Object.entries(data).map(([key, value]) => {
+      Object.entries(value).map(([key, item]) => {
         if (secret.test(key)) return [key, "[redacted]"]
-        return [key, value]
+        return [key, redact(item)]
       }),
     )
   }
@@ -41,7 +43,7 @@ export namespace SessionProcessor {
           ...(typeof data.isRetryable === "boolean" ? { isRetryable: data.isRetryable } : {}),
           ...(typeof data.responseBody === "string" ? { responseBody: data.responseBody } : {}),
           ...(data.metadata && typeof data.metadata === "object"
-            ? { metadata: redact(data.metadata as Record<string, unknown>) }
+            ? { metadata: redact(data.metadata) }
             : {}),
         }
       : undefined
