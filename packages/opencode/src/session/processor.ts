@@ -424,6 +424,7 @@ export namespace SessionProcessor {
                   attempt,
                   message: retry,
                   next: Date.now() + delay,
+                  details: JSON.stringify(error, null, 2),
                 })
                 await SessionRetry.sleep(delay, input.abort).catch(() => {})
                 continue

@@ -41,7 +41,9 @@ export async function seedSessionStatuses(
         type: "sessionStatus",
         sessionID: sid,
         status: info.type,
-        ...(info.type === "retry" ? { attempt: info.attempt, message: info.message, next: info.next } : {}),
+        ...(info.type === "retry"
+          ? { attempt: info.attempt, message: info.message, next: info.next, details: info.details }
+          : {}),
       })
     }
 

@@ -14,7 +14,7 @@ export type SessionStatus = "idle" | "busy" | "retry"
 export type SessionStatusInfo =
   | { type: "idle" }
   | { type: "busy" }
-  | { type: "retry"; attempt: number; message: string; next: number }
+  | { type: "retry"; attempt: number; message: string; next: number; details?: string }
 
 // Tool state for tool parts
 export type ToolState =
@@ -474,6 +474,7 @@ export interface SessionStatusMessage {
   attempt?: number
   message?: string
   next?: number
+  details?: string
 }
 
 export interface SessionErrorMessage {

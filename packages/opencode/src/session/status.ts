@@ -14,6 +14,7 @@ export namespace SessionStatus {
         attempt: z.number(),
         message: z.string(),
         next: z.number(),
+        details: z.string().optional(),
       }),
       z.object({
         type: z.literal("busy"),

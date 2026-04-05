@@ -631,7 +631,14 @@ export const SessionProvider: ParentComponent = (props) => {
           break
 
         case "sessionStatus":
-          handleSessionStatus(message.sessionID, message.status, message.attempt, message.message, message.next)
+          handleSessionStatus(
+            message.sessionID,
+            message.status,
+            message.attempt,
+            message.message,
+            message.next,
+            message.details,
+          )
           break
 
         case "permissionRequest":
@@ -891,11 +898,12 @@ export const SessionProvider: ParentComponent = (props) => {
     attempt?: number,
     message?: string,
     next?: number,
+    details?: string,
   ) {
     const prev = statusMap[sessionID] ?? { type: "idle" }
     const info: SessionStatusInfo =
       newStatus === "retry"
-        ? { type: "retry", attempt: attempt ?? 0, message: message ?? "", next: next ?? 0 }
+        ? { type: "retry", attempt: attempt ?? 0, message: message ?? "", next: next ?? 0, details }
         : { type: newStatus }
     setStatusMap(sessionID, info)
     // Track busy start time

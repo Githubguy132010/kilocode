@@ -600,6 +600,7 @@ export type SessionStatus =
       attempt: number
       message: string
       next: number
+      details?: string
     }
   | {
       type: "busy"
