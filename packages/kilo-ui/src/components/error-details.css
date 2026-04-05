@@ -6,6 +6,24 @@
   margin-top: 8px;
 }
 
+.error-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.error-card-message {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.error-details-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 0 4px;
+}
+
 .error-details-trigger {
   display: inline-flex;
   align-items: center;
