@@ -646,6 +646,11 @@ const CustomProviderDialog = (props: CustomProviderDialogProps) => {
               <Show when={fetching()}>
                 <Spinner style={{ width: "12px", height: "12px" }} />
               </Show>
+              <Show when={fetching()}>
+                <Button type="button" size="small" variant="ghost" onClick={cancelFetch}>
+                  {language.t("common.cancel")}
+                </Button>
+              </Show>
             </div>
             <For each={form.models}>
               {(m, i) => (
