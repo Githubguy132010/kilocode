@@ -453,7 +453,7 @@ const CustomProviderDialog = (props: CustomProviderDialogProps) => {
     setFetchError(undefined)
     setFetchStatus(language.t("deviceAuth.status.cancelled"))
     setFetchedModels(undefined)
-    setSelected(new Set())
+    setSelected(new Set<string>())
     setSearch("")
   }
 
