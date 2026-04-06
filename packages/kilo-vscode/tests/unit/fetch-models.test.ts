@@ -83,4 +83,65 @@ describe("fetchOpenAIModels", () => {
       globalThis.fetch = old
     }
   })
+
+  it("stops retrying when aborted during backoff wait", async () => {
+    const old = globalThis.fetch
+    const abort = new AbortController()
+    let c = 0
+
+    globalThis.fetch = (async () => {
+      c += 1
+      return new Response("slow down", { status: 429 })
+    }) as unknown as typeof globalThis.fetch
+
+    try {
+      const task = fetchOpenAIModels({
+        baseURL: "https://example.com",
+        signal: abort.signal,
+        wait: async (_ms, signal) => {
+          await new Promise((_, reject) => {
+            signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")), {
+              once: true,
+            })
+          })
+        },
+      })
+
+      abort.abort()
+      await expect(task).rejects.toMatchObject({ name: "AbortError" })
+      expect(c).toBe(1)
+    } finally {
+      globalThis.fetch = old
+    }
+  })
+
+  it("aborts an active fetch attempt", async () => {
+    const old = globalThis.fetch
+    const abort = new AbortController()
+    let c = 0
+
+    globalThis.fetch = ((_: string | URL | Request, init?: RequestInit) => {
+      c += 1
+      return new Promise((_, reject) => {
+        const signal = init?.signal
+        if (!signal) return
+        signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")), {
+          once: true,
+        })
+      })
+    }) as unknown as typeof globalThis.fetch
+
+    try {
+      const task = fetchOpenAIModels({
+        baseURL: "https://example.com",
+        signal: abort.signal,
+      })
+
+      abort.abort()
+      await expect(task).rejects.toMatchObject({ name: "AbortError" })
+      expect(c).toBe(1)
+    } finally {
+      globalThis.fetch = old
+    }
+  })
 })

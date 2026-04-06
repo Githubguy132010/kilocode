@@ -133,6 +133,8 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
   private projectID: string | undefined
   /** Abort controller for the current loadMessages request; aborted when a new session is selected. */
   private loadMessagesAbort: AbortController | null = null
+  /** Active custom provider model fetches, keyed by requestId for cancellation. */
+  private customProviderFetches = new Map<string, AbortController>()
   /** Set when refreshSessions() is called before the client is ready.
    *  Cleared and retried once the connection transitions to "connected". */
   private pendingSessionRefresh = false
@@ -653,6 +655,9 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
           this.handleFetchCustomProviderModels(message).catch((e) =>
             console.error("[Kilo New] fetchCustomProviderModels failed:", e),
           )
+          break
+        case "cancelFetchCustomProviderModels":
+          this.handleCancelFetchCustomProviderModels(message)
           break
         case "compact":
           await this.handleCompact(message.sessionID, message.providerID, message.modelID)
@@ -1556,11 +1561,14 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     if (!rid || !url) return
     const key = typeof msg.apiKey === "string" ? msg.apiKey : undefined
     const headers = msg.headers && typeof msg.headers === "object" ? (msg.headers as Record<string, string>) : undefined
+    const abort = new AbortController()
+    this.customProviderFetches.set(rid, abort)
     try {
       const models = await fetchOpenAIModels({
         baseURL: url,
         apiKey: key,
         headers,
+        signal: abort.signal,
         onRetry: (retry) => {
           this.postMessage({
             type: "customProviderModelsFetched",
@@ -1571,10 +1579,25 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       })
       this.postMessage({ type: "customProviderModelsFetched", requestId: rid, models })
     } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        this.postMessage({ type: "customProviderModelsFetched", requestId: rid, cancelled: true })
+        return
+      }
+
       const message = err instanceof Error ? err.message : "Failed to fetch models"
       const auth = err instanceof FetchModelsError && err.auth
       this.postMessage({ type: "customProviderModelsFetched", requestId: rid, error: message, auth })
+    } finally {
+      if (this.customProviderFetches.get(rid) === abort) {
+        this.customProviderFetches.delete(rid)
+      }
     }
+  }
+
+  private handleCancelFetchCustomProviderModels(msg: Record<string, unknown>): void {
+    const rid = typeof msg.requestId === "string" ? msg.requestId : ""
+    if (!rid) return
+    this.customProviderFetches.get(rid)?.abort()
   }
 
   /**

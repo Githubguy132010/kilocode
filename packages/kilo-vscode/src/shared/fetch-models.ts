@@ -8,7 +8,8 @@ type Options = {
   apiKey?: string
   headers?: Record<string, string>
   onRetry?: (retry: { attempt: number; maxRetries: number; nextDelayMs: number }) => void
-  wait?: (ms: number) => Promise<void>
+  wait?: (ms: number, signal?: AbortSignal) => Promise<void>
+  signal?: AbortSignal
 }
 
 type ModelEntry = {
@@ -56,8 +57,32 @@ function backoff(attempt: number, retryAfter: string | null): number {
   return Math.max(exp, Math.min(hinted, MAX_DELAY_MS))
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
+function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+  if (!signal) {
+    return new Promise((resolve) => setTimeout(resolve, ms))
+  }
+
+  return new Promise((resolve, reject) => {
+    if (signal.aborted) {
+      reject(new DOMException("Aborted", "AbortError"))
+      return
+    }
+
+    const abort = () => {
+      clearTimeout(timeout)
+      reject(new DOMException("Aborted", "AbortError"))
+    }
+    const timeout = setTimeout(() => {
+      signal.removeEventListener("abort", abort)
+      resolve()
+    }, ms)
+    signal.addEventListener("abort", abort, { once: true })
+  })
+}
+
+function attemptSignal(signal?: AbortSignal): AbortSignal {
+  if (!signal) return AbortSignal.timeout(TIMEOUT_MS)
+  return AbortSignal.any([signal, AbortSignal.timeout(TIMEOUT_MS)])
 }
 
 export async function fetchOpenAIModels(opts: Options): Promise<ModelEntry[]> {
@@ -76,7 +101,7 @@ export async function fetchOpenAIModels(opts: Options): Promise<ModelEntry[]> {
     const response = await fetch(url, {
       method: "GET",
       headers,
-      signal: AbortSignal.timeout(TIMEOUT_MS),
+      signal: attemptSignal(opts.signal),
     })
 
     if (response.ok) {
@@ -107,7 +132,7 @@ export async function fetchOpenAIModels(opts: Options): Promise<ModelEntry[]> {
 
     const nextDelayMs = backoff(attempt, response.headers.get("Retry-After"))
     opts.onRetry?.({ attempt, maxRetries: MAX_RETRIES, nextDelayMs })
-    await wait(nextDelayMs)
+    await wait(nextDelayMs, opts.signal)
   }
 
   throw new FetchModelsError("Failed to fetch models")

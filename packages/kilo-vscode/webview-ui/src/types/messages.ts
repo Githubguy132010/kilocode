@@ -1248,6 +1248,7 @@ export interface CustomProviderModelsFetchedMessage {
   requestId: string
   /** Present while backend is retrying after HTTP 429 */
   status?: string
+  cancelled?: boolean
   models?: Array<{ id: string; name: string }>
   error?: string
   /** True when error was HTTP 401/403 — hints the user to check their API key */
@@ -2021,6 +2022,11 @@ export interface FetchCustomProviderModelsMessage {
   headers?: Record<string, string>
 }
 
+export interface CancelFetchCustomProviderModelsMessage {
+  type: "cancelFetchCustomProviderModels"
+  requestId: string
+}
+
 export interface PersistRecentsRequest {
   type: "persistRecents"
   recents: ModelSelection[]
@@ -2183,6 +2189,7 @@ export type WebviewMessage =
   | DisconnectProviderMessage
   | SaveCustomProviderMessage
   | FetchCustomProviderModelsMessage
+  | CancelFetchCustomProviderModelsMessage
   | PersistRecentsRequest
   | RequestRecentsMessage
   | ToggleFavoriteRequest

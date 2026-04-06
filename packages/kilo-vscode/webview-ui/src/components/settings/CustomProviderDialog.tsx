@@ -252,6 +252,7 @@ const CustomProviderDialog = (props: CustomProviderDialogProps) => {
   const [fetchedModels, setFetchedModels] = createSignal<FetchedModel[]>()
   const [selected, setSelected] = createSignal<Set<string>>(new Set())
   const [fetchStatus, setFetchStatus] = createSignal<string>()
+  const [fetchRequest, setFetchRequest] = createSignal<string>()
 
   // Search within fetched models
   const [search, setSearch] = createSignal("")
@@ -331,6 +332,7 @@ const CustomProviderDialog = (props: CustomProviderDialogProps) => {
     setSearch("")
 
     const rid = crypto.randomUUID()
+    setFetchRequest(rid)
 
     const unsub = vscode.onMessage((msg: ExtensionMessage) => {
       if (msg.type !== "customProviderModelsFetched") return
@@ -348,8 +350,16 @@ const CustomProviderDialog = (props: CustomProviderDialogProps) => {
       }
 
       unsub()
+      if (fetchRequest() === rid) {
+        setFetchRequest(undefined)
+      }
 
       setFetching(false)
+
+      if (msg.cancelled) {
+        setFetchStatus(language.t("deviceAuth.status.cancelled"))
+        return
+      }
 
       if (msg.error) {
         setFetchError(msg.auth ? language.t("provider.custom.models.fetch.authError") : msg.error)
@@ -432,7 +442,18 @@ const CustomProviderDialog = (props: CustomProviderDialogProps) => {
   }
 
   function cancelFetch() {
+    const rid = fetchRequest()
+    if (rid) {
+      fetchVersion++
+      vscode.postMessage({ type: "cancelFetchCustomProviderModels", requestId: rid })
+      setFetchRequest(undefined)
+    }
+
+    setFetching(false)
+    setFetchError(undefined)
+    setFetchStatus(language.t("deviceAuth.status.cancelled"))
     setFetchedModels(undefined)
+    setSelected(new Set())
     setSearch("")
   }
 
