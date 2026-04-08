@@ -1291,7 +1291,7 @@ PART_MAPPING["reasoning"] = function ReasoningPartDisplay(props: MessagePartProp
 
   // Propagate user intent to the module-level set so it survives component
   // recreations (e.g. when a tool call arrives while reading reasoning).
-  const handleOpenChange = (value: boolean) => {
+  const track = (value: boolean) => {
     if (value) userOpened.add(id)
     else userOpened.delete(id)
     setOpen(value)
@@ -1311,6 +1311,7 @@ PART_MAPPING["reasoning"] = function ReasoningPartDisplay(props: MessagePartProp
 
   onCleanup(() => {
     if (done()) streamed.delete(id)
+    if (done()) userOpened.delete(id)
   })
 
   // Auto-scroll the content container while streaming, but only when the user
@@ -1327,7 +1328,7 @@ PART_MAPPING["reasoning"] = function ReasoningPartDisplay(props: MessagePartProp
   return (
     <Show when={display()}>
       <div data-component="reasoning-part" data-streaming={!done() ? "" : undefined}>
-        <Collapsible open={open()} onOpenChange={handleOpenChange} class="tool-collapsible">
+        <Collapsible open={open()} onOpenChange={track} class="tool-collapsible">
           <Collapsible.Trigger>
             <div data-slot="reasoning-header">
               <Icon name="brain" size="small" />
