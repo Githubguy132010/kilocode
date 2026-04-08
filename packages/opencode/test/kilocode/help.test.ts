@@ -158,7 +158,7 @@ describe("generateCommandTable", () => {
 })
 
 describe("commands.ts stays in sync with index.ts", () => {
-  test("every .command() in index.ts has an entry in commands.ts", async () => {
+  test("every .command() in index.ts has an entry in the commands array", async () => {
     const index = await Bun.file(path.resolve(import.meta.dir, "../../src/index.ts")).text()
     const barrel = await Bun.file(path.resolve(import.meta.dir, "../../src/kilocode/commands.ts")).text()
 
@@ -166,7 +166,12 @@ describe("commands.ts stays in sync with index.ts", () => {
     const registered = [...index.matchAll(/^\s*\.command\((\w+)\)/gm)].map((m) => m[1]!)
     expect(registered.length).toBeGreaterThan(0)
 
-    const missing = registered.filter((name) => !barrel.includes(name))
+    // Extract identifiers inside the exported commands = [...] array, not just anywhere in the file
+    const arrayMatch = barrel.match(/export const commands\s*=\s*\[([\s\S]*?)\]/)
+    expect(arrayMatch).toBeTruthy()
+    const entries = [...arrayMatch![1]!.matchAll(/\b(\w+Command)\b/g)].map((m) => m[1]!)
+
+    const missing = registered.filter((name) => !entries.includes(name))
     expect(missing).toEqual([])
   })
 })

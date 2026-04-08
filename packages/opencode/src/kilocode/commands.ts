@@ -21,6 +21,7 @@ import { PrCommand } from "../cli/cmd/pr"
 import { SessionCommand } from "../cli/cmd/session"
 import { RemoteCommand } from "../cli/cmd/remote"
 import { DbCommand } from "../cli/cmd/db"
+import { ConfigCommand as ConfigCLICommand } from "../cli/cmd/config"
 import { HelpCommand } from "./help-command"
 
 // Synthetic entry for the yargs built-in .completion() command so that
@@ -52,6 +53,7 @@ export const commands = [
   SessionCommand,
   RemoteCommand,
   DbCommand,
+  ConfigCLICommand,
   HelpCommand,
   CompletionCommand,
 ]
