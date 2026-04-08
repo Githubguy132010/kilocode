@@ -231,7 +231,7 @@ export class WorktreeManager {
         .branch()
         .then((b) => b.all)
         .catch(() => [] as string[])
-      branch = generateBranchName(params.prompt || "agent-task", existing)
+      branch = generateBranchName(params.prompt, existing)
     }
 
     if (params.existingBranch) {

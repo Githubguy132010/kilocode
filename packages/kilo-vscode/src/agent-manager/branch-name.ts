@@ -2,6 +2,7 @@ import friendlyWords from "friendly-words"
 
 const MAX_ATTEMPTS = 10
 const FALLBACK_MAX_SUFFIX = 100
+const AUTO_PREFIX = "kilo-worktree"
 
 /**
  * Sanitize a string into a valid git branch name segment.
@@ -17,11 +18,10 @@ export function sanitizeBranchName(name: string, maxLength = 50): string {
 }
 
 /**
- * Generate a natural two-word branch name (e.g. "ambitious-keyboard") using
- * the friendly-words package.  Checks `existingBranches` to avoid collisions,
- * falling back to a numeric suffix and ultimately a timestamp.
+ * Generate an auto branch name for a worktree. Task prompts become grouped
+ * `kilo-worktree/<task-slug>` refs; prompt-less flows fall back to friendly words.
  */
-export function generateBranchName(_prompt: string, existingBranches: string[] = []): string {
+export function generateBranchName(prompt?: string, existingBranches: string[] = []): string {
   const predicates = friendlyWords.predicates as string[]
   const objects = friendlyWords.objects as string[]
   const existing = new Set(existingBranches.map((b) => b.toLowerCase()))
@@ -29,24 +29,29 @@ export function generateBranchName(_prompt: string, existingBranches: string[] =
   const random = () => {
     const predicate = predicates[Math.floor(Math.random() * predicates.length)]
     const object = objects[Math.floor(Math.random() * objects.length)]
-    return `${predicate}-${object}`
+    return `${AUTO_PREFIX}/${predicate}-${object}`
   }
 
-  // Try up to MAX_ATTEMPTS unique two-word combos
+  const unique = (base: string) => {
+    if (!existing.has(base.toLowerCase())) return base
+
+    for (let n = 2; n < FALLBACK_MAX_SUFFIX + 2; n++) {
+      const candidate = `${base}-${n}`
+      if (!existing.has(candidate.toLowerCase())) return candidate
+    }
+
+    return `${base}-${Date.now()}`
+  }
+
+  const slug = prompt ? sanitizeBranchName(prompt) : ""
+  if (slug) return unique(`${AUTO_PREFIX}/${slug}`)
+
   for (let i = 0; i < MAX_ATTEMPTS; i++) {
     const candidate = random()
-    if (!existing.has(candidate)) return candidate
+    if (!existing.has(candidate.toLowerCase())) return candidate
   }
 
-  // Append numeric suffix 0–99
-  const base = random()
-  for (let n = 0; n < FALLBACK_MAX_SUFFIX; n++) {
-    const candidate = `${base}-${n}`
-    if (!existing.has(candidate)) return candidate
-  }
-
-  // Last resort: timestamp
-  return `${base}-${Date.now()}`
+  return unique(random())
 }
 
 /**

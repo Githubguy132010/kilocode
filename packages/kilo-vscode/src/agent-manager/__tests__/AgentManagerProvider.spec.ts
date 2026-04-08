@@ -56,7 +56,16 @@ vi.mock("../format-keybinding", () => ({
 }))
 
 vi.mock("../branch-name", () => ({
-  versionedName: () => ({ branch: "branch", label: "label" }),
+  versionedName: (base: string | undefined, index: number, total: number) => {
+    if (!base) return { branch: undefined, label: undefined }
+    if (total > 1 && index > 0) {
+      return {
+        branch: `${base}_v${index + 1}`,
+        label: `${base} v${index + 1}`,
+      }
+    }
+    return { branch: base, label: base }
+  },
 }))
 
 vi.mock("../git-import", () => ({
@@ -105,8 +114,10 @@ function createHarness() {
     getStateManager: ReturnType<typeof vi.fn>
     registerWorktreeSession: ReturnType<typeof vi.fn>
     notifyWorktreeReady: ReturnType<typeof vi.fn>
+    postToWebview: ReturnType<typeof vi.fn>
     log: ReturnType<typeof vi.fn>
     onCreateWorktree: () => Promise<null>
+    onCreateMultiVersion: (msg: Record<string, unknown>) => Promise<null>
   }
 
   manager.host = host
@@ -122,6 +133,7 @@ function createHarness() {
   manager.getStateManager = vi.fn().mockReturnValue({ addSession: vi.fn() })
   manager.registerWorktreeSession = vi.fn()
   manager.notifyWorktreeReady = vi.fn()
+  manager.postToWebview = vi.fn()
   manager.log = vi.fn()
 
   return manager
@@ -168,5 +180,29 @@ describe("AgentManagerProvider worktree creation", () => {
     await pending
 
     expect(manager.createWorktreeOnDisk).toHaveBeenCalledTimes(1)
+  })
+
+  it("passes task text into auto-named multi-version worktree creation", async () => {
+    const manager = createHarness()
+    const created = {
+      worktree: { id: "wt-3" },
+      result: { path: "/repo/.kilo/worktrees/wt-3", branch: "kilo-worktree/fix-login-flow", parentBranch: "main" },
+    }
+
+    manager.createWorktreeOnDisk.mockResolvedValue(created)
+    manager.createSessionInWorktree.mockResolvedValue({ id: "session-3" })
+    manager.getStateManager.mockReturnValue({ addSession: vi.fn() })
+
+    await manager.onCreateMultiVersion({
+      type: "agentManager.createMultiVersion",
+      text: "Fix login flow",
+      versions: 1,
+    })
+
+    expect(manager.createWorktreeOnDisk).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: "Fix login flow",
+      }),
+    )
   })
 })

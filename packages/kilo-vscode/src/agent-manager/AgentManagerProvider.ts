@@ -484,7 +484,7 @@ export class AgentManagerProvider implements Disposable {
     baseBranch?: string
     branchName?: string
     existingBranch?: string
-    name?: string
+    prompt?: string
     label?: string
   }): Promise<{
     worktree: ReturnType<WorktreeStateManager["addWorktree"]>
@@ -512,7 +512,7 @@ export class AgentManagerProvider implements Disposable {
     let result: CreateWorktreeResult
     try {
       result = await manager.createWorktree({
-        prompt: opts?.name || "kilo",
+        prompt: opts?.prompt,
         baseBranch: effectiveBase ?? opts?.baseBranch,
         branchName: opts?.branchName,
         existingBranch: opts?.existingBranch,
@@ -898,8 +898,8 @@ export class AgentManagerProvider implements Disposable {
       const wt = await this.createWorktreeOnDisk({
         groupId,
         baseBranch,
+        prompt: text,
         branchName: version.branch,
-        name: version.branch,
         label: version.label,
       })
       if (!wt) {

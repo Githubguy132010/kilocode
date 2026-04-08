@@ -73,34 +73,22 @@ async function createTempRepoWithOrigin(): Promise<{ bare: string; clone: string
 // ---------------------------------------------------------------------------
 
 describe("generateBranchName", () => {
-  it("generates a two-word predicate-object name", () => {
-    const name = generateBranchName("anything")
-    // Should be two lowercase words joined by a hyphen
-    expect(name).toMatch(/^[a-z]+-[a-z]+$/)
+  it("uses the task prompt for auto-generated names", () => {
+    expect(generateBranchName("Fix login bug")).toBe("kilo-worktree/fix-login-bug")
   })
 
-  it("avoids existing branches", () => {
-    // Generate 50 names and collect them; none should collide with the existing list
-    const existing = ["brave-piano", "sunny-cloud"]
-    for (let i = 0; i < 50; i++) {
-      const name = generateBranchName("task", existing)
-      expect(existing).not.toContain(name)
-    }
+  it("sanitizes task prompts before building the branch", () => {
+    expect(generateBranchName("FIX bug #123 & add feature")).toBe("kilo-worktree/fix-bug-123-add-feature")
   })
 
-  it("falls back to numeric suffix when collisions are likely", () => {
-    // Supply a huge existing list — eventually a numeric suffix or timestamp is used
-    const name = generateBranchName("task", [])
-    expect(typeof name).toBe("string")
-    expect(name.length).toBeGreaterThan(0)
+  it("adds a numeric suffix when the prompt-based branch already exists", () => {
+    const existing = ["kilo-worktree/fix-login-bug"]
+    expect(generateBranchName("Fix login bug", existing)).toBe("kilo-worktree/fix-login-bug-2")
   })
 
-  it("ignores the prompt and always returns friendly words", () => {
-    const a = generateBranchName("")
-    const b = generateBranchName("FIX BUG")
-    // Both should be lowercase word-hyphen-word patterns
-    expect(a).toMatch(/^[a-z]+-[a-z]+/)
-    expect(b).toMatch(/^[a-z]+-[a-z]+/)
+  it("falls back to prefixed friendly words when no prompt is available", () => {
+    const name = generateBranchName(undefined, [])
+    expect(name).toMatch(/^kilo-worktree\/[a-z]+-[a-z]+$/)
   })
 })
 
@@ -237,14 +225,13 @@ describe("WorktreeStateManager.updateWorktreeLabel", () => {
 // ---------------------------------------------------------------------------
 
 describe("WorktreeManager.createWorktree", () => {
-  it("creates a worktree with a new branch", async () => {
+  it("creates a worktree with a task-based branch", async () => {
     const root = await createTempRepo()
     const mgr = createManager(root)
 
     const result = await mgr.createWorktree({ prompt: "test task" })
 
-    // Branch should be a friendly two-word name (e.g. "brave-piano")
-    expect(result.branch).toMatch(/^[a-z]+-[a-z]+/)
+    expect(result.branch).toBe("kilo-worktree/test-task")
     expect(result.parentBranch).toBeTruthy()
 
     // Worktree directory should exist and have a .git file (not directory)
