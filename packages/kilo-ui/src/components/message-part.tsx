@@ -1311,17 +1311,33 @@ PART_MAPPING["reasoning"] = function ReasoningPartDisplay(props: MessagePartProp
 
   onCleanup(() => {
     if (done()) streamed.delete(id)
-    if (done()) userOpened.delete(id)
+    // userOpened is intentionally NOT deleted here. The component recreates
+    // frequently while other parts stream (same as autocollapsed), so removing
+    // the entry on unmount would discard the user's explicit preference and
+    // re-collapse the block on the next remount.
   })
 
-  // Auto-scroll the content container while streaming, but only when the user
-  // hasn't scrolled away from the bottom (mirrors create-auto-scroll logic).
+  // Auto-scroll the content container while streaming.
+  // Use a plain mutable flag rather than checking dist inside the reactive
+  // effect: by the time the effect runs the DOM has already grown, so reading
+  // scrollHeight post-update incorrectly reports the user as scrolled away
+  // whenever a streaming chunk is > 10px tall.
   let ref: HTMLDivElement | undefined
+  let scrolled = false
+
+  const onScroll = (e: Event) => {
+    const el = e.currentTarget as HTMLDivElement
+    if (el.scrollHeight - el.clientHeight - el.scrollTop < 10) scrolled = false
+  }
+
+  const onWheel = (e: WheelEvent) => {
+    if (e.deltaY < 0) scrolled = true
+  }
+
   createEffect(() => {
     display()
-    if (!done() && ref) {
-      const dist = ref.scrollHeight - ref.clientHeight - ref.scrollTop
-      if (dist < 10) ref.scrollTop = ref.scrollHeight
+    if (!done() && ref && !scrolled) {
+      ref.scrollTop = ref.scrollHeight
     }
   })
 
@@ -1337,7 +1353,7 @@ PART_MAPPING["reasoning"] = function ReasoningPartDisplay(props: MessagePartProp
             <Collapsible.Arrow />
           </Collapsible.Trigger>
           <Collapsible.Content>
-            <div data-slot="reasoning-content" ref={ref}>
+            <div data-slot="reasoning-content" ref={ref} onScroll={onScroll} onWheel={onWheel}>
               <Markdown text={display()} cacheKey={id} />
             </div>
           </Collapsible.Content>
