@@ -1254,6 +1254,9 @@ const streamed = new Set<string>()
 // Tracks parts that have already been auto-collapsed once, so component
 // recreation (from store updates while other parts stream) won't collapse again.
 const autocollapsed = new Set<string>()
+// Tracks parts that the user has explicitly opened, so auto-collapse won't
+// override the user's intent when reasoning finishes or a tool call starts.
+const userOpened = new Set<string>()
 
 // Overrides upstream flat markdown render with streaming reasoning block + auto-collapse.
 // Also filters encrypted reasoning data from OpenRouter that appears as [REDACTED].
@@ -1283,14 +1286,24 @@ PART_MAPPING["reasoning"] = function ReasoningPartDisplay(props: MessagePartProp
 
   // Streaming → open. Just finished (was streaming, now done) → open briefly
   // then collapse. Historical → collapsed from the start.
-  const [open, setOpen] = createSignal(!done() || was)
+  // Restore user's explicit open preference across component recreations.
+  const [open, setOpen] = createSignal(!done() || was || userOpened.has(id))
+
+  // Propagate user intent to the module-level set so it survives component
+  // recreations (e.g. when a tool call arrives while reading reasoning).
+  const handleOpenChange = (value: boolean) => {
+    if (value) userOpened.add(id)
+    else userOpened.delete(id)
+    setOpen(value)
+  }
 
   // Auto-collapse once when reasoning finishes (streaming → done transition).
   // Collapses immediately so the grid transition runs in sync with the
   // streaming-height removal. Module-level Set prevents re-triggering on
-  // component recreation or when the user manually reopens.
+  // component recreation. Skipped entirely if the user has explicitly opened
+  // the block, so reading is not interrupted by a subsequent tool call.
   createEffect(() => {
-    if (done() && open() && !autocollapsed.has(id)) {
+    if (done() && open() && !autocollapsed.has(id) && !userOpened.has(id)) {
       autocollapsed.add(id)
       setOpen(false)
     }
@@ -1300,19 +1313,21 @@ PART_MAPPING["reasoning"] = function ReasoningPartDisplay(props: MessagePartProp
     if (done()) streamed.delete(id)
   })
 
-  // Auto-scroll the content container while streaming
+  // Auto-scroll the content container while streaming, but only when the user
+  // hasn't scrolled away from the bottom (mirrors create-auto-scroll logic).
   let ref: HTMLDivElement | undefined
   createEffect(() => {
     display()
     if (!done() && ref) {
-      ref.scrollTop = ref.scrollHeight
+      const dist = ref.scrollHeight - ref.clientHeight - ref.scrollTop
+      if (dist < 10) ref.scrollTop = ref.scrollHeight
     }
   })
 
   return (
     <Show when={display()}>
       <div data-component="reasoning-part" data-streaming={!done() ? "" : undefined}>
-        <Collapsible open={open()} onOpenChange={setOpen} class="tool-collapsible">
+        <Collapsible open={open()} onOpenChange={handleOpenChange} class="tool-collapsible">
           <Collapsible.Trigger>
             <div data-slot="reasoning-header">
               <Icon name="brain" size="small" />
