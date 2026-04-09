@@ -13,6 +13,8 @@ import type {
   AuthRemoveResponses,
   AuthSetErrors,
   AuthSetResponses,
+  BranchNameGenerateErrors,
+  BranchNameGenerateResponses,
   CommandListResponses,
   CommitMessageGenerateErrors,
   CommitMessageGenerateResponses,
@@ -3187,6 +3189,49 @@ export class EnhancePrompt extends HeyApiClient {
   }
 }
 
+export class BranchName extends HeyApiClient {
+  /**
+   * Generate branch name
+   *
+   * Generate a concise git branch name slug from a task prompt using AI.
+   */
+  public generate<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+      prompt?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+            { in: "body", key: "prompt" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).post<
+      BranchNameGenerateResponses,
+      BranchNameGenerateErrors,
+      ThrowOnError
+    >({
+      url: "/branch-name",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    })
+  }
+}
+
 export class SessionImport extends HeyApiClient {
   /**
    * Insert project for session import
@@ -5373,6 +5418,11 @@ export class KiloClient extends HeyApiClient {
   private _enhancePrompt?: EnhancePrompt
   get enhancePrompt(): EnhancePrompt {
     return (this._enhancePrompt ??= new EnhancePrompt({ client: this.client }))
+  }
+
+  private _branchName?: BranchName
+  get branchName(): BranchName {
+    return (this._branchName ??= new BranchName({ client: this.client }))
   }
 
   private _kilocode?: Kilocode

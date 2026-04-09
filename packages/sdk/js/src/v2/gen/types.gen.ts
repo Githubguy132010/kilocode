@@ -4608,6 +4608,41 @@ export type EnhancePromptEnhanceResponses = {
 
 export type EnhancePromptEnhanceResponse = EnhancePromptEnhanceResponses[keyof EnhancePromptEnhanceResponses]
 
+export type BranchNameGenerateData = {
+  body?: {
+    /**
+     * The task prompt to derive a branch name from
+     */
+    prompt: string
+  }
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/branch-name"
+}
+
+export type BranchNameGenerateErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type BranchNameGenerateError = BranchNameGenerateErrors[keyof BranchNameGenerateErrors]
+
+export type BranchNameGenerateResponses = {
+  /**
+   * Generated branch name slug
+   */
+  200: {
+    branch: string
+  }
+}
+
+export type BranchNameGenerateResponse = BranchNameGenerateResponses[keyof BranchNameGenerateResponses]
+
 export type KilocodeSessionImportProjectData = {
   body?: {
     id: string

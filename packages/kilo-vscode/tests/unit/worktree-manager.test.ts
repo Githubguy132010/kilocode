@@ -134,6 +134,10 @@ describe("sanitizeBranchName", () => {
     const result = sanitizeBranchName("abcdefghij", 5)
     expect(result).toBe("abcde")
   })
+
+  it("preserves forward slash as namespace separator", () => {
+    expect(sanitizeBranchName("kilo-worktree/fix-login-bug")).toBe("kilo-worktree/fix-login-bug")
+  })
 })
 
 // ---------------------------------------------------------------------------

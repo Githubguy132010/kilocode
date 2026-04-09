@@ -47,6 +47,7 @@ import { HTTPException } from "hono/http-exception"
 import { errors } from "./error"
 import { CommitMessageRoutes } from "./routes/commit-message" // kilocode_change
 import { EnhancePromptRoutes } from "./routes/enhance-prompt" // kilocode_change
+import { BranchNameRoutes } from "./routes/branch-name" // kilocode_change
 import { KilocodeRoutes } from "./routes/kilocode" // kilocode_change
 import { PermissionKilocodeRoutes } from "../kilocode/permission/routes" // kilocode_change
 import { Filesystem } from "@/util/filesystem"
@@ -285,6 +286,7 @@ export namespace Server {
         .route("/remote", RemoteRoutes()) // kilocode_change
         .route("/commit-message", CommitMessageRoutes()) // kilocode_change
         .route("/enhance-prompt", EnhancePromptRoutes()) // kilocode_change
+        .route("/branch-name", BranchNameRoutes()) // kilocode_change
         .route("/kilocode", KilocodeRoutes()) // kilocode_change
         // kilocode_change start - Kilo Gateway routes
         .route(

@@ -11,7 +11,7 @@ import { chooseBaseBranch, normalizeBaseBranch } from "./base-branch"
 import { GitStatsPoller, type WorktreePresenceResult } from "./GitStatsPoller"
 import { PRStatusBridge } from "./pr-status-bridge"
 import { GitOps, type ApplyConflict } from "./GitOps"
-import { versionedName } from "./branch-name"
+import { versionedName, resolveWorktreeBranchName } from "./branch-name"
 import { normalizePath, classifyWorktreeError } from "./git-import"
 import { SetupScriptService } from "./SetupScriptService"
 import { SetupScriptRunner } from "./SetupScriptRunner"
@@ -518,7 +518,7 @@ export class AgentManagerProvider implements Disposable {
       result = await manager.createWorktree({
         prompt: opts?.prompt,
         baseBranch: effectiveBase ?? opts?.baseBranch,
-        branchName: opts?.branchName,
+        branchName: await resolveWorktreeBranchName(this.connectionService.getClient(), opts?.branchName, opts?.prompt, (err) => this.log(`LLM branch name failed, using slug: ${err}`)),
         existingBranch: opts?.existingBranch,
       })
     } catch (error) {

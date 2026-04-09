@@ -1,20 +1,25 @@
 import friendlyWords from "friendly-words"
+import type { KiloClient } from "@kilocode/sdk/v2/client"
 
 const MAX_ATTEMPTS = 10
 const FALLBACK_MAX_SUFFIX = 100
 const AUTO_PREFIX = "kilo-worktree"
 
 /**
- * Sanitize a string into a valid git branch name segment.
- * Keeps lowercase alphanumeric chars and hyphens, collapses runs, strips edges.
+ * Sanitize a string into a valid git branch name.
+ * Keeps lowercase alphanumeric chars, hyphens, and forward slashes (namespace
+ * separator), collapses runs, strips edges.
  */
 export function sanitizeBranchName(name: string, maxLength = 50): string {
   return name
     .slice(0, maxLength)
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
+    .replace(/[^a-z0-9/]+/g, "-")
+    .replace(/^[-/]+|[-/]+$/g, "")
     .replace(/-+/g, "-")
+    .replace(/\/+/g, "/")
+    .replace(/-\//g, "/")
+    .replace(/\/-/g, "/")
 }
 
 /**
@@ -71,4 +76,26 @@ export function versionedName(
     }
   }
   return { branch: base, label: base }
+}
+
+/**
+ * Resolve the branch name for a new worktree. If no explicit branch name is
+ * provided and a prompt is available, calls the LLM endpoint on the server to
+ * generate a meaningful slug.  Falls back to `undefined` (triggering slug-based
+ * generation in WorktreeManager) when the LLM call fails or returns nothing.
+ */
+export async function resolveWorktreeBranchName(
+  client: KiloClient,
+  explicitBranch: string | undefined,
+  prompt: string | undefined,
+  onError: (err: unknown) => void,
+): Promise<string | undefined> {
+  if (explicitBranch || !prompt) return explicitBranch
+  try {
+    const { data } = await client.branchName.generate({ prompt })
+    return data?.branch ? `${AUTO_PREFIX}/${data.branch}` : undefined
+  } catch (err) {
+    onError(err)
+    return undefined
+  }
 }
