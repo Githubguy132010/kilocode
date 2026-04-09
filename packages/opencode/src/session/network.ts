@@ -230,7 +230,7 @@ export namespace SessionNetwork {
         return
       }
       delete s.pending[input.requestID]
-      await MCP.reconnectRemote().catch((err) => {
+      void MCP.reconnectRemote().catch((err) => {
         log.error("remote reconnect failed", { err })
       })
       Bus.publish(Event.Replied, {
