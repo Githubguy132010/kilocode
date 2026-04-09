@@ -109,6 +109,9 @@ export const dict = {
 
   "agentManager.diff.toggle": "Skift diff",
   "agentManager.diff.openFile": "Åbn fil",
+  "agentManager.diff.revertFile": "Gendan fil",
+  "agentManager.diff.revertSuccess": "Fil gendannet",
+  "agentManager.diff.revertError": "Gendannelse fejlede",
   "agentManager.open.button": "Åbn",
   "agentManager.open.tooltip": "Åbn dette Worktree i VS Code",
   "agentManager.apply.button": "Anvend lokalt",

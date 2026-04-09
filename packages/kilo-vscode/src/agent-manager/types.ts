@@ -228,6 +228,14 @@ interface WorktreeDiffFileMessage {
   diff: WorktreeDiffEntry | null
 }
 
+interface RevertWorktreeFileResultMessage {
+  type: "agentManager.revertWorktreeFileResult"
+  sessionId: string
+  file: string
+  status: "success" | "error"
+  message: string
+}
+
 interface PRStatusOutMessage {
   type: "agentManager.prStatus"
   worktreeId: string
@@ -262,6 +270,7 @@ export type AgentManagerOutMessage =
   | WorktreeDiffLoadingMessage
   | WorktreeDiffMessage
   | WorktreeDiffFileMessage
+  | RevertWorktreeFileResultMessage
   | PRStatusOutMessage
   | ActionOutMessage
 
@@ -440,6 +449,12 @@ interface StopDiffWatchIn {
   type: "agentManager.stopDiffWatch"
 }
 
+interface RevertWorktreeFileIn {
+  type: "agentManager.revertWorktreeFile"
+  sessionId: string
+  file: string
+}
+
 interface RefreshPRIn {
   type: "agentManager.refreshPR"
   worktreeId: string
@@ -601,6 +616,7 @@ export type AgentManagerInMessage =
   | ApplyWorktreeDiffIn
   | StartDiffWatchIn
   | StopDiffWatchIn
+  | RevertWorktreeFileIn
   | RefreshPRIn
   | OpenPRIn
   | OpenFileIn
