@@ -169,6 +169,7 @@ interface SendInitialMessage {
   providerID?: string
   modelID?: string
   agent?: string
+  variant?: string
   files?: Array<{ mime: string; url: string }>
 }
 
@@ -314,6 +315,18 @@ interface CloseSessionIn {
   sessionId: string
 }
 
+/** Persist a non-worktree session to agent-manager.json (worktreeId = null). */
+interface PersistSessionIn {
+  type: "agentManager.persistSession"
+  sessionId: string
+}
+
+/** Remove a non-worktree session from agent-manager.json. */
+interface ForgetSessionIn {
+  type: "agentManager.forgetSession"
+  sessionId: string
+}
+
 interface ConfigureSetupScriptIn {
   type: "agentManager.configureSetupScript"
 }
@@ -353,6 +366,7 @@ interface CreateMultiVersionIn {
   providerID?: string
   modelID?: string
   agent?: string
+  variant?: string
   files?: Array<{ mime: string; url: string }>
   baseBranch?: string
   branchName?: string
@@ -463,6 +477,11 @@ interface RefreshPRIn {
 interface OpenPRIn {
   type: "agentManager.openPR"
   worktreeId: string
+}
+
+interface OpenSessionsIn {
+  type: "agentManager.openSessions"
+  sessionIDs: string[]
 }
 
 interface OpenFileIn {
@@ -589,6 +608,8 @@ export type AgentManagerInMessage =
   | OpenLocallyIn
   | AddSessionToWorktreeIn
   | CloseSessionIn
+  | PersistSessionIn
+  | ForgetSessionIn
   | ForkSessionIn
   | ConfigureSetupScriptIn
   | ShowTerminalIn
@@ -619,6 +640,7 @@ export type AgentManagerInMessage =
   | RevertWorktreeFileIn
   | RefreshPRIn
   | OpenPRIn
+  | OpenSessionsIn
   | OpenFileIn
   | GenericOpenFileIn
   | PreviewImageIn

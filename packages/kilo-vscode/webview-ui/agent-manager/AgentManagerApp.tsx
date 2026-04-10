@@ -98,6 +98,7 @@ import {
   buildTopLevelItems,
   buildSidebarOrder,
   buildShortcutMap,
+  completeSidebarOrder,
   isGrouped,
   isGroupStart,
   isGroupEnd,
@@ -1310,6 +1311,7 @@ const AgentManagerContent: Component = () => {
             providerID: ev.providerID,
             modelID: ev.modelID,
             agent: ev.agent,
+            variant: ev.variant,
             files: ev.files,
           })
         }
@@ -2276,10 +2278,7 @@ const AgentManagerContent: Component = () => {
                     if (typeof from !== "string" || typeof to !== "string") return
                     if (secIds().has(to)) return
                     setSidebarWorktreeOrder((prev) => {
-                      const cur = applyTabOrder(
-                        sortedWorktrees().map((w) => ({ id: w.id })),
-                        prev,
-                      ).map((i) => i.id)
+                      const cur = completeSidebarOrder(sections(), sortedWorktrees(), prev)
                       return reorderTabs(cur, from, to) ?? prev
                     })
                   }
@@ -2289,6 +2288,7 @@ const AgentManagerContent: Component = () => {
                     setDraggingWorktree(undefined)
                     document.body.classList.remove("am-wt-dragging-active")
                     if (typeof from === "string" && typeof to === "string" && secIds().has(to)) {
+                      vscode.postMessage({ type: "agentManager.setWorktreeOrder", order: sidebarWorktreeOrder() })
                       moveToSection([from], to)
                       return
                     }
