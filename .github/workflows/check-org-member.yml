@@ -19,6 +19,7 @@ on:
 jobs:
   check:
     runs-on: ubuntu-24.04
+    permissions: {}
     outputs:
       is-member: ${{ steps.check.outputs['is-member'] }}
     steps:
