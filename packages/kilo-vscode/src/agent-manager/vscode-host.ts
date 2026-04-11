@@ -170,7 +170,7 @@ export class VscodeHost implements Host {
   }
 
   setting<T>(key: string, fallback: T): T {
-    return vscode.workspace.getConfiguration("kilo-code.new").get<T>(key, fallback) ?? fallback
+    return vscode.workspace.getConfiguration("kilo-code.new").get<T>(key, fallback)
   }
 
   copyToClipboard(text: string): void {

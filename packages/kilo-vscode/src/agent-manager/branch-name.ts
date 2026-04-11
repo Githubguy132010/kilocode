@@ -5,7 +5,7 @@ const FALLBACK_MAX_SUFFIX = 100
 export const DEFAULT_WORKTREE_PREFIX = "kilo-worktree"
 
 export function normalizeWorktreePrefix(prefix: string | undefined): string {
-  return sanitizeBranchName(prefix ?? "").replace(/\/+$/g, "")
+  return sanitizeBranchName(prefix ?? "", 255).replace(/\/+$/g, "")
 }
 
 function applyPrefix(prefix: string | undefined, name: string): string {
@@ -32,6 +32,8 @@ export function sanitizeBranchName(name: string, maxLength = 50): string {
 
 /**
  * Generate an auto branch name for a worktree.
+ * Uses the prompt when available, falls back to friendly words when not,
+ * and applies the configured prefix unless it is empty.
  */
 export function generateBranchName(
   prompt: string | undefined,

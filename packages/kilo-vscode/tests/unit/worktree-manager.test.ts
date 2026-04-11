@@ -100,7 +100,7 @@ describe("generateBranchName", () => {
 
   it("falls back to prefixed friendly words when no prompt is available", () => {
     const name = generateBranchName(undefined, [])
-    expect(name).toMatch(/^kilo-worktree\/[a-z]+-[a-z]+$/)
+    expect(name).toMatch(new RegExp(`^${DEFAULT_WORKTREE_PREFIX}\\/[a-z]+-[a-z]+$`))
   })
 })
 
