@@ -591,7 +591,12 @@ export class AgentManagerProvider implements Disposable {
       result = await manager.createWorktree({
         prompt: opts?.prompt,
         baseBranch: effectiveBase ?? opts?.baseBranch,
-        branchName: await resolveWorktreeBranchName(this.connectionService.getClient(), opts?.branchName, opts?.prompt, (err) => this.log(`LLM branch name failed, using slug: ${err}`)),
+        branchName: await resolveWorktreeBranchName(
+          this.connectionService.getClient(),
+          opts?.branchName,
+          opts?.prompt,
+          (err) => this.log(`LLM branch name failed, using slug: ${err}`),
+        ),
         existingBranch: opts?.existingBranch,
       })
     } catch (error) {
