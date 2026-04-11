@@ -3,7 +3,13 @@ import os from "node:os"
 import path from "node:path"
 import fs from "node:fs/promises"
 import { WorktreeManager } from "../../src/agent-manager/WorktreeManager"
-import { generateBranchName, sanitizeBranchName, versionedName } from "../../src/agent-manager/branch-name"
+import {
+  applyPrefix,
+  generateBranchName,
+  sanitizeBranchName,
+  sanitizePrefix,
+  versionedName,
+} from "../../src/agent-manager/branch-name"
 import { WorktreeStateManager } from "../../src/agent-manager/WorktreeStateManager"
 import simpleGit from "simple-git"
 
@@ -32,9 +38,9 @@ async function createTempRepo(): Promise<string> {
   return dir
 }
 
-function createManager(root: string): WorktreeManager {
+function createManager(root: string, prefix?: string): WorktreeManager {
   const logs: string[] = []
-  return new WorktreeManager(root, (msg) => logs.push(msg))
+  return new WorktreeManager(root, (msg) => logs.push(msg), undefined, prefix)
 }
 
 /** Create a temp repo with a bare origin remote so origin/<branch> refs exist. */
@@ -152,6 +158,26 @@ describe("sanitizeBranchName", () => {
 // versionedName
 // ---------------------------------------------------------------------------
 
+describe("sanitizePrefix", () => {
+  it("sanitizes valid prefix", () => {
+    expect(sanitizePrefix("My Prefix")).toBe("my-prefix")
+  })
+
+  it("falls back to empty for invalid input", () => {
+    expect(sanitizePrefix("***")).toBe("")
+  })
+})
+
+describe("applyPrefix", () => {
+  it("adds prefix to generated branch name", () => {
+    expect(applyPrefix("bright-otter", "my-work")).toBe("my-work/bright-otter")
+  })
+
+  it("does not double-prefix branch names", () => {
+    expect(applyPrefix("my-work/bright-otter", "my-work")).toBe("my-work/bright-otter")
+  })
+})
+
 describe("versionedName", () => {
   it("returns base name for first version", () => {
     const result = versionedName("auth-refactor", 0, 3)
@@ -243,8 +269,7 @@ describe("WorktreeManager.createWorktree", () => {
 
     const result = await mgr.createWorktree({ prompt: "test task" })
 
-    // Branch should be a friendly two-word name (e.g. "brave-piano")
-    expect(result.branch).toMatch(/^[a-z]+-[a-z]+/)
+    expect(result.branch).toMatch(/^kilo-worktree\/[a-z]+-[a-z]+/)
     expect(result.parentBranch).toBeTruthy()
 
     // Worktree directory should exist and have a .git file (not directory)
@@ -998,6 +1023,24 @@ describe("WorktreeManager.resolveBaseBranch", () => {
     const head = (await git2.revparse(["--abbrev-ref", "HEAD"])).trim()
     expect(result).toEqual({ branch: head })
     expect(result.remote).toBeUndefined()
+  })
+})
+
+describe("WorktreeManager.createWorktree prefix", () => {
+  it("uses custom prefix for generated branch names", async () => {
+    const root = await createTempRepo()
+    const mgr = createManager(root, "my-work")
+    const res = await mgr.createWorktree({ prompt: "prefix test" })
+
+    expect(res.branch).toMatch(/^my-work\/[a-z]+-[a-z]+/)
+  })
+
+  it("falls back to default prefix when custom prefix is invalid", async () => {
+    const root = await createTempRepo()
+    const mgr = createManager(root, "***")
+    const res = await mgr.createWorktree({ prompt: "prefix test" })
+
+    expect(res.branch).toMatch(/^kilo-worktree\/[a-z]+-[a-z]+/)
   })
 })
 

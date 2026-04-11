@@ -16,6 +16,17 @@ export function sanitizeBranchName(name: string, maxLength = 50): string {
     .replace(/-+/g, "-")
 }
 
+export function sanitizePrefix(name: string, maxLength = 24): string {
+  return sanitizeBranchName(name, maxLength)
+}
+
+export function applyPrefix(branch: string, prefix?: string): string {
+  const clean = prefix ? sanitizePrefix(prefix) : ""
+  if (!clean) return branch
+  if (branch.startsWith(`${clean}/`)) return branch
+  return `${clean}/${branch}`
+}
+
 /**
  * Generate a natural two-word branch name (e.g. "ambitious-keyboard") using
  * the friendly-words package.  Checks `existingBranches` to avoid collisions,

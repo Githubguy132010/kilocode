@@ -1,5 +1,6 @@
 import * as fs from "fs"
 import * as path from "path"
+import * as vscode from "vscode"
 import type { KiloClient, Session } from "@kilocode/sdk/v2/client"
 import type { KiloConnectionService } from "../services/cli-backend"
 import { getErrorMessage } from "../kilo-provider-utils"
@@ -1269,6 +1270,18 @@ export class AgentManagerProvider implements Disposable {
     return this.host.workspacePath()
   }
 
+  private getWorktreePrefix(): string {
+    const value = vscode.workspace.getConfiguration("kilo-code.new").get<string>("worktreePrefix") ?? "kilo-worktree"
+    const clean = value
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .replace(/-+/g, "-")
+      .slice(0, 24)
+    return clean || "kilo-worktree"
+  }
+
   private getWorktreeManager(): WorktreeManager | undefined {
     if (this.worktrees) return this.worktrees
     const root = this.getRoot()
@@ -1280,6 +1293,7 @@ export class AgentManagerProvider implements Disposable {
       root,
       (msg) => this.outputChannel.appendLine(`[WorktreeManager] ${msg}`),
       this.gitOps,
+      this.getWorktreePrefix(),
     )
     return this.worktrees
   }

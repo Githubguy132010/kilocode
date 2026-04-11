@@ -232,6 +232,9 @@ The Agent Manager surfaces:
 - Worktree path
 - A completion/merge instruction message when the agent finishes
 
+You can customize the default branch prefix for Agent Manager worktrees with the VS Code setting `kilo-code.new.worktreePrefix`.
+By default this is `kilo-worktree`. Custom values are sanitized to lowercase letters, numbers, and hyphens.
+
 ### After Completion
 
 - The worktree is cleaned up automatically, but the branch is preserved
