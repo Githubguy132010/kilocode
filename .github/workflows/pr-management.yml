@@ -19,7 +19,7 @@ jobs:
     needs: check-author
     if: github.repository == 'Kilo-Org/kilocode' && false # kilocode_change - disabled: not needed in kilocode repo
     # kilocode_change end
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04 # kilocode_change - use GitHub-hosted runners in the Kilo fork
     permissions:
       contents: read
       pull-requests: write
