@@ -783,6 +783,11 @@
           "type": "boolean",
           "default": true,
           "description": "Show the task timeline graph in the chat header"
+        },
+        "kilo-code.new.agentManager.worktreePrefix": {
+          "type": "string",
+          "default": "kilo-worktree",
+          "description": "Prefix used for auto-generated Agent Manager worktree branch names. Use an empty string to disable the prefix."
         }
       }
     }

@@ -169,6 +169,10 @@ export class VscodeHost implements Host {
     return this.connectionService.getServerInfo()?.port
   }
 
+  setting<T>(key: string, fallback: T): T {
+    return vscode.workspace.getConfiguration("kilo-code.new").get<T>(key, fallback) ?? fallback
+  }
+
   copyToClipboard(text: string): void {
     void vscode.env.clipboard.writeText(text)
   }

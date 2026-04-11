@@ -109,6 +109,9 @@ export interface Host {
   /** Get the CLI server port (for webview CSP). */
   serverPort(): number | undefined
 
+  /** Read a Kilo Code setting. */
+  setting<T>(key: string, fallback: T): T
+
   /** Copy text to the system clipboard. */
   copyToClipboard(text: string): void
 

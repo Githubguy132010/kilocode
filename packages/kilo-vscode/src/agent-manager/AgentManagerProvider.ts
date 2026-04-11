@@ -11,7 +11,7 @@ import { chooseBaseBranch, normalizeBaseBranch } from "./base-branch"
 import { GitStatsPoller, type WorktreePresenceResult } from "./GitStatsPoller"
 import { PRStatusBridge } from "./pr-status-bridge"
 import { GitOps } from "./GitOps"
-import { versionedName } from "./branch-name"
+import { DEFAULT_WORKTREE_PREFIX, versionedName } from "./branch-name"
 import { classifyWorktreeError } from "./git-import"
 import { SetupScriptService } from "./SetupScriptService"
 import { SetupScriptRunner } from "./SetupScriptRunner"
@@ -1280,6 +1280,7 @@ export class AgentManagerProvider implements Disposable {
       root,
       (msg) => this.outputChannel.appendLine(`[WorktreeManager] ${msg}`),
       this.gitOps,
+      { prefix: () => this.host.setting("agentManager.worktreePrefix", DEFAULT_WORKTREE_PREFIX) },
     )
     return this.worktrees
   }

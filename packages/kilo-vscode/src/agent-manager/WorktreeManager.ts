@@ -10,7 +10,7 @@ import * as path from "path"
 import * as fs from "fs"
 import { randomUUID } from "crypto"
 import simpleGit, { type SimpleGit } from "simple-git"
-import { generateBranchName, sanitizeBranchName } from "./branch-name"
+import { DEFAULT_WORKTREE_PREFIX, generateBranchName, sanitizeBranchName } from "./branch-name"
 import { type GitOps, nonInteractiveEnv } from "./GitOps"
 import { execWithShellEnv } from "./shell-env"
 import {
@@ -92,14 +92,16 @@ export class WorktreeManager {
   private readonly git: SimpleGit
   private readonly ops: GitOps | undefined
   private readonly log: (msg: string) => void
+  private readonly prefix: (() => string) | undefined
   private migrated = false
 
-  constructor(root: string, log: (msg: string) => void, ops?: GitOps) {
+  constructor(root: string, log: (msg: string) => void, ops?: GitOps, opts?: { prefix?: () => string }) {
     this.root = root
     this.dir = path.join(root, KILO_DIR, "worktrees")
     this.git = simpleGit(root)
     this.ops = ops
     this.log = log
+    this.prefix = opts?.prefix
   }
 
   /** Run once before first read/write to migrate Agent Manager data from .kilocode → .kilo. */
@@ -231,7 +233,7 @@ export class WorktreeManager {
         .branch()
         .then((b) => b.all)
         .catch(() => [] as string[])
-      branch = generateBranchName(params.prompt || "agent-task", existing)
+      branch = generateBranchName(params.prompt, existing, this.prefix?.() ?? DEFAULT_WORKTREE_PREFIX)
     }
 
     if (params.existingBranch) {

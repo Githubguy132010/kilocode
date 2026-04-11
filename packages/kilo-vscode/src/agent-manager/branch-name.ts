@@ -2,26 +2,42 @@ import friendlyWords from "friendly-words"
 
 const MAX_ATTEMPTS = 10
 const FALLBACK_MAX_SUFFIX = 100
+export const DEFAULT_WORKTREE_PREFIX = "kilo-worktree"
+
+export function normalizeWorktreePrefix(prefix: string | undefined): string {
+  return sanitizeBranchName(prefix ?? "").replace(/\/+$/g, "")
+}
+
+function applyPrefix(prefix: string | undefined, name: string): string {
+  const base = normalizeWorktreePrefix(prefix)
+  if (!base) return name
+  return `${base}/${name}`
+}
 
 /**
  * Sanitize a string into a valid git branch name segment.
- * Keeps lowercase alphanumeric chars and hyphens, collapses runs, strips edges.
+ * Keeps lowercase alphanumeric chars, hyphens, and slashes, collapses runs, strips edges.
  */
 export function sanitizeBranchName(name: string, maxLength = 50): string {
   return name
     .slice(0, maxLength)
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
+    .replace(/[^a-z0-9/]+/g, "-")
+    .replace(/^[-/]+|[-/]+$/g, "")
     .replace(/-+/g, "-")
+    .replace(/\/+/g, "/")
+    .replace(/-\//g, "/")
+    .replace(/\/-/g, "/")
 }
 
 /**
- * Generate a natural two-word branch name (e.g. "ambitious-keyboard") using
- * the friendly-words package.  Checks `existingBranches` to avoid collisions,
- * falling back to a numeric suffix and ultimately a timestamp.
+ * Generate an auto branch name for a worktree.
  */
-export function generateBranchName(_prompt: string, existingBranches: string[] = []): string {
+export function generateBranchName(
+  prompt: string | undefined,
+  existingBranches: string[] = [],
+  prefix = DEFAULT_WORKTREE_PREFIX,
+): string {
   const predicates = friendlyWords.predicates as string[]
   const objects = friendlyWords.objects as string[]
   const existing = new Set(existingBranches.map((b) => b.toLowerCase()))
@@ -29,24 +45,29 @@ export function generateBranchName(_prompt: string, existingBranches: string[] =
   const random = () => {
     const predicate = predicates[Math.floor(Math.random() * predicates.length)]
     const object = objects[Math.floor(Math.random() * objects.length)]
-    return `${predicate}-${object}`
+    return applyPrefix(prefix, `${predicate}-${object}`)
   }
 
-  // Try up to MAX_ATTEMPTS unique two-word combos
+  const unique = (base: string) => {
+    if (!existing.has(base.toLowerCase())) return base
+
+    for (let n = 2; n < FALLBACK_MAX_SUFFIX + 2; n++) {
+      const candidate = `${base}-${n}`
+      if (!existing.has(candidate.toLowerCase())) return candidate
+    }
+
+    return `${base}-${Date.now()}`
+  }
+
+  const slug = prompt ? sanitizeBranchName(prompt) : ""
+  if (slug) return unique(applyPrefix(prefix, slug))
+
   for (let i = 0; i < MAX_ATTEMPTS; i++) {
     const candidate = random()
-    if (!existing.has(candidate)) return candidate
+    if (!existing.has(candidate.toLowerCase())) return candidate
   }
 
-  // Append numeric suffix 0–99
-  const base = random()
-  for (let n = 0; n < FALLBACK_MAX_SUFFIX; n++) {
-    const candidate = `${base}-${n}`
-    if (!existing.has(candidate)) return candidate
-  }
-
-  // Last resort: timestamp
-  return `${base}-${Date.now()}`
+  return unique(random())
 }
 
 /**

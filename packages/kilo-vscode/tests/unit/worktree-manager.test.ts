@@ -3,7 +3,13 @@ import os from "node:os"
 import path from "node:path"
 import fs from "node:fs/promises"
 import { WorktreeManager } from "../../src/agent-manager/WorktreeManager"
-import { generateBranchName, sanitizeBranchName, versionedName } from "../../src/agent-manager/branch-name"
+import {
+  DEFAULT_WORKTREE_PREFIX,
+  generateBranchName,
+  normalizeWorktreePrefix,
+  sanitizeBranchName,
+  versionedName,
+} from "../../src/agent-manager/branch-name"
 import { WorktreeStateManager } from "../../src/agent-manager/WorktreeStateManager"
 import simpleGit from "simple-git"
 
@@ -32,9 +38,11 @@ async function createTempRepo(): Promise<string> {
   return dir
 }
 
-function createManager(root: string): WorktreeManager {
+function createManager(root: string, prefix?: string): WorktreeManager {
   const logs: string[] = []
-  return new WorktreeManager(root, (msg) => logs.push(msg))
+  return new WorktreeManager(root, (msg) => logs.push(msg), undefined, {
+    prefix: () => prefix ?? DEFAULT_WORKTREE_PREFIX,
+  })
 }
 
 /** Create a temp repo with a bare origin remote so origin/<branch> refs exist. */
@@ -73,34 +81,26 @@ async function createTempRepoWithOrigin(): Promise<{ bare: string; clone: string
 // ---------------------------------------------------------------------------
 
 describe("generateBranchName", () => {
-  it("generates a two-word predicate-object name", () => {
-    const name = generateBranchName("anything")
-    // Should be two lowercase words joined by a hyphen
-    expect(name).toMatch(/^[a-z]+-[a-z]+$/)
+  it("uses the default prefix for prompt-based names", () => {
+    expect(generateBranchName("Fix login bug")).toBe("kilo-worktree/fix-login-bug")
   })
 
-  it("avoids existing branches", () => {
-    // Generate 50 names and collect them; none should collide with the existing list
-    const existing = ["brave-piano", "sunny-cloud"]
-    for (let i = 0; i < 50; i++) {
-      const name = generateBranchName("task", existing)
-      expect(existing).not.toContain(name)
-    }
+  it("uses a custom prefix for prompt-based names", () => {
+    expect(generateBranchName("Fix login bug", [], "team-worktree")).toBe("team-worktree/fix-login-bug")
   })
 
-  it("falls back to numeric suffix when collisions are likely", () => {
-    // Supply a huge existing list — eventually a numeric suffix or timestamp is used
-    const name = generateBranchName("task", [])
-    expect(typeof name).toBe("string")
-    expect(name.length).toBeGreaterThan(0)
+  it("disables the prefix when configured empty", () => {
+    expect(generateBranchName("Fix login bug", [], "")).toBe("fix-login-bug")
   })
 
-  it("ignores the prompt and always returns friendly words", () => {
-    const a = generateBranchName("")
-    const b = generateBranchName("FIX BUG")
-    // Both should be lowercase word-hyphen-word patterns
-    expect(a).toMatch(/^[a-z]+-[a-z]+/)
-    expect(b).toMatch(/^[a-z]+-[a-z]+/)
+  it("adds a numeric suffix when a prompt-based branch already exists", () => {
+    const existing = ["kilo-worktree/fix-login-bug"]
+    expect(generateBranchName("Fix login bug", existing)).toBe("kilo-worktree/fix-login-bug-2")
+  })
+
+  it("falls back to prefixed friendly words when no prompt is available", () => {
+    const name = generateBranchName(undefined, [])
+    expect(name).toMatch(/^kilo-worktree\/[a-z]+-[a-z]+$/)
   })
 })
 
@@ -145,6 +145,20 @@ describe("sanitizeBranchName", () => {
   it("handles custom maxLength", () => {
     const result = sanitizeBranchName("abcdefghij", 5)
     expect(result).toBe("abcde")
+  })
+
+  it("preserves forward slash as namespace separator", () => {
+    expect(sanitizeBranchName("team/worktree/fix-login-bug")).toBe("team/worktree/fix-login-bug")
+  })
+})
+
+describe("normalizeWorktreePrefix", () => {
+  it("sanitizes prefix input", () => {
+    expect(normalizeWorktreePrefix(" Team Worktree / ")).toBe("team-worktree")
+  })
+
+  it("allows empty prefix", () => {
+    expect(normalizeWorktreePrefix("")).toBe("")
   })
 })
 
@@ -237,14 +251,13 @@ describe("WorktreeStateManager.updateWorktreeLabel", () => {
 // ---------------------------------------------------------------------------
 
 describe("WorktreeManager.createWorktree", () => {
-  it("creates a worktree with a new branch", async () => {
+  it("creates a worktree with the default prefix", async () => {
     const root = await createTempRepo()
     const mgr = createManager(root)
 
     const result = await mgr.createWorktree({ prompt: "test task" })
 
-    // Branch should be a friendly two-word name (e.g. "brave-piano")
-    expect(result.branch).toMatch(/^[a-z]+-[a-z]+/)
+    expect(result.branch).toBe("kilo-worktree/test-task")
     expect(result.parentBranch).toBeTruthy()
 
     // Worktree directory should exist and have a .git file (not directory)
@@ -255,6 +268,24 @@ describe("WorktreeManager.createWorktree", () => {
     const git = simpleGit(root)
     const branches = await git.branch()
     expect(branches.all).toContain(result.branch)
+  })
+
+  it("creates a worktree with a custom prefix", async () => {
+    const root = await createTempRepo()
+    const mgr = createManager(root, "team-worktree")
+
+    const result = await mgr.createWorktree({ prompt: "test task" })
+
+    expect(result.branch).toBe("team-worktree/test-task")
+  })
+
+  it("creates a worktree without a prefix when disabled", async () => {
+    const root = await createTempRepo()
+    const mgr = createManager(root, "")
+
+    const result = await mgr.createWorktree({ prompt: "test task" })
+
+    expect(result.branch).toBe("test-task")
   })
 
   it("uses existing branch when specified", async () => {
