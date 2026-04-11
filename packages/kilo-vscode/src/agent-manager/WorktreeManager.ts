@@ -153,6 +153,21 @@ export class WorktreeManager {
     return this.withGitLock(() => this.createWorktreeImpl(params))
   }
 
+  private async resolveBranchName(params: {
+    prompt?: string
+    existingBranch?: string
+    branchName?: string
+  }): Promise<string> {
+    const sanitized = params.branchName ? sanitizeBranchName(params.branchName) : undefined
+    if (params.existingBranch) return params.existingBranch
+    if (sanitized) return sanitized
+    const existing = await this.git
+      .branch()
+      .then((b) => b.all)
+      .catch(() => [] as string[])
+    return generateBranchName(params.prompt, existing, this.prefix?.() ?? DEFAULT_WORKTREE_PREFIX)
+  }
+
   private async ensureGitAvailable(): Promise<void> {
     try {
       await execWithShellEnv("git", ["--version"])
@@ -222,19 +237,7 @@ export class WorktreeManager {
       parentRemote = startPoint.remote
     }
 
-    const sanitized = params.branchName ? sanitizeBranchName(params.branchName) : undefined
-    let branch: string
-    if (params.existingBranch) {
-      branch = params.existingBranch
-    } else if (sanitized) {
-      branch = sanitized
-    } else {
-      const existing = await this.git
-        .branch()
-        .then((b) => b.all)
-        .catch(() => [] as string[])
-      branch = generateBranchName(params.prompt, existing, this.prefix?.() ?? DEFAULT_WORKTREE_PREFIX)
-    }
+    let branch = await this.resolveBranchName(params)
 
     if (params.existingBranch) {
       const exists = await this.branchExists(branch)
