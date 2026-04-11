@@ -90,7 +90,7 @@ jobs:
 
   add-contributor-label:
     if: github.repository == 'Kilo-Org/kilocode' && false # kilocode_change - disabled: not needed in kilocode repo
-    runs-on: ubuntu-24.04 # kilocode_change
+    runs-on: ubuntu-24.04
     permissions:
       pull-requests: write
       issues: write
