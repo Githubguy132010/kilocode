@@ -589,7 +589,7 @@ export class AgentManagerProvider implements Disposable {
     let result: CreateWorktreeResult
     try {
       result = await manager.createWorktree({
-        prompt: opts?.name || "kilo",
+        prompt: opts?.name?.trim() && opts.name.trim() !== "kilo" ? opts.name.trim() : undefined,
         baseBranch: effectiveBase ?? opts?.baseBranch,
         branchName: opts?.branchName,
         existingBranch: opts?.existingBranch,
