@@ -2,10 +2,11 @@ import friendlyWords from "friendly-words"
 
 const MAX_ATTEMPTS = 10
 const FALLBACK_MAX_SUFFIX = 100
+const MAX_PREFIX_LENGTH = 255
 export const DEFAULT_WORKTREE_PREFIX = "kilo-worktree"
 
 export function normalizeWorktreePrefix(prefix: string | undefined): string {
-  return sanitizeBranchName(prefix ?? "", 255).replace(/\/+$/g, "")
+  return sanitizeBranchName(prefix ?? "", MAX_PREFIX_LENGTH).replace(/\/+$/g, "")
 }
 
 function applyPrefix(prefix: string | undefined, name: string): string {
