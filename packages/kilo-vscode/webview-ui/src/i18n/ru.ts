@@ -947,6 +947,11 @@ export const dict = {
   "session.status.retry": "Повторная попытка…",
   "session.status.retrying": "Повторная попытка ({{ attempt }})… {{ message }}",
   "session.status.working": "Работаю…",
+  "session.status.offline": "Сеть отключена — переподключение...",
+
+  "ui.sessionTurn.cancel": "Отмена",
+  "ui.sessionTurn.status.thinking": "Думаю...",
+  "ui.sessionTurn.status.consideringNextSteps": "Продумываю следующие шаги...",
 
   "dialog.model.noProviders": "Нет провайдеров",
 
@@ -1068,6 +1073,14 @@ export const dict = {
   "settings.experimental.continueOnDeny.description": "Продолжить цикл агента при отказе в разрешении",
   "settings.experimental.mcpTimeout.title": "Таймаут MCP (мс)",
   "settings.experimental.mcpTimeout.description": "Таймаут запросов MCP-сервера в миллисекундах",
+  "settings.experimental.remote.title": "Управление Remote",
+  "settings.experimental.remote.description":
+    "Включите управление Remote сеансами через Kilo Cloud. Это также повлияет на CLI на этом компьютере.",
+  "settings.experimental.remote.current": "Текущее состояние:",
+  "settings.experimental.remote.startup": "Автоматически включать при запуске:",
+  "settings.experimental.remote.active": "Активно",
+  "settings.experimental.remote.inactive": "Неактивно",
+  "settings.experimental.remote.hint": "Используйте /remote в чате для переключения",
   "settings.experimental.toolToggles": "Переключатели инструментов",
   "settings.agentBehaviour.defaultAgent.title": "Агент по умолчанию",
   "settings.agentBehaviour.defaultAgent.description": "Агент при отсутствии указания",
@@ -1132,6 +1145,16 @@ export const dict = {
     "Это встроенный режим. Его базовое определение нельзя изменить, но вы можете настроить переопределения ниже.",
   "settings.agentBehaviour.editMode.promptOverride":
     "Пользовательское переопределение промпта для этого встроенного режима",
+  "settings.agentBehaviour.badge.subagent": "субагент",
+  "settings.agentBehaviour.permissions.title": "Вычисленные разрешения",
+  "settings.agentBehaviour.permissions.count": "{{count}} правил",
+  "settings.agentBehaviour.permissions.effective": "Действующие (wildcard):",
+  "settings.agentBehaviour.permissions.col.tool": "Инструмент",
+  "settings.agentBehaviour.permissions.col.pattern": "Шаблон",
+  "settings.agentBehaviour.permissions.col.action": "Действие",
+  "settings.agentBehaviour.permissions.copy": "Скопировать разрешения как JSON",
+  "settings.agentBehaviour.permissions.hint":
+    "Правила оцениваются по порядку — побеждает последнее совпавшее правило. Это разрешенный набор правил из бэкенда CLI.",
   "settings.agentBehaviour.removeMode.title": "Удалить режим",
   "settings.agentBehaviour.removeMode.confirm":
     'Удалить режим "{{name}}"? Это отключит режим, обновив вашу конфигурацию.',
@@ -1161,6 +1184,10 @@ export const dict = {
     "Правила — это файлы инструкций, которые направляют поведение агента. Они включаются в системный промпт для каждого разговора. Добавьте пути к файлам ниже, чтобы включить дополнительные правила.",
   "settings.agentBehaviour.instructionFiles": "Дополнительные файлы инструкций",
   "settings.agentBehaviour.instructionFiles.description": "Пути к дополнительным файлам инструкций в системном промпте",
+  "settings.agentBehaviour.claudeCompat.heading": "Совместимость с Claude Code",
+  "settings.agentBehaviour.claudeCompat.title": "Загружать файлы Claude Code",
+  "settings.agentBehaviour.claudeCompat.description":
+    "Загружать инструкции CLAUDE.md и навыки из каталога конфигурации Claude Code в сессии. Включите эту опцию, если хотите, чтобы Kilo использовал ваши инструкции и навыки Claude Code. Требуется перезапуск.",
   "settings.agentBehaviour.mcpDetail.command": "Команда",
   "settings.agentBehaviour.mcpDetail.args": "Аргументы",
   "settings.agentBehaviour.mcpDetail.env": "Окружение",
@@ -1266,6 +1293,7 @@ export const dict = {
   "migration.whatsNew.features.foundation.detail":
     "Одно компактное и эффективное ядро для всех продуктов Kilo. Знакомый опыт независимо от выбранного способа работы.",
   "migration.whatsNew.blogLink": "Читать полный анонс",
+  "migration.whatsNew.docsLink": "Что нового и часто задаваемые вопросы",
   "migration.whatsNew.continue": "Продолжить",
 
   // Screen 2 — Migrate Settings
@@ -1302,6 +1330,36 @@ export const dict = {
   "migration.error.continue": "Продолжить",
   "migration.error.action.copy": "Копировать",
   "migration.error.toast.copied": "Ошибка скопирована в буфер обмена",
+
+  "migration.sessionSummary.title": "Сводка:",
+  "migration.sessionSummary.copy": "Скопировать отчёт",
+  "migration.sessionSummary.toast.copied": "Отчёт скопирован",
+  "migration.sessionSummary.successful": "Успешно",
+  "migration.sessionSummary.skipped": "Пропущено",
+  "migration.sessionSummary.alreadyMigrated": "Уже перенесено",
+  "migration.sessionSummary.errored": "С ошибкой",
+  "migration.sessionSummary.none": "Нет",
+  "migration.forceReimport.title": "Принудительный повторный импорт",
+  "migration.forceReimport.description":
+    "Повторный импорт {{target}} перезапишет их и удалит все новые сообщения, уже созданные в этих сессиях.",
+  "migration.forceReimport.target.one": "эту сессию",
+  "migration.forceReimport.target.many": "эти {{count}} сессии",
+  "migration.forceReimport.button": "Принудительно импортировать снова",
+  "migration.forceReimport.all": "Импортировать всё заново",
+  "migration.forceReimport.proceed": "Продолжить",
+  "migration.forceReimport.toast.started": "Принудительный повторный импорт запущен",
+  "migration.running.title": "Миграция выполняется",
+  "migration.running.description.line1": "Вы собираетесь завершить процесс, пока некоторые сессии всё ещё переносятся.",
+  "migration.running.description.line2": "Если вы уйдёте сейчас, некоторые сессии могут остаться незавершёнными.",
+  "migration.running.stay": "Остаться",
+  "migration.running.proceed": "Продолжить",
+  "migration.sessionProgress.preparing": "Подготовка сессии",
+  "migration.sessionProgress.storing": "Сохранение сессии",
+  "migration.sessionProgress.skipped": "Сессия пропущена",
+  "migration.sessionProgress.header": "Перенос {{current}} из {{total}}",
+  "migration.sessionFormat.unknownDate": "Неизвестная дата",
+  "migration.sessionFormat.unknown": "Неизвестно",
+  "migration.sessionFormat.unknownError": "Неизвестная ошибка",
   // legacy-migration end
 
   "error.details.show": "Подробности",
@@ -1318,4 +1376,5 @@ export const dict = {
   "notifications.action.next": "Далее",
   "notifications.action.close": "Закрыть",
   "notifications.action.tryModel": "Попробовать {{model}}",
+  "notifications.action.tryModelGeneric": "Попробовать модель",
 }

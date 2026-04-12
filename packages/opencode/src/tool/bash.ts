@@ -8,8 +8,8 @@ import { Log } from "../util/log"
 import { Instance } from "../project/instance"
 import { lazy } from "@/util/lazy"
 import { Language } from "web-tree-sitter"
+import fs from "fs/promises"
 
-import { $ } from "bun"
 import { Filesystem } from "@/util/filesystem"
 import { fileURLToPath } from "url"
 import { Flag } from "@/flag/flag.ts"
@@ -17,7 +17,7 @@ import { Shell } from "@/shell/shell"
 
 import { BashArity } from "@/permission/arity"
 import { BashHierarchy } from "@/kilocode/bash-hierarchy" // kilocode_change
-import { Truncate } from "./truncation"
+import { Truncate } from "./truncate"
 import { Plugin } from "@/plugin"
 
 const MAX_METADATA_LENGTH = 30_000
@@ -59,9 +59,10 @@ export const BashTool = Tool.define("bash", async () => {
   log.info("bash tool using shell", { shell })
 
   return {
-    description: DESCRIPTION.replaceAll("${directory}", Instance.directory)
-      .replaceAll("${maxLines}", String(Truncate.MAX_LINES))
-      .replaceAll("${maxBytes}", String(Truncate.MAX_BYTES)),
+    description: DESCRIPTION.replaceAll("${maxLines}", String(Truncate.MAX_LINES)).replaceAll(
+      "${maxBytes}",
+      String(Truncate.MAX_BYTES),
+    ),
     parameters: z.object({
       command: z.string().describe("The command to execute"),
       timeout: z.number().describe("Optional timeout in milliseconds").optional(),
@@ -119,12 +120,7 @@ export const BashTool = Tool.define("bash", async () => {
         if (["cd", "rm", "cp", "mv", "mkdir", "touch", "chmod", "chown", "cat"].includes(command[0])) {
           for (const arg of command.slice(1)) {
             if (arg.startsWith("-") || (command[0] === "chmod" && arg.startsWith("+"))) continue
-            const resolved = await $`realpath ${arg}`
-              .cwd(cwd)
-              .quiet()
-              .nothrow()
-              .text()
-              .then((x) => x.trim())
+            const resolved = await fs.realpath(path.resolve(cwd, arg)).catch(() => "")
             log.info("resolved path", { arg, resolved })
             if (resolved) {
               const normalized =

@@ -1,17 +1,19 @@
 import path from "path"
 import os from "os"
 import fs from "fs/promises"
-import { StringDecoder } from "string_decoder" // kilocode_change - fix UTF-8 multi-byte split
+import { KiloSessionPrompt } from "@/kilocode/session/prompt" // kilocode_change
+import { KiloSession } from "@/kilocode/session" // kilocode_change
 import z from "zod"
 import { Filesystem } from "../util/filesystem"
-import { Identifier } from "../id/id"
+import { SessionID, MessageID, PartID } from "./schema"
 import { MessageV2 } from "./message-v2"
 import { Log } from "../util/log"
 import { SessionRevert } from "./revert"
 import { Session } from "."
 import { Agent } from "../agent/agent"
 import { Provider } from "../provider/provider"
-import { type Tool as AITool, tool, jsonSchema, type ToolCallOptions, asSchema } from "ai"
+import { ModelID, ProviderID } from "../provider/schema"
+import { type Tool as AITool, tool, jsonSchema, type ToolExecutionOptions, asSchema } from "ai"
 import { SessionCompaction } from "./compaction"
 import { Instance } from "../project/instance"
 import { Bus } from "../bus"
@@ -19,7 +21,6 @@ import { ProviderTransform } from "../provider/transform"
 import { SystemPrompt } from "./system"
 import { InstructionPrompt } from "./instruction"
 import { Plugin } from "../plugin"
-import PROMPT_PLAN from "../session/prompt/plan.txt"
 import CODE_SWITCH from "../session/prompt/code-switch.txt"
 import MAX_STEPS from "../session/prompt/max-steps.txt"
 import { defer } from "../util/defer"
@@ -28,11 +29,12 @@ import { MCP } from "../mcp"
 import { LSP } from "../lsp"
 import { ReadTool } from "../tool/read"
 import { FileTime } from "../file/time"
+import { NotFoundError } from "@/storage/db"
 import { Flag } from "../flag/flag"
 import { ulid } from "ulid"
 import { spawn } from "child_process"
 import { Command } from "../command"
-import { $, fileURLToPath, pathToFileURL } from "bun"
+import { pathToFileURL, fileURLToPath } from "url"
 import { ConfigMarkdown } from "../config/markdown"
 import { SessionSummary } from "./summary"
 import { NamedError } from "@opencode-ai/util/error"
@@ -40,14 +42,14 @@ import { fn } from "@/util/fn"
 import { SessionProcessor } from "./processor"
 import { TaskTool } from "@/tool/task"
 import { Tool } from "@/tool/tool"
-import { PermissionNext } from "@/permission/next"
+import { Permission } from "@/permission"
 import { SessionStatus } from "./status"
 import { LLM } from "./llm"
 import { iife } from "@/util/iife"
 import { Shell } from "@/shell/shell"
-import { Truncate } from "@/tool/truncation"
-import { PlanFollowup } from "@/kilocode/plan-followup" // kilocode_change
-import { environmentDetails } from "@/kilocode/editor-context" // kilocode_change
+import { Truncate } from "@/tool/truncate"
+import { decodeDataUrl } from "@/util/data-url"
+import { Process } from "@/util/process"
 
 // @ts-ignore
 globalThis.AI_SDK_LOG_WARNINGS = false
@@ -63,18 +65,8 @@ IMPORTANT:
 const STRUCTURED_OUTPUT_SYSTEM_PROMPT = `IMPORTANT: The user has requested structured output. You MUST use the StructuredOutput tool to provide your final response. Do NOT respond with plain text - you MUST call the StructuredOutput tool with your answer formatted according to the schema.`
 
 export namespace SessionPrompt {
-  // kilocode_change start - share follow-up trigger logic with tests
-  export function shouldAskPlanFollowup(input: { messages: MessageV2.WithParts[]; abort: AbortSignal }) {
-    if (input.abort.aborted) return false
-    if (!["cli", "vscode"].includes(Flag.KILO_CLIENT)) return false
-    const lastUserIdx = input.messages.findLastIndex((m) => m.info.role === "user")
-    return input.messages
-      .slice(lastUserIdx + 1)
-      .some((msg) =>
-        msg.parts.some((p) => p.type === "tool" && p.tool === "plan_exit" && p.state.status === "completed"),
-      )
-  }
-  // kilocode_change end
+  // kilocode_change
+  export const shouldAskPlanFollowup = KiloSessionPrompt.shouldAskPlanFollowup
 
   const log = Log.create({ service: "session.prompt" })
 
@@ -99,18 +91,18 @@ export namespace SessionPrompt {
     },
   )
 
-  export function assertNotBusy(sessionID: string) {
+  export function assertNotBusy(sessionID: SessionID) {
     const match = state()[sessionID]
     if (match) throw new Session.BusyError(sessionID)
   }
 
   export const PromptInput = z.object({
-    sessionID: Identifier.schema("session"),
-    messageID: Identifier.schema("message").optional(),
+    sessionID: SessionID.zod,
+    messageID: MessageID.zod.optional(),
     model: z
       .object({
-        providerID: z.string(),
-        modelID: z.string(),
+        providerID: ProviderID.zod,
+        modelID: ModelID.zod,
       })
       .optional(),
     agent: z.string().optional(),
@@ -190,7 +182,7 @@ export namespace SessionPrompt {
 
     // this is backwards compatibility for allowing `tools` to be specified when
     // prompting
-    const permissions: PermissionNext.Ruleset = []
+    const permissions: Permission.Ruleset = []
     for (const [tool, enabled] of Object.entries(input.tools ?? {})) {
       permissions.push({
         permission: tool,
@@ -261,7 +253,7 @@ export namespace SessionPrompt {
     return parts
   }
 
-  function start(sessionID: string) {
+  function start(sessionID: SessionID) {
     const s = state()
     if (s[sessionID]) return
     const controller = new AbortController()
@@ -272,29 +264,29 @@ export namespace SessionPrompt {
     return controller.signal
   }
 
-  function resume(sessionID: string) {
+  function resume(sessionID: SessionID) {
     const s = state()
     if (!s[sessionID]) return
 
     return s[sessionID].abort.signal
   }
 
-  export function cancel(sessionID: string) {
+  export async function cancel(sessionID: SessionID) {
     log.info("cancel", { sessionID })
     const s = state()
     const match = s[sessionID]
     if (!match) {
-      SessionStatus.set(sessionID, { type: "idle" })
+      await SessionStatus.set(sessionID, { type: "idle" })
       return
     }
     match.abort.abort()
     delete s[sessionID]
-    SessionStatus.set(sessionID, { type: "idle" })
+    await SessionStatus.set(sessionID, { type: "idle" })
     return
   }
 
   export const LoopInput = z.object({
-    sessionID: Identifier.schema("session"),
+    sessionID: SessionID.zod,
     resume_existing: z.boolean().optional(),
   })
   export const loop = fn(LoopInput, async (input) => {
@@ -310,9 +302,9 @@ export namespace SessionPrompt {
 
     // kilocode_change start
     void Bus.publish(Session.Event.TurnOpen, { sessionID })
-    let closeReason: Session.CloseReason = "completed"
+    let closeReason: KiloSession.CloseReason = "completed"
     let finished = false
-    using _ = defer(() => cancel(sessionID))
+    await using _ = defer(() => cancel(sessionID))
     await using _close = defer(async () => {
       if (!finished) closeReason = abort.aborted ? "interrupted" : "error"
       await Bus.publish(Session.Event.TurnClose, { sessionID, reason: closeReason })
@@ -324,16 +316,13 @@ export namespace SessionPrompt {
     // on the user message and will be retrieved from lastUser below
     let structuredOutput: unknown | undefined
 
-    // kilocode_change — cache environment details per turn so the last user
-    // message stays byte-identical across tool-loop steps (prompt caching).
-    // Keyed by user message ID so it recomputes when a new user message arrives.
-    let envBlock: string | undefined
-    let envUser: string | undefined
+    // kilocode_change — cache environment details per turn (prompt caching)
+    const envCache: KiloSessionPrompt.EnvCache = {}
 
     let step = 0
     const session = await Session.get(sessionID)
     while (true) {
-      SessionStatus.set(sessionID, { type: "busy" })
+      await SessionStatus.set(sessionID, { type: "busy" })
       log.info("loop", { step, sessionID })
       // kilocode_change start
       if (abort.aborted) {
@@ -363,15 +352,17 @@ export namespace SessionPrompt {
       if (!lastUser) throw new Error("No user message found in stream. This should never happen.")
       if (
         lastAssistant?.finish &&
-        !["tool-calls", "unknown"].includes(lastAssistant.finish) &&
+        ![
+          "tool-calls",
+          // in v6 unknown became other but other existed in v5 too and was distinctly different
+          // I think there are certain providers that used to have bad stop reasons, not rlly sure which
+          // ones if any still have this?
+          // "unknown",
+        ].includes(lastAssistant.finish) &&
         lastUser.id < lastAssistant.id
       ) {
-        // kilocode_change start - ask follow-up when plan_exit tool was called
-        if (shouldAskPlanFollowup({ messages: msgs, abort })) {
-          const action = await PlanFollowup.ask({ sessionID, messages: msgs, abort })
-          if (action === "continue") continue
-        }
-        // kilocode_change end
+        // kilocode_change - ask follow-up when plan_exit tool was called
+        if ((await KiloSessionPrompt.askPlanFollowup({ sessionID, messages: msgs, abort })) === "continue") continue
         log.info("exiting loop", { sessionID })
         break
       }
@@ -405,7 +396,7 @@ export namespace SessionPrompt {
         const taskTool = await TaskTool.init()
         const taskModel = task.model ? await Provider.getModel(task.model.providerID, task.model.modelID) : model
         const assistantMessage = (await Session.updateMessage({
-          id: Identifier.ascending("message"),
+          id: MessageID.ascending(),
           role: "assistant",
           parentID: lastUser.id,
           sessionID,
@@ -430,7 +421,7 @@ export namespace SessionPrompt {
           },
         })) as MessageV2.Assistant
         let part = (await Session.updatePart({
-          id: Identifier.ascending("part"),
+          id: PartID.ascending(),
           messageID: assistantMessage.id,
           sessionID: assistantMessage.sessionID,
           type: "tool",
@@ -466,6 +457,16 @@ export namespace SessionPrompt {
         )
         let executionError: Error | undefined
         const taskAgent = await Agent.get(task.agent)
+        if (!taskAgent) {
+          const available = await Agent.list().then((agents) => agents.filter((a) => !a.hidden).map((a) => a.name))
+          const hint = available.length ? ` Available agents: ${available.join(", ")}` : ""
+          const error = new NamedError.Unknown({ message: `Agent not found: "${task.agent}".${hint}` })
+          Bus.publish(Session.Event.Error, {
+            sessionID,
+            error: error.toObject(),
+          })
+          throw error
+        }
         const taskCtx: Tool.Context = {
           agent: task.agent,
           messageID: assistantMessage.id,
@@ -475,20 +476,20 @@ export namespace SessionPrompt {
           extra: { bypassAgentCheck: true },
           messages: msgs,
           async metadata(input) {
-            await Session.updatePart({
+            part = (await Session.updatePart({
               ...part,
               type: "tool",
               state: {
                 ...part.state,
                 ...input,
               },
-            } satisfies MessageV2.ToolPart)
+            } satisfies MessageV2.ToolPart)) as MessageV2.ToolPart
           },
           async ask(req) {
-            await PermissionNext.ask({
+            await Permission.ask({
               ...req,
               sessionID: sessionID,
-              ruleset: PermissionNext.merge(taskAgent.permission, session.permission ?? []),
+              ruleset: Permission.merge(taskAgent.permission, session.permission ?? []),
             })
           },
         }
@@ -499,7 +500,7 @@ export namespace SessionPrompt {
         })
         const attachments = result?.attachments?.map((attachment) => ({
           ...attachment,
-          id: Identifier.ascending("part"),
+          id: PartID.ascending(),
           sessionID,
           messageID: assistantMessage.id,
         }))
@@ -543,7 +544,7 @@ export namespace SessionPrompt {
                 start: part.state.status === "running" ? part.state.time.start : Date.now(),
                 end: Date.now(),
               },
-              metadata: part.metadata,
+              metadata: "metadata" in part.state ? part.state.metadata : undefined,
               input: part.state.input,
             },
           } satisfies MessageV2.ToolPart)
@@ -554,7 +555,7 @@ export namespace SessionPrompt {
           // If we create assistant messages w/ out user ones following mid loop thinking signatures
           // will be missing and it can cause errors for models like gemini for example
           const summaryUserMsg: MessageV2.User = {
-            id: Identifier.ascending("message"),
+            id: MessageID.ascending(),
             sessionID,
             role: "user",
             time: {
@@ -566,7 +567,7 @@ export namespace SessionPrompt {
           }
           await Session.updateMessage(summaryUserMsg)
           await Session.updatePart({
-            id: Identifier.ascending("part"),
+            id: PartID.ascending(),
             messageID: summaryUserMsg.id,
             sessionID,
             type: "text",
@@ -609,6 +610,16 @@ export namespace SessionPrompt {
 
       // normal processing
       const agent = await Agent.get(lastUser.agent)
+      if (!agent) {
+        const available = await Agent.list().then((agents) => agents.filter((a) => !a.hidden).map((a) => a.name))
+        const hint = available.length ? ` Available agents: ${available.join(", ")}` : ""
+        const error = new NamedError.Unknown({ message: `Agent not found: "${lastUser.agent}".${hint}` })
+        Bus.publish(Session.Event.Error, {
+          sessionID,
+          error: error.toObject(),
+        })
+        throw error
+      }
       const maxSteps = agent.steps ?? Infinity
       const isLastStep = step >= maxSteps
       msgs = await insertReminders({
@@ -617,9 +628,9 @@ export namespace SessionPrompt {
         session,
       })
 
-      const processor = SessionProcessor.create({
+      const processor = await SessionProcessor.create({
         assistantMessage: (await Session.updateMessage({
-          id: Identifier.ascending("message"),
+          id: MessageID.ascending(),
           parentID: lastUser.id,
           role: "assistant",
           mode: agent.name,
@@ -701,35 +712,16 @@ export namespace SessionPrompt {
 
       await Plugin.trigger("experimental.chat.messages.transform", {}, { messages: msgs })
 
-      // kilocode_change start — ephemerally inject dynamic editor context into last user message
-      if (envUser !== lastUser.id) {
-        envBlock = environmentDetails(lastUser.editorContext)
-        envUser = lastUser.id
-      }
-      if (envBlock) {
-        const idx = msgs.findLastIndex((m) => m.info.role === "user")
-        if (idx !== -1)
-          msgs[idx] = {
-            ...msgs[idx],
-            parts: [
-              ...msgs[idx].parts,
-              {
-                id: Identifier.ascending("part"),
-                sessionID,
-                messageID: msgs[idx].info.id,
-                type: "text",
-                text: envBlock,
-              } satisfies MessageV2.TextPart,
-            ],
-          }
-      }
-      // kilocode_change end
+      // kilocode_change — ephemerally inject dynamic editor context into last user message
+      KiloSessionPrompt.injectEditorContext({ msgs, lastUser, sessionID, cache: envCache })
 
       // Build system prompt, adding structured output instruction if needed
+      const skills = await SystemPrompt.skills(agent)
       const system = [
-        ...(await SystemPrompt.environment(model, lastUser.editorContext)),
+        ...(await SystemPrompt.environment(model, lastUser.editorContext)), // kilocode_change
+        ...(skills ? [skills] : []),
         ...(await InstructionPrompt.system()),
-      ] // kilocode_change
+      ]
       const format = lastUser.format ?? { type: "text" }
       if (format.type === "json_schema") {
         system.push(STRUCTURED_OUTPUT_SYSTEM_PROMPT)
@@ -738,11 +730,12 @@ export namespace SessionPrompt {
       const result = await processor.process({
         user: lastUser,
         agent,
+        permission: session.permission,
         abort,
         sessionID,
         system,
         messages: [
-          ...MessageV2.toModelMessages(msgs, model),
+          ...(await MessageV2.toModelMessages(msgs, model)),
           ...(isLastStep
             ? [
                 {
@@ -802,21 +795,15 @@ export namespace SessionPrompt {
     SessionCompaction.prune({ sessionID })
     // kilocode_change start
     finished = true
-    // Return the stored interrupted assistant turn before surfacing AbortError.
-    for await (const item of MessageV2.stream(sessionID)) {
-      if (item.info.role === "user") continue
-      const queued = state()[sessionID]?.callbacks ?? []
-      for (const q of queued) {
-        q.resolve(item)
-      }
-      return item
-    }
-    if (abort.aborted) abort.throwIfAborted()
+    return KiloSessionPrompt.resolveFinishedMessages({
+      sessionID,
+      callbacks: state()[sessionID]?.callbacks ?? [],
+      abort,
+    })
     // kilocode_change end
-    throw new Error("Impossible")
   })
 
-  async function lastModel(sessionID: string) {
+  async function lastModel(sessionID: SessionID) {
     for await (const item of MessageV2.stream(sessionID)) {
       if (item.info.role === "user" && item.info.model) return item.info.model
     }
@@ -836,7 +823,7 @@ export namespace SessionPrompt {
     using _ = log.time("resolveTools")
     const tools: Record<string, AITool> = {}
 
-    const context = (args: any, options: ToolCallOptions): Tool.Context => ({
+    const context = (args: any, options: ToolExecutionOptions): Tool.Context => ({
       sessionID: input.session.id,
       abort: options.abortSignal!,
       messageID: input.processor.message.id,
@@ -862,17 +849,17 @@ export namespace SessionPrompt {
         }
       },
       async ask(req) {
-        await PermissionNext.ask({
+        await Permission.ask({
           ...req,
           sessionID: input.session.id,
           tool: { messageID: input.processor.message.id, callID: options.toolCallId },
-          ruleset: PermissionNext.merge(input.agent.permission, input.session.permission ?? []),
+          ruleset: Permission.merge(input.agent.permission, input.session.permission ?? []),
         })
       },
     })
 
     for (const item of await ToolRegistry.tools(
-      { modelID: input.model.api.id, providerID: input.model.providerID },
+      { modelID: ModelID.make(input.model.api.id), providerID: input.model.providerID },
       input.agent,
     )) {
       const schema = ProviderTransform.schema(input.model, z.toJSONSchema(item.parameters))
@@ -898,7 +885,7 @@ export namespace SessionPrompt {
             ...result,
             attachments: result.attachments?.map((attachment) => ({
               ...attachment,
-              id: Identifier.ascending("part"),
+              id: PartID.ascending(),
               sessionID: ctx.sessionID,
               messageID: input.processor.message.id,
             })),
@@ -922,7 +909,8 @@ export namespace SessionPrompt {
       const execute = item.execute
       if (!execute) continue
 
-      const transformed = ProviderTransform.schema(input.model, asSchema(item.inputSchema).jsonSchema)
+      const schema = await asSchema(item.inputSchema).jsonSchema
+      const transformed = ProviderTransform.schema(input.model, schema)
       item.inputSchema = jsonSchema(transformed)
       // Wrap execute to add plugin hooks and format output
       item.execute = async (args, opts) => {
@@ -1001,7 +989,7 @@ export namespace SessionPrompt {
           output: truncated.content,
           attachments: attachments.map((attachment) => ({
             ...attachment,
-            id: Identifier.ascending("part"),
+            id: PartID.ascending(),
             sessionID: ctx.sessionID,
             messageID: input.processor.message.id,
           })),
@@ -1035,17 +1023,28 @@ export namespace SessionPrompt {
           metadata: { valid: true },
         }
       },
-      toModelOutput(result) {
+      toModelOutput({ output }) {
         return {
           type: "text",
-          value: result.output,
+          value: output.output,
         }
       },
     })
   }
 
   async function createUserMessage(input: PromptInput) {
-    const agent = await Agent.get(input.agent ?? (await Agent.defaultAgent()))
+    const agentName = input.agent || (await Agent.defaultAgent())
+    const agent = await Agent.get(agentName)
+    if (!agent) {
+      const available = await Agent.list().then((agents) => agents.filter((a) => !a.hidden).map((a) => a.name))
+      const hint = available.length ? ` Available agents: ${available.join(", ")}` : ""
+      const error = new NamedError.Unknown({ message: `Agent not found: "${agentName}".${hint}` })
+      Bus.publish(Session.Event.Error, {
+        sessionID: input.sessionID,
+        error: error.toObject(),
+      })
+      throw error
+    }
 
     const model = input.model ?? agent.model ?? (await lastModel(input.sessionID))
     const full =
@@ -1055,7 +1054,7 @@ export namespace SessionPrompt {
     const variant = input.variant ?? (agent.variant && full?.variants?.[agent.variant] ? agent.variant : undefined)
 
     const info: MessageV2.Info = {
-      id: input.messageID ?? Identifier.ascending("message"),
+      id: input.messageID ?? MessageID.ascending(),
       role: "user",
       sessionID: input.sessionID,
       time: {
@@ -1074,7 +1073,7 @@ export namespace SessionPrompt {
     type Draft<T> = T extends MessageV2.Part ? Omit<T, "id"> & { id?: string } : never
     const assign = (part: Draft<MessageV2.Part>): MessageV2.Part => ({
       ...part,
-      id: part.id ?? Identifier.ascending("part"),
+      id: part.id ? PartID.make(part.id) : PartID.ascending(),
     })
 
     const parts = await Promise.all(
@@ -1164,7 +1163,7 @@ export namespace SessionPrompt {
                     sessionID: input.sessionID,
                     type: "text",
                     synthetic: true,
-                    text: Buffer.from(part.url, "base64url").toString(),
+                    text: decodeDataUrl(part.url),
                   },
                   {
                     ...part,
@@ -1328,7 +1327,7 @@ export namespace SessionPrompt {
                 ]
               }
 
-              FileTime.read(input.sessionID, filepath)
+              await FileTime.read(input.sessionID, filepath)
               return [
                 {
                   messageID: info.id,
@@ -1353,7 +1352,7 @@ export namespace SessionPrompt {
 
         if (part.type === "agent") {
           // Check if this agent would be denied by task permission
-          const perm = PermissionNext.evaluate("task", part.name, agent.permission)
+          const perm = Permission.evaluate("task", part.name, agent.permission)
           const hint = perm.action === "deny" ? " . Invoked by user; guaranteed to exist." : ""
           return [
             {
@@ -1401,6 +1400,31 @@ export namespace SessionPrompt {
       },
     )
 
+    const parsedInfo = MessageV2.Info.safeParse(info)
+    if (!parsedInfo.success) {
+      log.error("invalid user message before save", {
+        sessionID: input.sessionID,
+        messageID: info.id,
+        agent: info.agent,
+        model: info.model,
+        issues: parsedInfo.error.issues,
+      })
+    }
+
+    parts.forEach((part, index) => {
+      const parsedPart = MessageV2.Part.safeParse(part)
+      if (parsedPart.success) return
+      log.error("invalid user part before save", {
+        sessionID: input.sessionID,
+        messageID: info.id,
+        partID: part.id,
+        partType: part.type,
+        index,
+        issues: parsedPart.error.issues,
+        part,
+      })
+    })
+
     await Session.updateMessage(info)
     for (const part of parts) {
       await Session.updatePart(part)
@@ -1419,29 +1443,13 @@ export namespace SessionPrompt {
     // Original logic when experimental plan mode is disabled
     if (!Flag.KILO_EXPERIMENTAL_PLAN_MODE) {
       // kilocode_change start - inject plan file path so agent writes to .kilo/plans/
-      if (input.agent.name === "plan") {
-        const plan = Session.plan(input.session)
-        const exists = await Filesystem.exists(plan)
-        if (!exists) await fs.mkdir(path.dirname(plan), { recursive: true })
-        const info = exists
-          ? `A plan file already exists at ${plan}. You can read it and make incremental edits using the edit tool.`
-          : `No plan file exists yet. You should create your plan at ${plan} using the write tool.`
-        userMessage.parts.push({
-          id: Identifier.ascending("part"),
-          messageID: userMessage.info.id,
-          sessionID: userMessage.info.sessionID,
-          type: "text",
-          text: PROMPT_PLAN + `\n\n## Plan File\n${info}\nThis is the ONLY file you are allowed to write to or edit.`,
-          synthetic: true,
-        })
-      }
-      // kilocode_change end
+      await KiloSessionPrompt.insertPlanReminders({ agent: input.agent, session: input.session, userMessage })
       const wasPlan = input.messages.some((msg) => msg.info.role === "assistant" && msg.info.agent === "plan")
-      // kilocode_change start - renamed from "build" to "code"
+      // kilocode_change - renamed from "build" to "code"
       if (wasPlan && input.agent.name === "code") {
         // kilocode_change end
         userMessage.parts.push({
-          id: Identifier.ascending("part"),
+          id: PartID.ascending(),
           messageID: userMessage.info.id,
           sessionID: userMessage.info.sessionID,
           type: "text",
@@ -1461,7 +1469,7 @@ export namespace SessionPrompt {
       const exists = await Filesystem.exists(plan)
       if (exists) {
         const part = await Session.updatePart({
-          id: Identifier.ascending("part"),
+          id: PartID.ascending(),
           messageID: userMessage.info.id,
           sessionID: userMessage.info.sessionID,
           type: "text",
@@ -1480,7 +1488,7 @@ export namespace SessionPrompt {
       const exists = await Filesystem.exists(plan)
       if (!exists) await fs.mkdir(path.dirname(plan), { recursive: true })
       const part = await Session.updatePart({
-        id: Identifier.ascending("part"),
+        id: PartID.ascending(),
         messageID: userMessage.info.id,
         sessionID: userMessage.info.sessionID,
         type: "text",
@@ -1563,12 +1571,12 @@ NOTE: At any point in time through this workflow you should feel free to ask the
   }
 
   export const ShellInput = z.object({
-    sessionID: Identifier.schema("session"),
+    sessionID: SessionID.zod,
     agent: z.string(),
     model: z
       .object({
-        providerID: z.string(),
-        modelID: z.string(),
+        providerID: ProviderID.zod,
+        modelID: ModelID.zod,
       })
       .optional(),
     command: z.string(),
@@ -1598,9 +1606,19 @@ NOTE: At any point in time through this workflow you should feel free to ask the
       await SessionRevert.cleanup(session)
     }
     const agent = await Agent.get(input.agent)
+    if (!agent) {
+      const available = await Agent.list().then((agents) => agents.filter((a) => !a.hidden).map((a) => a.name))
+      const hint = available.length ? ` Available agents: ${available.join(", ")}` : ""
+      const error = new NamedError.Unknown({ message: `Agent not found: "${input.agent}".${hint}` })
+      Bus.publish(Session.Event.Error, {
+        sessionID: input.sessionID,
+        error: error.toObject(),
+      })
+      throw error
+    }
     const model = input.model ?? agent.model ?? (await lastModel(input.sessionID))
     const userMsg: MessageV2.User = {
-      id: Identifier.ascending("message"),
+      id: MessageID.ascending(),
       sessionID: input.sessionID,
       time: {
         created: Date.now(),
@@ -1615,7 +1633,7 @@ NOTE: At any point in time through this workflow you should feel free to ask the
     await Session.updateMessage(userMsg)
     const userPart: MessageV2.Part = {
       type: "text",
-      id: Identifier.ascending("part"),
+      id: PartID.ascending(),
       messageID: userMsg.id,
       sessionID: input.sessionID,
       text: "The following tool was executed by the user",
@@ -1624,7 +1642,7 @@ NOTE: At any point in time through this workflow you should feel free to ask the
     await Session.updatePart(userPart)
 
     const msg: MessageV2.Assistant = {
-      id: Identifier.ascending("message"),
+      id: MessageID.ascending(),
       sessionID: input.sessionID,
       parentID: userMsg.id,
       mode: input.agent,
@@ -1650,7 +1668,7 @@ NOTE: At any point in time through this workflow you should feel free to ask the
     await Session.updateMessage(msg)
     const part: MessageV2.Part = {
       type: "tool",
-      id: Identifier.ascending("part"),
+      id: PartID.ascending(),
       messageID: msg.id,
       sessionID: input.sessionID,
       tool: "bash",
@@ -1741,12 +1759,10 @@ NOTE: At any point in time through this workflow you should feel free to ask the
 
     let output = ""
     // kilocode_change start - use StringDecoder to handle multi-byte UTF-8 characters split across chunks
-    // separate decoder per stream so partial bytes from one pipe don't corrupt the other
-    const stdoutDecoder = new StringDecoder("utf8")
-    const stderrDecoder = new StringDecoder("utf8")
+    const decoders = KiloSessionPrompt.createShellDecoders()
 
-    proc.stdout?.on("data", (chunk) => {
-      output += stdoutDecoder.write(chunk)
+    proc.stdout?.on("data", (chunk: Buffer) => {
+      output += decoders.write("stdout", chunk)
       if (part.state.status === "running") {
         part.state.metadata = {
           output: output,
@@ -1756,8 +1772,8 @@ NOTE: At any point in time through this workflow you should feel free to ask the
       }
     })
 
-    proc.stderr?.on("data", (chunk) => {
-      output += stderrDecoder.write(chunk)
+    proc.stderr?.on("data", (chunk: Buffer) => {
+      output += decoders.write("stderr", chunk)
       if (part.state.status === "running") {
         part.state.metadata = {
           output: output,
@@ -1794,8 +1810,7 @@ NOTE: At any point in time through this workflow you should feel free to ask the
     })
 
     // kilocode_change - flush any trailing buffered bytes from decoders
-    output += stdoutDecoder.end()
-    output += stderrDecoder.end()
+    output += decoders.flush()
 
     if (aborted) {
       output += "\n\n" + ["<metadata>", "User aborted the command", "</metadata>"].join("\n")
@@ -1823,8 +1838,8 @@ NOTE: At any point in time through this workflow you should feel free to ask the
   }
 
   export const CommandInput = z.object({
-    messageID: Identifier.schema("message").optional(),
-    sessionID: Identifier.schema("session"),
+    messageID: MessageID.zod.optional(),
+    sessionID: SessionID.zod,
     agent: z.string().optional(),
     model: z.string().optional(),
     arguments: z.string(),
@@ -1858,6 +1873,16 @@ NOTE: At any point in time through this workflow you should feel free to ask the
   export async function command(input: CommandInput) {
     log.info("command", input)
     const command = await Command.get(input.command)
+    if (!command) {
+      const available = await Command.list().then((cmds) => cmds.map((c) => c.name))
+      const hint = available.length ? ` Available commands: ${available.join(", ")}` : ""
+      const error = new NamedError.Unknown({ message: `Command not found: "${input.command}".${hint}` })
+      Bus.publish(Session.Event.Error, {
+        sessionID: input.sessionID,
+        error: error.toObject(),
+      })
+      throw error
+    }
     const agentName = command.agent ?? input.agent ?? (await Agent.defaultAgent())
 
     const raw = input.arguments.match(argsRegex) ?? []
@@ -1889,15 +1914,13 @@ NOTE: At any point in time through this workflow you should feel free to ask the
       template = template + "\n\n" + input.arguments
     }
 
-    const shell = ConfigMarkdown.shell(template)
-    if (shell.length > 0) {
+    const shellMatches = ConfigMarkdown.shell(template)
+    if (shellMatches.length > 0) {
+      const sh = Shell.preferred()
       const results = await Promise.all(
-        shell.map(async ([, cmd]) => {
-          try {
-            return await $`${{ raw: cmd }}`.quiet().nothrow().text()
-          } catch (error) {
-            return `Error executing command: ${error instanceof Error ? error.message : String(error)}`
-          }
+        shellMatches.map(async ([, cmd]) => {
+          const out = await Process.text([cmd], { shell: sh, nothrow: true })
+          return out.text
         }),
       )
       let index = 0
@@ -2002,8 +2025,8 @@ NOTE: At any point in time through this workflow you should feel free to ask the
   async function ensureTitle(input: {
     session: Session.Info
     history: MessageV2.WithParts[]
-    providerID: string
-    modelID: string
+    providerID: ProviderID
+    modelID: ModelID
   }) {
     if (input.session.parentID) return
     if (!Session.isDefaultTitle(input.session.title)) return
@@ -2037,28 +2060,28 @@ NOTE: At any point in time through this workflow you should feel free to ask the
         (await Provider.getSmallModel(input.providerID)) ?? (await Provider.getModel(input.providerID, input.modelID))
       )
     })
-    const result = await LLM.stream({
-      agent,
-      user: firstRealUser.info as MessageV2.User,
-      system: [],
-      small: true,
-      tools: {},
-      model,
-      abort: new AbortController().signal,
-      sessionID: `title-${input.session.id}`, // kilocode_change - separate taskID to prevent small-model leak (#6552)
-      retries: 2,
-      messages: [
-        {
-          role: "user",
-          content: "Generate a title for this conversation:\n",
-        },
-        ...(hasOnlySubtaskParts
-          ? [{ role: "user" as const, content: subtaskParts.map((p) => p.prompt).join("\n") }]
-          : MessageV2.toModelMessages(contextMessages, model)),
-      ],
-    })
-    const text = await result.text.catch((err) => log.error("failed to generate title", { error: err }))
-    if (text) {
+    try {
+      const result = await LLM.stream({
+        agent,
+        user: firstRealUser.info as MessageV2.User,
+        system: [],
+        small: true,
+        tools: {},
+        model,
+        abort: new AbortController().signal,
+        sessionID: input.session.id,
+        retries: 2,
+        messages: [
+          {
+            role: "user",
+            content: "Generate a title for this conversation:\n",
+          },
+          ...(hasOnlySubtaskParts
+            ? [{ role: "user" as const, content: subtaskParts.map((p) => p.prompt).join("\n") }]
+            : await MessageV2.toModelMessages(contextMessages, model)),
+        ],
+      })
+      const text = await result.text
       const cleaned = text
         .replace(/<think>[\s\S]*?<\/think>\s*/g, "")
         .split("\n")
@@ -2067,7 +2090,12 @@ NOTE: At any point in time through this workflow you should feel free to ask the
       if (!cleaned) return
 
       const title = cleaned.length > 100 ? cleaned.substring(0, 97) + "..." : cleaned
-      return Session.setTitle({ sessionID: input.session.id, title })
+      return Session.setTitle({ sessionID: input.session.id, title }).catch((err) => {
+        if (NotFoundError.isInstance(err)) return
+        throw err
+      })
+    } catch (error) {
+      log.error("failed to generate title", { error })
     }
   }
 }

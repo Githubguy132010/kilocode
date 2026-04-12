@@ -934,6 +934,11 @@ export const dict = {
   "session.status.retry": "جارٍ إعادة المحاولة…",
   "session.status.retrying": "...إعادة المحاولة (المحاولة {{ attempt }})… {{ message }}",
   "session.status.working": "...جارٍ العمل",
+  "session.status.offline": "انقطع الاتصال بالشبكة — جارٍ إعادة الاتصال...",
+
+  "ui.sessionTurn.cancel": "إلغاء",
+  "ui.sessionTurn.status.thinking": "...جارٍ التفكير",
+  "ui.sessionTurn.status.consideringNextSteps": "...جارٍ التفكير في الخطوات التالية",
 
   "dialog.model.noProviders": "لا يوجد موفرون",
 
@@ -1052,6 +1057,14 @@ export const dict = {
   "settings.experimental.continueOnDeny.description": "متابعة حلقة الوكيل عند رفض الإذن",
   "settings.experimental.mcpTimeout.title": "مهلة MCP (مللي ثانية)",
   "settings.experimental.mcpTimeout.description": "مهلة طلبات خادم MCP بالمللي ثانية",
+  "settings.experimental.remote.title": "التحكم Remote",
+  "settings.experimental.remote.description":
+    "قم بتمكين التحكم Remote في الجلسات عبر Kilo Cloud. سيؤثر هذا أيضًا على واجهات سطر الأوامر (CLIs) على هذا الجهاز.",
+  "settings.experimental.remote.current": "الحالة الحالية:",
+  "settings.experimental.remote.startup": "التفعيل التلقائي عند بدء التشغيل:",
+  "settings.experimental.remote.active": "نشط",
+  "settings.experimental.remote.inactive": "غير نشط",
+  "settings.experimental.remote.hint": "استخدم /remote في الدردشة للتبديل",
   "settings.experimental.toolToggles": "مفاتيح الأدوات",
   "settings.agentBehaviour.defaultAgent.title": "الوكيل الافتراضي",
   "settings.agentBehaviour.defaultAgent.description": "الوكيل المستخدم عند عدم التحديد",
@@ -1113,6 +1126,16 @@ export const dict = {
   "settings.agentBehaviour.editMode.native":
     "هذا وضع مضمن. لا يمكن تغيير تعريفه الأساسي، ولكن يمكنك تكوين التجاوزات أدناه.",
   "settings.agentBehaviour.editMode.promptOverride": "تجاوز موجه مخصص لهذا الوضع المدمج",
+  "settings.agentBehaviour.badge.subagent": "وكيل فرعي",
+  "settings.agentBehaviour.permissions.title": "الأذونات المحسوبة",
+  "settings.agentBehaviour.permissions.count": "{{count}} قواعد",
+  "settings.agentBehaviour.permissions.effective": "الفعال (حرف بدل):",
+  "settings.agentBehaviour.permissions.col.tool": "الأداة",
+  "settings.agentBehaviour.permissions.col.pattern": "النمط",
+  "settings.agentBehaviour.permissions.col.action": "الإجراء",
+  "settings.agentBehaviour.permissions.copy": "نسخ الأذونات كـ JSON",
+  "settings.agentBehaviour.permissions.hint":
+    "يتم تقييم القواعد بالترتيب — القاعدة المطابقة الأخيرة هي التي تُطبق. هذه هي مجموعة القواعد المحلولة من خلفية CLI.",
   "settings.agentBehaviour.removeMode.title": "إزالة الوضع",
   "settings.agentBehaviour.removeMode.confirm":
     'هل تريد إزالة الوضع "{{name}}"؟ سيؤدي هذا إلى تعطيل الوضع عن طريق تحديث الإعدادات.',
@@ -1143,6 +1166,10 @@ export const dict = {
     "القواعد هي ملفات تعليمات توجه سلوك الوكيل. يتم تضمينها في موجه النظام لكل محادثة. أضف مسارات الملفات أدناه لتضمين قواعد إضافية.",
   "settings.agentBehaviour.instructionFiles": "ملفات تعليمات إضافية",
   "settings.agentBehaviour.instructionFiles.description": "مسارات ملفات التعليمات الإضافية في موجه النظام",
+  "settings.agentBehaviour.claudeCompat.heading": "توافق Claude Code",
+  "settings.agentBehaviour.claudeCompat.title": "تحميل ملفات Claude Code",
+  "settings.agentBehaviour.claudeCompat.description":
+    "تحميل تعليمات ومهارات CLAUDE.md من مجلد إعدادات Claude Code إلى الجلسات. قم بتمكين هذا الخيار إذا كنت ترغب في أن يستخدم Kilo مهارات وتعليمات Claude Code الخاصة بك. يتطلب إعادة التشغيل.",
   "settings.agentBehaviour.mcpDetail.command": "الأمر",
   "settings.agentBehaviour.mcpDetail.args": "الوسائط",
   "settings.agentBehaviour.mcpDetail.env": "البيئة",
@@ -1243,6 +1270,7 @@ export const dict = {
   "migration.whatsNew.features.foundation.detail":
     "نواة صغيرة وفعالة واحدة عبر كل منتجات Kilo. تجربة مألوفة بغض النظر عن طريقة عملك.",
   "migration.whatsNew.blogLink": "اقرأ الإعلان الكامل",
+  "migration.whatsNew.docsLink": "الجديد والأسئلة الشائعة",
   "migration.whatsNew.continue": "متابعة",
 
   // Screen 2 — Migrate Settings
@@ -1279,6 +1307,36 @@ export const dict = {
   "migration.error.continue": "متابعة",
   "migration.error.action.copy": "نسخ",
   "migration.error.toast.copied": "تم نسخ الخطأ إلى الحافظة",
+
+  "migration.sessionSummary.title": "الملخص:",
+  "migration.sessionSummary.copy": "نسخ التقرير",
+  "migration.sessionSummary.toast.copied": "تم نسخ التقرير",
+  "migration.sessionSummary.successful": "ناجحة",
+  "migration.sessionSummary.skipped": "تم تخطيها",
+  "migration.sessionSummary.alreadyMigrated": "تم ترحيلها بالفعل",
+  "migration.sessionSummary.errored": "حدثت بها أخطاء",
+  "migration.sessionSummary.none": "لا يوجد",
+  "migration.forceReimport.title": "فرض إعادة الاستيراد",
+  "migration.forceReimport.description":
+    "ستؤدي إعادة استيراد {{target}} إلى استبدالها وحذف أي رسائل جديدة تم إنشاؤها بالفعل في تلك الجلسات.",
+  "migration.forceReimport.target.one": "هذه الجلسة",
+  "migration.forceReimport.target.many": "هذه الجلسات الـ {{count}}",
+  "migration.forceReimport.button": "فرض إعادة الاستيراد",
+  "migration.forceReimport.all": "إعادة استيراد الكل",
+  "migration.forceReimport.proceed": "متابعة",
+  "migration.forceReimport.toast.started": "بدأت إعادة الاستيراد القسرية",
+  "migration.running.title": "الترحيل قيد التنفيذ",
+  "migration.running.description.line1": "أنت على وشك الإنهاء بينما لا تزال هناك جلسات قيد الترحيل.",
+  "migration.running.description.line2": "إذا غادرت الآن، فقد تبقى بعض الجلسات غير مكتملة.",
+  "migration.running.stay": "البقاء",
+  "migration.running.proceed": "متابعة",
+  "migration.sessionProgress.preparing": "جارٍ تحضير الجلسة",
+  "migration.sessionProgress.storing": "جارٍ حفظ الجلسة",
+  "migration.sessionProgress.skipped": "تم تخطي الجلسة",
+  "migration.sessionProgress.header": "جارٍ ترحيل {{current}} من {{total}}",
+  "migration.sessionFormat.unknownDate": "تاريخ غير معروف",
+  "migration.sessionFormat.unknown": "غير معروف",
+  "migration.sessionFormat.unknownError": "خطأ غير معروف",
   // legacy-migration end
 
   "error.details.show": "التفاصيل",
@@ -1295,4 +1353,5 @@ export const dict = {
   "notifications.action.next": "التالي",
   "notifications.action.close": "إغلاق",
   "notifications.action.tryModel": "جرّب {{model}}",
+  "notifications.action.tryModelGeneric": "جرّب النموذج",
 }

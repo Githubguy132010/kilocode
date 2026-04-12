@@ -940,6 +940,11 @@ export const dict = {
   "session.status.retry": "Prøver igen…",
   "session.status.retrying": "Prøver igen (forsøg {{ attempt }})… {{ message }}",
   "session.status.working": "Arbejder…",
+  "session.status.offline": "Netværk afbrudt — genopretter forbindelse...",
+
+  "ui.sessionTurn.cancel": "Annuller",
+  "ui.sessionTurn.status.thinking": "Tænker...",
+  "ui.sessionTurn.status.consideringNextSteps": "Overvejer næste trin...",
 
   "dialog.model.noProviders": "Ingen udbydere",
 
@@ -1062,6 +1067,14 @@ export const dict = {
   "settings.experimental.continueOnDeny.description": "Fortsæt agentløkken, når en tilladelse afvises",
   "settings.experimental.mcpTimeout.title": "MCP-timeout (ms)",
   "settings.experimental.mcpTimeout.description": "Timeout for MCP-serveranmodninger i millisekunder",
+  "settings.experimental.remote.title": "Remote-styring",
+  "settings.experimental.remote.description":
+    "Aktivér Remote-styring af sessioner via Kilo Cloud. Dette vil også påvirke CLI'er på denne maskine.",
+  "settings.experimental.remote.current": "Nuværende status:",
+  "settings.experimental.remote.startup": "Aktivér automatisk ved opstart:",
+  "settings.experimental.remote.active": "Aktiv",
+  "settings.experimental.remote.inactive": "Inaktiv",
+  "settings.experimental.remote.hint": "Brug /remote i chatten for at skifte",
   "settings.experimental.toolToggles": "Værktøjsskift",
   "settings.agentBehaviour.defaultAgent.title": "Standardagent",
   "settings.agentBehaviour.defaultAgent.description": "Agent til brug, når ingen er angivet",
@@ -1123,6 +1136,16 @@ export const dict = {
   "settings.agentBehaviour.editMode.native":
     "Dette er en indbygget tilstand. Dens grundlæggende definition kan ikke ændres, men du kan konfigurere tilsidesættelser nedenfor.",
   "settings.agentBehaviour.editMode.promptOverride": "Tilpasset prompt-tilsidesættelse for denne indbyggede tilstand",
+  "settings.agentBehaviour.badge.subagent": "subagent",
+  "settings.agentBehaviour.permissions.title": "Beregnede tilladelser",
+  "settings.agentBehaviour.permissions.count": "{{count}} regler",
+  "settings.agentBehaviour.permissions.effective": "Gældende (wildcard):",
+  "settings.agentBehaviour.permissions.col.tool": "Værktøj",
+  "settings.agentBehaviour.permissions.col.pattern": "Mønster",
+  "settings.agentBehaviour.permissions.col.action": "Handling",
+  "settings.agentBehaviour.permissions.copy": "Kopiér tilladelser som JSON",
+  "settings.agentBehaviour.permissions.hint":
+    "Reglerne evalueres i rækkefølge — den sidst matchende regel vinder. Dette er det endelige regelsæt fra CLI-backenden.",
   "settings.agentBehaviour.removeMode.title": "Fjern tilstand",
   "settings.agentBehaviour.removeMode.confirm":
     'Vil du fjerne tilstanden "{{name}}"? Dette vil deaktivere tilstanden ved at opdatere din konfiguration.',
@@ -1153,6 +1176,10 @@ export const dict = {
     "Regler er instruktionsfiler, der styrer agentens adfærd. De inkluderes i systemprompten for hver samtale. Tilføj filstier nedenfor for at inkludere yderligere regler.",
   "settings.agentBehaviour.instructionFiles": "Yderligere instruktionsfiler",
   "settings.agentBehaviour.instructionFiles.description": "Stier til yderligere instruktionsfiler i systemprompten",
+  "settings.agentBehaviour.claudeCompat.heading": "Claude Code-kompatibilitet",
+  "settings.agentBehaviour.claudeCompat.title": "Indlæs Claude Code-filer",
+  "settings.agentBehaviour.claudeCompat.description":
+    "Indlæs CLAUDE.md-instruktioner og -færdigheder fra din Claude Code-konfigurationsmappe i sessioner. Aktivér dette, hvis du vil have Kilo til at bruge dine Claude Code-instruktioner og -færdigheder. Kræver genstart.",
   "settings.agentBehaviour.mcpDetail.command": "Kommando",
   "settings.agentBehaviour.mcpDetail.args": "Argumenter",
   "settings.agentBehaviour.mcpDetail.env": "Miljø",
@@ -1258,6 +1285,7 @@ export const dict = {
   "migration.whatsNew.features.foundation.detail":
     "Én lille, effektiv kerne på tværs af alle Kilo-produkter. En velkendt oplevelse uanset hvordan du vælger at arbejde.",
   "migration.whatsNew.blogLink": "Læs den fulde meddelelse",
+  "migration.whatsNew.docsLink": "Nyheder og ofte stillede spørgsmål",
   "migration.whatsNew.continue": "Fortsæt",
 
   // Screen 2 — Migrate Settings
@@ -1295,6 +1323,36 @@ export const dict = {
   "migration.error.continue": "Fortsæt",
   "migration.error.action.copy": "Kopiér",
   "migration.error.toast.copied": "Fejl kopieret til udklipsholder",
+
+  "migration.sessionSummary.title": "Opsummering:",
+  "migration.sessionSummary.copy": "Kopiér rapport",
+  "migration.sessionSummary.toast.copied": "Rapport kopieret",
+  "migration.sessionSummary.successful": "Vellykkede",
+  "migration.sessionSummary.skipped": "Sprunget over",
+  "migration.sessionSummary.alreadyMigrated": "Allerede migreret",
+  "migration.sessionSummary.errored": "Med fejl",
+  "migration.sessionSummary.none": "Ingen",
+  "migration.forceReimport.title": "Tving genimport",
+  "migration.forceReimport.description":
+    "Genimport af {{target}} vil overskrive dem og slette alle nye beskeder, der allerede er oprettet i disse sessioner.",
+  "migration.forceReimport.target.one": "denne session",
+  "migration.forceReimport.target.many": "disse {{count}} sessioner",
+  "migration.forceReimport.button": "Tving genimport",
+  "migration.forceReimport.all": "Genimportér alle",
+  "migration.forceReimport.proceed": "Fortsæt",
+  "migration.forceReimport.toast.started": "Tvungen genimport er startet",
+  "migration.running.title": "Migrering i gang",
+  "migration.running.description.line1": "Du er ved at afslutte, mens der stadig er sessioner, som bliver migreret.",
+  "migration.running.description.line2": "Hvis du forlader nu, kan nogle sessioner forblive ufuldstændige.",
+  "migration.running.stay": "Bliv",
+  "migration.running.proceed": "Fortsæt",
+  "migration.sessionProgress.preparing": "Forbereder session",
+  "migration.sessionProgress.storing": "Gemmer session",
+  "migration.sessionProgress.skipped": "Session sprunget over",
+  "migration.sessionProgress.header": "Migrerer {{current}} af {{total}}",
+  "migration.sessionFormat.unknownDate": "Ukendt dato",
+  "migration.sessionFormat.unknown": "Ukendt",
+  "migration.sessionFormat.unknownError": "Ukendt fejl",
   // legacy-migration end
 
   "error.details.show": "Detaljer",
@@ -1311,4 +1369,5 @@ export const dict = {
   "notifications.action.next": "Næste",
   "notifications.action.close": "Luk",
   "notifications.action.tryModel": "Prøv {{model}}",
+  "notifications.action.tryModelGeneric": "Prøv model",
 }

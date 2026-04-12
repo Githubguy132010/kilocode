@@ -935,6 +935,11 @@ export const dict = {
   "session.status.retry": "กำลังลองใหม่…",
   "session.status.retrying": "กำลังลองใหม่ (ครั้งที่ {{ attempt }})… {{ message }}",
   "session.status.working": "กำลังทำงาน...",
+  "session.status.offline": "เครือข่ายถูกตัดการเชื่อมต่อ — กำลังเชื่อมต่อใหม่...",
+
+  "ui.sessionTurn.cancel": "ยกเลิก",
+  "ui.sessionTurn.status.thinking": "กำลังคิด...",
+  "ui.sessionTurn.status.consideringNextSteps": "กำลังพิจารณาขั้นตอนถัดไป...",
 
   "dialog.model.noProviders": "ไม่มีผู้ให้บริการ",
 
@@ -1054,6 +1059,14 @@ export const dict = {
   "settings.experimental.continueOnDeny.description": "ดำเนินลูปเอเจนต์ต่อเมื่อสิทธิ์ถูกปฏิเสธ",
   "settings.experimental.mcpTimeout.title": "หมดเวลา MCP (มิลลิวินาที)",
   "settings.experimental.mcpTimeout.description": "หมดเวลาสำหรับคำขอเซิร์ฟเวอร์ MCP เป็นมิลลิวินาที",
+  "settings.experimental.remote.title": "การควบคุม Remote",
+  "settings.experimental.remote.description":
+    "เปิดใช้งานการควบคุม Remote ของเซสชันผ่าน Kilo Cloud ซึ่งจะส่งผลต่อ CLI บนเครื่องนี้ด้วย",
+  "settings.experimental.remote.current": "สถานะปัจจุบัน:",
+  "settings.experimental.remote.startup": "เปิดใช้งานอัตโนมัติเมื่อเริ่มต้น:",
+  "settings.experimental.remote.active": "เปิดใช้งาน",
+  "settings.experimental.remote.inactive": "ปิดใช้งาน",
+  "settings.experimental.remote.hint": "ใช้ /remote ในแชทเพื่อสลับสถานะ",
   "settings.experimental.toolToggles": "สวิตช์เครื่องมือ",
   "settings.agentBehaviour.defaultAgent.title": "เอเจนต์เริ่มต้น",
   "settings.agentBehaviour.defaultAgent.description": "เอเจนต์ที่ใช้เมื่อไม่ได้ระบุ",
@@ -1114,6 +1127,16 @@ export const dict = {
   "settings.agentBehaviour.editMode.native":
     "นี่คือโหมดในตัว ไม่สามารถเปลี่ยนคำจำกัดความพื้นฐานได้ แต่คุณสามารถกำหนดค่าการแทนที่ได้ที่ด้านล่าง",
   "settings.agentBehaviour.editMode.promptOverride": "การแทนที่ prompt แบบกำหนดเองสำหรับโหมดในตัวนี้",
+  "settings.agentBehaviour.badge.subagent": "เอเจนต์ย่อย",
+  "settings.agentBehaviour.permissions.title": "สิทธิ์ที่คำนวณแล้ว",
+  "settings.agentBehaviour.permissions.count": "{{count}} กฎ",
+  "settings.agentBehaviour.permissions.effective": "มีผล (ไวลด์การ์ด):",
+  "settings.agentBehaviour.permissions.col.tool": "เครื่องมือ",
+  "settings.agentBehaviour.permissions.col.pattern": "รูปแบบ",
+  "settings.agentBehaviour.permissions.col.action": "การดำเนินการ",
+  "settings.agentBehaviour.permissions.copy": "คัดลอกสิทธิ์เป็น JSON",
+  "settings.agentBehaviour.permissions.hint":
+    "กฎจะถูกประเมินตามลำดับ — กฎที่ตรงกันล่าสุดจะมีผล นี่คือชุดกฎที่ประมวลผลแล้วจากแบ็กเอนด์ CLI",
   "settings.agentBehaviour.removeMode.title": "ลบโหมด",
   "settings.agentBehaviour.removeMode.confirm":
     'ต้องการลบโหมด "{{name}}" หรือไม่? การดำเนินการนี้จะปิดใช้งานโหมดโดยอัปเดตการกำหนดค่าของคุณ',
@@ -1144,6 +1167,10 @@ export const dict = {
     "กฎคือไฟล์คำสั่งที่แนะนำพฤติกรรมของเอเจนต์ กฎเหล่านี้จะถูกรวมอยู่ในพรอมต์ระบบสำหรับทุกการสนทนา เพิ่มเส้นทางไฟล์ด้านล่างเพื่อรวมกฎเพิ่มเติม",
   "settings.agentBehaviour.instructionFiles": "ไฟล์คำสั่งเพิ่มเติม",
   "settings.agentBehaviour.instructionFiles.description": "เส้นทางไฟล์คำสั่งเพิ่มเติมในพรอมต์ระบบ",
+  "settings.agentBehaviour.claudeCompat.heading": "ความเข้ากันได้กับ Claude Code",
+  "settings.agentBehaviour.claudeCompat.title": "โหลดไฟล์ Claude Code",
+  "settings.agentBehaviour.claudeCompat.description":
+    "โหลดคำแนะนำและทักษะจาก CLAUDE.md ในไดเรกทอรีการกำหนดค่า Claude Code ของคุณลงในเซสชัน เปิดใช้งานตัวเลือกนี้หากคุณต้องการให้ Kilo ใช้คำแนะนำและทักษะจาก Claude Code ของคุณ จำเป็นต้องรีสตาร์ท",
   "settings.agentBehaviour.mcpDetail.command": "คำสั่ง",
   "settings.agentBehaviour.mcpDetail.args": "อาร์กิวเมนต์",
   "settings.agentBehaviour.mcpDetail.env": "สภาพแวดล้อม",
@@ -1242,6 +1269,7 @@ export const dict = {
   "migration.whatsNew.features.foundation.detail":
     "แกนหลักขนาดเล็กและมีประสิทธิภาพเดียวกันในทุกผลิตภัณฑ์ Kilo ประสบการณ์ที่คุ้นเคยไม่ว่าคุณจะเลือกทำงานอย่างไร",
   "migration.whatsNew.blogLink": "อ่านประกาศฉบับเต็ม",
+  "migration.whatsNew.docsLink": "มีอะไรใหม่และคำถามที่พบบ่อย",
   "migration.whatsNew.continue": "ดำเนินการต่อ",
 
   // Screen 2 — Migrate Settings
@@ -1278,6 +1306,36 @@ export const dict = {
   "migration.error.continue": "ดำเนินการต่อ",
   "migration.error.action.copy": "คัดลอก",
   "migration.error.toast.copied": "คัดลอกข้อผิดพลาดไปยังคลิปบอร์ดแล้ว",
+
+  "migration.sessionSummary.title": "สรุป:",
+  "migration.sessionSummary.copy": "คัดลอกรายงาน",
+  "migration.sessionSummary.toast.copied": "คัดลอกรายงานแล้ว",
+  "migration.sessionSummary.successful": "สำเร็จ",
+  "migration.sessionSummary.skipped": "ข้ามแล้ว",
+  "migration.sessionSummary.alreadyMigrated": "ย้ายแล้ว",
+  "migration.sessionSummary.errored": "มีข้อผิดพลาด",
+  "migration.sessionSummary.none": "ไม่มี",
+  "migration.forceReimport.title": "บังคับนำเข้าใหม่",
+  "migration.forceReimport.description":
+    "การนำเข้า {{target}} ใหม่จะเขียนทับและลบข้อความใหม่ใด ๆ ที่สร้างไว้แล้วในเซสชันเหล่านั้น",
+  "migration.forceReimport.target.one": "เซสชันนี้",
+  "migration.forceReimport.target.many": "{{count}} เซสชันเหล่านี้",
+  "migration.forceReimport.button": "บังคับนำเข้าใหม่",
+  "migration.forceReimport.all": "นำเข้าทั้งหมดใหม่",
+  "migration.forceReimport.proceed": "ดำเนินการต่อ",
+  "migration.forceReimport.toast.started": "เริ่มการนำเข้าใหม่แบบบังคับแล้ว",
+  "migration.running.title": "กำลังย้ายข้อมูล",
+  "migration.running.description.line1": "คุณกำลังจะเสร็จสิ้นในขณะที่ยังมีบางเซสชันกำลังย้ายข้อมูลอยู่",
+  "migration.running.description.line2": "หากคุณออกตอนนี้ บางเซสชันอาจยังไม่สมบูรณ์",
+  "migration.running.stay": "อยู่ต่อ",
+  "migration.running.proceed": "ดำเนินการต่อ",
+  "migration.sessionProgress.preparing": "กำลังเตรียมเซสชัน",
+  "migration.sessionProgress.storing": "กำลังบันทึกเซสชัน",
+  "migration.sessionProgress.skipped": "ข้ามเซสชันแล้ว",
+  "migration.sessionProgress.header": "กำลังย้าย {{current}} จาก {{total}}",
+  "migration.sessionFormat.unknownDate": "ไม่ทราบวันที่",
+  "migration.sessionFormat.unknown": "ไม่ทราบ",
+  "migration.sessionFormat.unknownError": "ข้อผิดพลาดที่ไม่ทราบสาเหตุ",
   // legacy-migration end
 
   "error.details.show": "รายละเอียด",
@@ -1294,4 +1352,5 @@ export const dict = {
   "notifications.action.next": "ถัดไป",
   "notifications.action.close": "ปิด",
   "notifications.action.tryModel": "ลองใช้ {{model}}",
+  "notifications.action.tryModelGeneric": "ลองใช้โมเดล",
 }

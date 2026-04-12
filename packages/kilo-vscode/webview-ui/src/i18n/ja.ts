@@ -939,6 +939,11 @@ export const dict = {
   "session.status.retry": "再試行中…",
   "session.status.retrying": "再試行中（{{ attempt }}回目）… {{ message }}",
   "session.status.working": "作業中…",
+  "session.status.offline": "ネットワークが切断されました — 再接続中…",
+
+  "ui.sessionTurn.cancel": "キャンセル",
+  "ui.sessionTurn.status.thinking": "考え中...",
+  "ui.sessionTurn.status.consideringNextSteps": "次のステップを検討中...",
 
   "dialog.model.noProviders": "プロバイダーなし",
 
@@ -1062,6 +1067,14 @@ export const dict = {
   "settings.experimental.continueOnDeny.description": "権限が拒否された場合にエージェントループを続行",
   "settings.experimental.mcpTimeout.title": "MCPタイムアウト（ミリ秒）",
   "settings.experimental.mcpTimeout.description": "MCPサーバーリクエストのタイムアウト（ミリ秒）",
+  "settings.experimental.remote.title": "Remote コントロール",
+  "settings.experimental.remote.description":
+    "Kilo Cloud 経由でのセッションの Remote コントロールを有効にします。これはこのマシンの CLI にも影響します。",
+  "settings.experimental.remote.current": "現在の状態:",
+  "settings.experimental.remote.startup": "起動時の自動有効化:",
+  "settings.experimental.remote.active": "アクティブ",
+  "settings.experimental.remote.inactive": "非アクティブ",
+  "settings.experimental.remote.hint": "チャットで /remote を使用して切り替えます",
   "settings.experimental.toolToggles": "ツールトグル",
   "settings.agentBehaviour.defaultAgent.title": "デフォルトエージェント",
   "settings.agentBehaviour.defaultAgent.description": "指定されていない場合に使用するエージェント",
@@ -1125,6 +1138,16 @@ export const dict = {
   "settings.agentBehaviour.editMode.native":
     "これは組み込みモードです。基本定義は変更できませんが、以下でオーバーライドを設定できます。",
   "settings.agentBehaviour.editMode.promptOverride": "この組み込みモードのカスタムプロンプト上書き",
+  "settings.agentBehaviour.badge.subagent": "サブエージェント",
+  "settings.agentBehaviour.permissions.title": "計算された権限",
+  "settings.agentBehaviour.permissions.count": "{{count}} 個のルール",
+  "settings.agentBehaviour.permissions.effective": "有効（ワイルドカード）:",
+  "settings.agentBehaviour.permissions.col.tool": "ツール",
+  "settings.agentBehaviour.permissions.col.pattern": "パターン",
+  "settings.agentBehaviour.permissions.col.action": "アクション",
+  "settings.agentBehaviour.permissions.copy": "権限をJSONとしてコピー",
+  "settings.agentBehaviour.permissions.hint":
+    "ルールは順番に評価され、最後に一致したルールが適用されます。これはCLIバックエンドから解決されたルールセットです。",
   "settings.agentBehaviour.removeMode.title": "モードを削除",
   "settings.agentBehaviour.removeMode.confirm":
     'モード "{{name}}" を削除しますか？設定を更新してモードを無効にします。',
@@ -1154,6 +1177,10 @@ export const dict = {
     "ルールはエージェントの動作を導く指示ファイルです。すべての会話のシステムプロンプトに含まれます。追加のルールを含めるには、以下にファイルパスを追加してください。",
   "settings.agentBehaviour.instructionFiles": "追加の指示ファイル",
   "settings.agentBehaviour.instructionFiles.description": "システムプロンプトに含まれる追加の指示ファイルへのパス",
+  "settings.agentBehaviour.claudeCompat.heading": "Claude Code 互換性",
+  "settings.agentBehaviour.claudeCompat.title": "Claude Code ファイルを読み込む",
+  "settings.agentBehaviour.claudeCompat.description":
+    "Claude Code の設定ディレクトリから CLAUDE.md のインストラクションとスキルをセッションに読み込みます。Kilo に Claude Code のインストラクションとスキルを使用させる場合は、これを有効にしてください。再起動が必要です。",
   "settings.agentBehaviour.mcpDetail.command": "コマンド",
   "settings.agentBehaviour.mcpDetail.args": "引数",
   "settings.agentBehaviour.mcpDetail.env": "環境",
@@ -1258,6 +1285,7 @@ export const dict = {
   "migration.whatsNew.features.foundation.detail":
     "すべてのKilo製品で共有される小さく効率的なコア。どのような作業スタイルでも馴染みのある体験を提供します。",
   "migration.whatsNew.blogLink": "完全なアナウンスを読む",
+  "migration.whatsNew.docsLink": "新機能とよくある質問",
   "migration.whatsNew.continue": "続行",
 
   // Screen 2 — Migrate Settings
@@ -1294,6 +1322,36 @@ export const dict = {
   "migration.error.continue": "続行",
   "migration.error.action.copy": "コピー",
   "migration.error.toast.copied": "エラーをクリップボードにコピーしました",
+
+  "migration.sessionSummary.title": "概要:",
+  "migration.sessionSummary.copy": "レポートをコピー",
+  "migration.sessionSummary.toast.copied": "レポートをコピーしました",
+  "migration.sessionSummary.successful": "成功",
+  "migration.sessionSummary.skipped": "スキップ",
+  "migration.sessionSummary.alreadyMigrated": "移行済み",
+  "migration.sessionSummary.errored": "エラーあり",
+  "migration.sessionSummary.none": "なし",
+  "migration.forceReimport.title": "再インポートを強制",
+  "migration.forceReimport.description":
+    "{{target}} を再インポートすると上書きされ、それらのセッションで既に作成された新しいメッセージは削除されます。",
+  "migration.forceReimport.target.one": "このセッション",
+  "migration.forceReimport.target.many": "これら {{count}} 件のセッション",
+  "migration.forceReimport.button": "再インポートを強制",
+  "migration.forceReimport.all": "すべて再インポート",
+  "migration.forceReimport.proceed": "続行",
+  "migration.forceReimport.toast.started": "強制再インポートを開始しました",
+  "migration.running.title": "移行を実行中",
+  "migration.running.description.line1": "まだ移行中のセッションがある状態で終了しようとしています。",
+  "migration.running.description.line2": "今離れると、一部のセッションは未完了のままになる可能性があります。",
+  "migration.running.stay": "このままにする",
+  "migration.running.proceed": "続行",
+  "migration.sessionProgress.preparing": "セッションを準備中",
+  "migration.sessionProgress.storing": "セッションを保存中",
+  "migration.sessionProgress.skipped": "セッションをスキップしました",
+  "migration.sessionProgress.header": "{{total}} 件中 {{current}} 件を移行中",
+  "migration.sessionFormat.unknownDate": "不明な日付",
+  "migration.sessionFormat.unknown": "不明",
+  "migration.sessionFormat.unknownError": "不明なエラー",
   // legacy-migration end
 
   "error.details.show": "詳細",
@@ -1310,4 +1368,5 @@ export const dict = {
   "notifications.action.next": "次へ",
   "notifications.action.close": "閉じる",
   "notifications.action.tryModel": "{{model}}を試す",
+  "notifications.action.tryModelGeneric": "モデルを試す",
 }

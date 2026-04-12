@@ -952,6 +952,11 @@ export const dict = {
   "session.status.retry": "Erneuter Versuch…",
   "session.status.retrying": "Erneuter Versuch ({{ attempt }})… {{ message }}",
   "session.status.working": "Wird bearbeitet…",
+  "session.status.offline": "Netzwerk getrennt — Verbindung wird wiederhergestellt...",
+
+  "ui.sessionTurn.cancel": "Abbrechen",
+  "ui.sessionTurn.status.thinking": "Denke nach...",
+  "ui.sessionTurn.status.consideringNextSteps": "Überlege nächste Schritte...",
 
   "dialog.model.noProviders": "Keine Anbieter",
 
@@ -1082,6 +1087,14 @@ export const dict = {
     "Agent-Schleife fortsetzen, wenn eine Berechtigung abgelehnt wird",
   "settings.experimental.mcpTimeout.title": "MCP-Zeitlimit (ms)",
   "settings.experimental.mcpTimeout.description": "Zeitlimit für MCP-Server-Anfragen in Millisekunden",
+  "settings.experimental.remote.title": "Remote-Steuerung",
+  "settings.experimental.remote.description":
+    "Aktivieren Sie die Remote-Steuerung von Sitzungen über Kilo Cloud. Dies betrifft auch CLIs auf diesem Computer.",
+  "settings.experimental.remote.current": "Aktueller Status:",
+  "settings.experimental.remote.startup": "Automatisch beim Start aktivieren:",
+  "settings.experimental.remote.active": "Aktiv",
+  "settings.experimental.remote.inactive": "Inaktiv",
+  "settings.experimental.remote.hint": "Verwende /remote im Chat zum Umschalten",
   "settings.experimental.toolToggles": "Werkzeug-Schalter",
   "settings.agentBehaviour.defaultAgent.title": "Standard-Agent",
   "settings.agentBehaviour.defaultAgent.description": "Agent, der verwendet wird, wenn keiner angegeben ist",
@@ -1145,6 +1158,16 @@ export const dict = {
     "Dies ist ein integrierter Modus. Seine Basisdefinition kann nicht geändert werden, aber Sie können unten Überschreibungen konfigurieren.",
   "settings.agentBehaviour.editMode.promptOverride":
     "Benutzerdefinierte Prompt-Überschreibung für diesen eingebauten Modus",
+  "settings.agentBehaviour.badge.subagent": "Subagent",
+  "settings.agentBehaviour.permissions.title": "Berechnete Berechtigungen",
+  "settings.agentBehaviour.permissions.count": "{{count}} Regeln",
+  "settings.agentBehaviour.permissions.effective": "Effektiv (Platzhalter):",
+  "settings.agentBehaviour.permissions.col.tool": "Werkzeug",
+  "settings.agentBehaviour.permissions.col.pattern": "Muster",
+  "settings.agentBehaviour.permissions.col.action": "Aktion",
+  "settings.agentBehaviour.permissions.copy": "Berechtigungen als JSON kopieren",
+  "settings.agentBehaviour.permissions.hint":
+    "Regeln werden der Reihe nach ausgewertet — die letzte übereinstimmende Regel gewinnt. Dies ist das aufgelöste Regelwerk vom CLI-Backend.",
   "settings.agentBehaviour.removeMode.title": "Modus entfernen",
   "settings.agentBehaviour.removeMode.confirm":
     'Modus "{{name}}" entfernen? Dadurch wird der Modus durch Aktualisierung Ihrer Konfiguration deaktiviert.',
@@ -1176,6 +1199,10 @@ export const dict = {
     "Regeln sind Anweisungsdateien, die das Verhalten des Agenten steuern. Sie werden in den System-Prompt für jede Konversation eingebunden. Fügen Sie unten Dateipfade hinzu, um zusätzliche Regeln einzubinden.",
   "settings.agentBehaviour.instructionFiles": "Zusätzliche Anweisungsdateien",
   "settings.agentBehaviour.instructionFiles.description": "Pfade zu zusätzlichen Anweisungsdateien im System-Prompt",
+  "settings.agentBehaviour.claudeCompat.heading": "Claude Code-Kompatibilität",
+  "settings.agentBehaviour.claudeCompat.title": "Claude Code-Dateien laden",
+  "settings.agentBehaviour.claudeCompat.description":
+    "Lädt CLAUDE.md-Anweisungen und Skills aus Ihrem Claude Code-Konfigurationsverzeichnis in Sitzungen. Aktivieren Sie dies, wenn Kilo Ihre Claude Code-Anweisungen und Skills verwenden soll. Neustart erforderlich.",
   "settings.agentBehaviour.mcpDetail.command": "Befehl",
   "settings.agentBehaviour.mcpDetail.args": "Argumente",
   "settings.agentBehaviour.mcpDetail.env": "Umgebung",
@@ -1285,6 +1312,7 @@ export const dict = {
   "migration.whatsNew.features.foundation.detail":
     "Ein kleiner, effizienter Kern über alle Kilo-Produkte hinweg. Ein vertrautes Erlebnis, egal wie Sie arbeiten.",
   "migration.whatsNew.blogLink": "Die vollständige Ankündigung lesen",
+  "migration.whatsNew.docsLink": "Neuigkeiten & häufige Fragen",
   "migration.whatsNew.continue": "Weiter",
 
   // Screen 2 — Migrate Settings
@@ -1322,6 +1350,36 @@ export const dict = {
   "migration.error.continue": "Weiter",
   "migration.error.action.copy": "Kopieren",
   "migration.error.toast.copied": "Fehler in die Zwischenablage kopiert",
+
+  "migration.sessionSummary.title": "Zusammenfassung:",
+  "migration.sessionSummary.copy": "Bericht kopieren",
+  "migration.sessionSummary.toast.copied": "Bericht kopiert",
+  "migration.sessionSummary.successful": "Erfolgreich",
+  "migration.sessionSummary.skipped": "Übersprungen",
+  "migration.sessionSummary.alreadyMigrated": "Bereits migriert",
+  "migration.sessionSummary.errored": "Fehlgeschlagen",
+  "migration.sessionSummary.none": "Keine",
+  "migration.forceReimport.title": "Erneuten Import erzwingen",
+  "migration.forceReimport.description":
+    "Ein erneuter Import von {{target}} überschreibt diese und löscht alle neuen Nachrichten, die in diesen Sitzungen bereits erstellt wurden.",
+  "migration.forceReimport.target.one": "diese Sitzung",
+  "migration.forceReimport.target.many": "diese {{count}} Sitzungen",
+  "migration.forceReimport.button": "Erneuten Import erzwingen",
+  "migration.forceReimport.all": "Alle erneut importieren",
+  "migration.forceReimport.proceed": "Fortfahren",
+  "migration.forceReimport.toast.started": "Erneuter Import gestartet",
+  "migration.running.title": "Migration läuft",
+  "migration.running.description.line1": "Sie sind dabei abzuschließen, während noch Sitzungen migriert werden.",
+  "migration.running.description.line2": "Wenn Sie jetzt gehen, bleiben einige Sitzungen möglicherweise unvollständig.",
+  "migration.running.stay": "Bleiben",
+  "migration.running.proceed": "Fortfahren",
+  "migration.sessionProgress.preparing": "Sitzung wird vorbereitet",
+  "migration.sessionProgress.storing": "Sitzung wird gespeichert",
+  "migration.sessionProgress.skipped": "Sitzung übersprungen",
+  "migration.sessionProgress.header": "Migriere {{current}} von {{total}}",
+  "migration.sessionFormat.unknownDate": "Unbekanntes Datum",
+  "migration.sessionFormat.unknown": "Unbekannt",
+  "migration.sessionFormat.unknownError": "Unbekannter Fehler",
   // legacy-migration end
 
   "error.details.show": "Details",
@@ -1338,4 +1396,5 @@ export const dict = {
   "notifications.action.next": "Weiter",
   "notifications.action.close": "Schließen",
   "notifications.action.tryModel": "{{model}} ausprobieren",
+  "notifications.action.tryModelGeneric": "Modell ausprobieren",
 } satisfies Partial<Record<Keys, string>>
