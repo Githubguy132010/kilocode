@@ -63,6 +63,7 @@ import { TuiConfigProvider, useTuiConfig } from "./context/tui-config"
 import { TuiConfig } from "@/config/tui"
 import { createTuiApi, TuiPluginRuntime, type RouteMap } from "./plugin"
 import { FormatError, FormatUnknownError } from "@/cli/error"
+import { resetTerminalState } from "@tui/util/terminal" // kilocode_change
 
 async function getTerminalBackgroundColor(): Promise<"dark" | "light"> {
   // can't set raw mode if not a TTY
@@ -196,6 +197,9 @@ export function tui(input: {
     const onBeforeExit = async () => {
       await TuiPluginRuntime.dispose()
     }
+
+    // kilocode_change - safety net: ensure mouse tracking is disabled regardless of exit path
+    process.on("exit", resetTerminalState) // kilocode_change
 
     const renderer = await createCliRenderer(rendererConfig(input.config))
 
@@ -1010,6 +1014,8 @@ function ErrorComponent(props: {
     renderer?.setTerminalTitle("")
     renderer?.destroy()
     win32FlushInputBuffer()
+    // kilocode_change - reset terminal state to disable mouse tracking on exit
+    resetTerminalState()
     await props.onExit()
   }
 
