@@ -292,7 +292,7 @@ export namespace KilocodeConfig {
 
   // ── Config merge utilities ───────────────────────────────────────────
 
-  /** Recursively remove keys whose value is null or becomes an empty object after stripping. */
+  /** Recursively remove null values and drop objects left empty after removal. */
   export function stripNulls(obj: Record<string, unknown>): Record<string, unknown> {
     const result: Record<string, unknown> = {}
     for (const [key, value] of Object.entries(obj)) {
