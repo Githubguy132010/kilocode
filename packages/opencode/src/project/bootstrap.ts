@@ -12,6 +12,7 @@ import { Log } from "@/util/log"
 import { FileWatcher } from "@/file/watcher"
 import { KiloSessions } from "@/kilo-sessions/kilo-sessions" // kilocode_change
 import * as Effect from "effect/Effect"
+import { ToolRegistry } from "../tool/registry" // kilocode_change — warm up tool registry on bootstrap
 
 export const InstanceBootstrap = Effect.gen(function* () {
   Log.Default.info("bootstrapping", { directory: Instance.directory })
@@ -33,4 +34,6 @@ export const InstanceBootstrap = Effect.gen(function* () {
       }
     }),
   )
+
+  ToolRegistry.warmup() // kilocode_change — fire-and-forget: warm tool registry and MCP connections in background
 }).pipe(Effect.withSpan("InstanceBootstrap"))
