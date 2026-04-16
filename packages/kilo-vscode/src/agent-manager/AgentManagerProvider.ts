@@ -8,7 +8,7 @@ import { WorktreeManager, type CreateWorktreeResult } from "./WorktreeManager"
 import { WorktreeStateManager } from "./WorktreeStateManager"
 import { handleSection } from "./section-handler"
 import { chooseBaseBranch, normalizeBaseBranch } from "./base-branch"
-import { GitStatsPoller, type WorktreePresenceResult } from "./GitStatsPoller"
+import { GitStatsPoller, type LocalStats, type WorktreePresenceResult, type WorktreeStats } from "./GitStatsPoller"
 import { PRStatusBridge } from "./pr-status-bridge"
 import { GitOps } from "./GitOps"
 import { versionedName } from "./branch-name"
@@ -59,8 +59,8 @@ export class AgentManagerProvider implements Disposable {
   private gitOps: GitOps
   private diffs: WorktreeDiffController
   private staleWorktreeIds = new Set<string>()
-  private cachedWorktreeStats: AgentManagerOutMessage | undefined
-  private cachedLocalStats: AgentManagerOutMessage | undefined
+  private cachedWorktreeStats: { type: "agentManager.worktreeStats"; stats: WorktreeStats[] } | undefined
+  private cachedLocalStats: { type: "agentManager.localStats"; stats: LocalStats } | undefined
 
   /** Session ID most recently loaded via a `loadMessages` message from the webview.
    *  Updated synchronously — unlike the session provider's currentSession which depends on
@@ -191,6 +191,10 @@ export class AgentManagerProvider implements Disposable {
     this.statsPoller.setVisible(ctx.visible)
     ctx.onDidChangeVisibility((visible) => {
       this.statsPoller.setVisible(visible)
+    })
+
+    ctx.sessions.onFollowupAdopted((session, directory) => {
+      this.adoptFollowupInWorktree(session, directory)
     })
 
     this.stateReady = this.initializeState()
@@ -789,6 +793,7 @@ export class AgentManagerProvider implements Disposable {
       return null
     }
     // Remove from state BEFORE disk removal so pollers immediately stop targeting this worktree.
+    // Pre-emptive skip covers any in-flight poll that already captured getWorktrees().
     this.statsPoller.skipWorktree(worktreeId)
     this.prBridge.remove(worktreeId)
     this.run.remove(worktreeId)
@@ -1200,6 +1205,24 @@ export class AgentManagerProvider implements Disposable {
     this.panel.sessions.recoverPendingPrompts()
   }
 
+  /** Route a plan follow-up session to its worktree instead of LOCAL. */
+  private adoptFollowupInWorktree(session: Session, directory: string): void {
+    const state = this.getStateManager()
+    if (!state) return
+    const worktree = state.findWorktreeByPath(directory)
+    if (!worktree) return
+
+    state.addSession(session.id, worktree.id)
+    this.registerWorktreeSession(session.id, directory)
+    this.pushState()
+    this.postToWebview({
+      type: "agentManager.sessionAdded",
+      sessionId: session.id,
+      worktreeId: worktree.id,
+    })
+    this.log(`Adopted follow-up session ${session.id} into worktree ${worktree.id}`)
+  }
+
   private onWorktreePresence(result: WorktreePresenceResult): void {
     const state = this.state
     if (!state) return
@@ -1251,6 +1274,22 @@ export class AgentManagerProvider implements Disposable {
     }
   }
 
+  /** Sync the poller's skip set with currently collapsed sections. */
+  private syncPollerSkips(): void {
+    const state = this.state
+    if (!state) return
+    const skipped = new Set<string>()
+    for (const sec of state.getSections()) {
+      if (!sec.collapsed) continue
+      for (const id of state.getWorktreesInSection(sec.id)) skipped.add(id)
+    }
+    const stats = this.statsPoller.syncSkips(skipped)
+    if (!stats) return
+    const msg = { type: "agentManager.worktreeStats" as const, stats }
+    this.cachedWorktreeStats = msg
+    this.postToWebview(msg)
+  }
+
   private pushState(): void {
     const state = this.state
     if (!state) return
@@ -1272,6 +1311,9 @@ export class AgentManagerProvider implements Disposable {
       ...run,
     })
 
+    // Sync skip set before enabling the poller so the first poll cycle
+    // already excludes worktrees in collapsed sections.
+    this.syncPollerSkips()
     this.statsPoller.setEnabled(worktrees.length > 0 || this.panel !== undefined)
     this.prBridge.poller.setEnabled(worktrees.length > 0)
   }
