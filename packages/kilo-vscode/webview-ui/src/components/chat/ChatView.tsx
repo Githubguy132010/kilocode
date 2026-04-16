@@ -19,6 +19,7 @@ import { useVSCode } from "../../context/vscode"
 import { useLanguage } from "../../context/language"
 import { useWorktreeMode } from "../../context/worktree-mode"
 import { useServer } from "../../context/server"
+import { isPromptBlocked, isSuggesting, isQuestioning } from "./prompt-input-utils"
 
 interface ChatViewProps {
   onSelectSession?: (id: string) => void
@@ -62,11 +63,11 @@ export const ChatView: Component<ChatViewProps> = (props) => {
   const standaloneQuestions = createMemo(() => familyQuestions().filter((q) => !q.tool))
   const standaloneSuggestions = createMemo(() => familySuggestions().filter((s) => !s.tool))
   const permissionRequest = () => familyPermissions().find((p) => p.sessionID === id()) ?? familyPermissions()[0]
-  const blocked = () => familyPermissions().length > 0
+  const blocked = () => isPromptBlocked(familyPermissions().length)
   // Session is busy only because a suggestion tool call is pending — prompt should behave as idle
-  const suggesting = () => !blocked() && familySuggestions().length > 0
+  const suggesting = () => isSuggesting(blocked(), familySuggestions().length)
   // Session is busy only because a question tool call is pending — prompt should behave as idle
-  const questioning = () => !blocked() && familyQuestions().length > 0
+  const questioning = () => isQuestioning(blocked(), familyQuestions().length)
   const dock = () => !props.readonly || !!permissionRequest()
 
   // When a bottom-dock permission disappears while the session is busy,

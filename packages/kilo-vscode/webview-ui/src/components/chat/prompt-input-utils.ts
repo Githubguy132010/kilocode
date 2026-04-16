@@ -49,3 +49,36 @@ export function buildHighlightSegments(val: string, paths: Set<string>): { text:
 export function atEnd(start: number, end: number, len: number): boolean {
   return start === end && end === len
 }
+
+/**
+ * Whether the input prompt should be blocked.
+ * Only permissions block — questions and suggestions do NOT.
+ */
+export function isPromptBlocked(permissions: number): boolean {
+  return permissions > 0
+}
+
+/**
+ * Whether the session is busy from the prompt's perspective.
+ * Returns false (idle-like) when the session is busy only because
+ * a suggestion or question tool call is pending.
+ */
+export function isPromptBusy(status: string, suggesting: boolean, questioning: boolean): boolean {
+  return status !== "idle" && !suggesting && !questioning
+}
+
+/**
+ * Whether the session is busy only because a suggestion is pending.
+ * True when no blocking requests exist and at least one suggestion is active.
+ */
+export function isSuggesting(blocked: boolean, suggestions: number): boolean {
+  return !blocked && suggestions > 0
+}
+
+/**
+ * Whether the session is busy only because a question is pending.
+ * True when no blocking requests exist and at least one question is active.
+ */
+export function isQuestioning(blocked: boolean, questions: number): boolean {
+  return !blocked && questions > 0
+}
