@@ -58,10 +58,9 @@ class KiloBackendChatManager(
         watcher = cs.launch {
             sse.collect { event ->
                 if (event.type in CHAT_EVENTS) {
-                    log.info("SSE chat event: type=${event.type}, data=${event.data.take(2000)}")
+                    log.debug("SSE chat event: type=${event.type}, data=${event.data.take(2000)}")
                     val parsed = KiloCliDataParser.parseChatEvent(event.type, event.data)
                     if (parsed != null) {
-                        log.info("SSE parsed → ${parsed::class.simpleName}")
                         _events.emit(parsed)
                     } else {
                         log.warn("SSE parse returned null for type=${event.type}")
@@ -88,9 +87,8 @@ class KiloBackendChatManager(
         val url = requireBase()
 
         val body = KiloCliDataParser.buildPromptJson(prompt)
-        log.info("prompt: request body=$body")
         val target = "$url/session/$id/prompt_async?directory=${encode(dir)}"
-        log.info("prompt: POST $target")
+        log.debug("prompt: POST $target, body=$body")
         val request = Request.Builder()
             .url(target)
             .post(body.toRequestBody(JSON_TYPE))
@@ -99,13 +97,12 @@ class KiloBackendChatManager(
         try {
             http.newCall(request).execute().use { response ->
                 val code = response.code
-                val raw = response.body?.string()
-                log.info("prompt: response HTTP $code, body=${raw?.take(200)}")
                 if (!response.isSuccessful) {
-                    log.warn("prompt_async failed: HTTP $code — $raw")
+                    val raw = response.body?.string()
+                    log.warn("prompt_async failed: HTTP $code")
+                    log.debug("prompt_async error body: $raw")
                     throw RuntimeException("prompt_async failed: HTTP $code")
                 }
-                log.info("prompt: success (HTTP $code)")
             }
         } catch (e: RuntimeException) {
             throw e
@@ -161,7 +158,6 @@ class KiloBackendChatManager(
         val url = requireBase()
 
         val partial = KiloCliDataParser.buildConfigPartial(update)
-        log.info("config update: PATCH /global/config body=$partial")
 
         val request = Request.Builder()
             .url("$url/global/config")
