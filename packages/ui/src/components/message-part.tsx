@@ -2008,10 +2008,19 @@ ToolRegistry.register({
                   </div>
                 </Show>
               </div>
-              {/* kilocode_change start - show +/- counts when overwriting an existing file */}
+              {/* kilocode_change start - collapsed-card indicator: Created badge for new files, +/- counts for overwrites */}
               <div data-slot="message-part-actions">
-                <Show when={!pending() && props.metadata.exists && props.metadata.filediff}>
-                  <DiffChanges changes={props.metadata.filediff} />
+                <Show when={!pending()}>
+                  <Switch>
+                    <Match when={props.metadata.exists === false}>
+                      <span data-slot="apply-patch-change" data-type="added">
+                        {i18n.t("ui.patch.action.created")}
+                      </span>
+                    </Match>
+                    <Match when={props.metadata.filediff}>
+                      <DiffChanges changes={props.metadata.filediff} />
+                    </Match>
+                  </Switch>
                 </Show>
               </div>
               {/* kilocode_change end */}
