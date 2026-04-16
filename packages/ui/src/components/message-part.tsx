@@ -2008,26 +2008,52 @@ ToolRegistry.register({
                   </div>
                 </Show>
               </div>
-              <div data-slot="message-part-actions">{/* <DiffChanges diff={diff} /> */}</div>
+              {/* kilocode_change start - show +/- counts when overwriting an existing file */}
+              <div data-slot="message-part-actions">
+                <Show when={!pending() && props.metadata.exists && props.metadata.filediff}>
+                  <DiffChanges changes={props.metadata.filediff} />
+                </Show>
+              </div>
+              {/* kilocode_change end */}
             </div>
           }
         >
-          <Show when={props.input.content && path()}>
-            <ToolFileAccordion path={path()}>
-              <div data-component="write-content">
-                <Dynamic
-                  component={fileComponent}
-                  mode="text"
-                  file={{
-                    name: props.input.filePath,
-                    contents: props.input.content,
-                    cacheKey: checksum(props.input.content),
-                  }}
-                  overflow="scroll"
-                />
-              </div>
+          {/* kilocode_change start - surface created/overwrite indicator + always render accordion so content is discoverable */}
+          <Show when={path()}>
+            <ToolFileAccordion
+              path={path()}
+              actions={
+                <Show when={!pending()}>
+                  <Switch>
+                    <Match when={props.metadata.exists === false}>
+                      <span data-slot="apply-patch-change" data-type="added">
+                        {i18n.t("ui.patch.action.created")}
+                      </span>
+                    </Match>
+                    <Match when={props.metadata.filediff}>
+                      <DiffChanges changes={props.metadata.filediff} />
+                    </Match>
+                  </Switch>
+                </Show>
+              }
+            >
+              <Show when={props.input.content != null}>
+                <div data-component="write-content">
+                  <Dynamic
+                    component={fileComponent}
+                    mode="text"
+                    file={{
+                      name: props.input.filePath,
+                      contents: props.input.content,
+                      cacheKey: checksum(props.input.content),
+                    }}
+                    overflow="scroll"
+                  />
+                </div>
+              </Show>
             </ToolFileAccordion>
           </Show>
+          {/* kilocode_change end */}
           <DiagnosticsDisplay diagnostics={diagnostics()} />
         </BasicTool>
       </div>

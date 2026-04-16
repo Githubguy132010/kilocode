@@ -2050,6 +2050,7 @@ ToolRegistry.register({
                       <ToolMetaLine
                         filename={name()}
                         path={props.input.filePath?.includes("/") ? getDirectory(props.input.filePath!) : undefined}
+                        changes={props.metadata.filediff}
                         animate={reveal()}
                         onClick={data.openFile && props.input.filePath ? handleFileClick : undefined}
                       />
@@ -2060,20 +2061,38 @@ ToolRegistry.register({
             </div>
           }
         >
-          <Show when={props.input.content && path()}>
-            <ToolFileAccordion path={path()}>
-              <div data-component="write-content">
-                <Dynamic
-                  component={fileComponent}
-                  mode="text"
-                  file={{
-                    name: props.input.filePath,
-                    contents: props.input.content,
-                    cacheKey: checksum(props.input.content),
-                  }}
-                  overflow="scroll"
-                />
-              </div>
+          <Show when={path()}>
+            <ToolFileAccordion
+              path={path()}
+              actions={
+                <Show when={!pending()}>
+                  <Switch>
+                    <Match when={props.metadata.exists === false}>
+                      <span data-slot="apply-patch-change" data-type="added">
+                        {i18n.t("ui.patch.action.created")}
+                      </span>
+                    </Match>
+                    <Match when={props.metadata.filediff}>
+                      <ToolChanges changes={props.metadata.filediff} animate={reveal()} />
+                    </Match>
+                  </Switch>
+                </Show>
+              }
+            >
+              <Show when={props.input.content != null}>
+                <div data-component="write-content">
+                  <Dynamic
+                    component={fileComponent}
+                    mode="text"
+                    file={{
+                      name: props.input.filePath,
+                      contents: props.input.content,
+                      cacheKey: checksum(props.input.content),
+                    }}
+                    overflow="scroll"
+                  />
+                </div>
+              </Show>
             </ToolFileAccordion>
           </Show>
           <DiagnosticsDisplay diagnostics={diagnostics()} />
