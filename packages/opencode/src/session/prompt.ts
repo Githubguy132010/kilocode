@@ -261,6 +261,7 @@ export namespace SessionPrompt {
         const plan = Session.plan(input.session)
         const exists = yield* fsys.existsSafe(plan)
         if (!exists) yield* fsys.ensureDir(path.dirname(plan)).pipe(Effect.catch(Effect.die))
+        // kilocode_change start - plan-mode workflow reminder uses ask/code subagent ids
         const part = yield* sessions.updatePart({
           id: PartID.ascending(),
           messageID: userMessage.info.id,
@@ -296,16 +297,16 @@ Launch code agent(s) to design the implementation based on the user's intent and
 You can launch up to 1 agent(s) in parallel.
 
 **Guidelines:**
-- **Default**: Launch at least 1 Plan agent for most tasks - it helps validate your understanding and consider alternatives
+- **Default**: Launch at least 1 code agent for most tasks - it helps validate your understanding and consider alternatives
 - **Skip agents**: Only for truly trivial tasks (typo fixes, single-line changes, simple renames)
 
-Examples of when to use multiple agents:
+Examples of when to use a code agent:
 - The task touches multiple parts of the codebase
 - It's a large refactor or architectural change
 - There are many edge cases to consider
 - You'd benefit from exploring different approaches
 
-Example perspectives by task type:
+Example perspectives to request by task type:
 - New feature: simplicity vs performance vs maintainability
 - Bug fix: root cause vs workaround vs prevention
 - Refactoring: minimal change vs clean architecture
@@ -339,6 +340,7 @@ NOTE: At any point in time through this workflow you should feel free to ask the
           synthetic: true,
         })
         userMessage.parts.push(part)
+        // kilocode_change end
         return input.messages
       })
 
