@@ -101,13 +101,13 @@ Note: `bash` and `mcp` are explicitly denied because they weren't in the origina
 
 The following Kilocode default modes are **skipped** during migration because Opencode has native equivalents:
 
-| Kilocode Mode  | Reason                                                   |
-| -------------- | -------------------------------------------------------- |
-| `code`         | Maps to Opencode's `code` agent                          |
-| `architect`    | Maps to Opencode's `plan` agent                          |
-| `ask`          | Maps to Opencode's `ask` agent                           |
-| `debug`        | Maps to Opencode's `debug` agent                         |
-| `orchestrator` | Redundant - all Opencode agents can spawn subagents      |
+| Kilocode Mode  | Reason                                              |
+| -------------- | --------------------------------------------------- |
+| `code`         | Maps to Opencode's `code` agent                     |
+| `architect`    | Maps to Opencode's `plan` agent                     |
+| `ask`          | Maps to Opencode's `ask` agent                      |
+| `debug`        | Maps to Opencode's `debug` agent                    |
+| `orchestrator` | Redundant - all Opencode agents can spawn subagents |
 
 ## Example Conversion
 
