@@ -110,6 +110,7 @@ export namespace DiffEngine {
   }
 
   let pool: Pool | null = null
+  let pending: Promise<Pool | null> | null = null
   let nextId = 1
   let warnedFallback = false
 
@@ -133,15 +134,13 @@ export namespace DiffEngine {
     next.pending.clear()
   }
 
-  async function ensurePool(): Promise<Pool | null> {
-    if (pool) return pool
+  async function build(): Promise<Pool | null> {
     if (!Flag.KILO_DIFF_WORKER) return null
     const file = await resolveWorkerPath()
     if (!file) return null
     try {
       const worker = new Worker(file, { name: "diff-worker" } as WorkerOptions)
-      const pending = new Map<number, Pending>()
-      const next: Pool = { worker, pending }
+      const next: Pool = { worker, pending: new Map<number, Pending>() }
 
       worker.onmessage = (evt: MessageEvent<{ id: number; patch?: string; error?: string }>) => {
         const res = evt.data
@@ -175,8 +174,7 @@ export namespace DiffEngine {
       }
       worker.onerror = (evt) => onError(evt instanceof ErrorEvent ? (evt.error ?? evt.message) : evt)
 
-      pool = next
-      return pool
+      return next
     } catch (err) {
       if (!warnedFallback) {
         warnedFallback = true
@@ -186,6 +184,26 @@ export namespace DiffEngine {
       }
       return null
     }
+  }
+
+  // Concurrent callers share the same construction promise. Without this gate,
+  // a batch of concurrent patchAsync calls (e.g. `Effect.forEach` with
+  // `concurrency: 8`) would all race past the `if (pool)` check and each
+  // spawn its own Worker, with last-write-wins leaking the others.
+  async function ensurePool(): Promise<Pool | null> {
+    if (pool) return pool
+    if (!Flag.KILO_DIFF_WORKER) return null
+    if (!pending) {
+      pending = build()
+        .then((next) => {
+          if (next) pool = next
+          return next
+        })
+        .finally(() => {
+          pending = null
+        })
+    }
+    return pending
   }
 
   function terminate() {
