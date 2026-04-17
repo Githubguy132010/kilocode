@@ -297,10 +297,10 @@ Launch code agent(s) to design the implementation based on the user's intent and
 You can launch up to 1 agent(s) in parallel.
 
 **Guidelines:**
-- **Default**: Launch a code agent for most tasks - it helps validate your understanding and consider alternatives
+- **Default**: Launch a code subagent for most tasks - it helps validate your understanding and consider alternatives
 - **Skip agents**: Only for truly trivial tasks (typo fixes, single-line changes, simple renames)
 
-When to request code agent assistance:
+Code subagent is especially useful for:
 - The task touches multiple parts of the codebase
 - It's a large refactor or architectural change
 - There are many edge cases to consider
