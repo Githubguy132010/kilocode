@@ -1084,7 +1084,7 @@ export namespace Config {
           debug: Agent.optional(), // kilocode_change
           orchestrator: Agent.optional(), // kilocode_change
           ask: Agent.optional(), // kilocode_change
-          // subagent
+          // deprecated aliases
           general: Agent.optional(),
           explore: Agent.optional(),
           // specialized

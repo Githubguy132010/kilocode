@@ -27,8 +27,6 @@ test("returns default native agents when no config", async () => {
       expect(names).toContain("debug") // kilocode_change
       expect(names).toContain("orchestrator") // kilocode_change
       expect(names).toContain("ask") // kilocode_change
-      expect(names).toContain("general")
-      expect(names).toContain("explore")
       expect(names).toContain("compaction")
       expect(names).toContain("title")
       expect(names).toContain("summary")
@@ -44,7 +42,7 @@ test("code agent has correct default properties", async () => {
     fn: async () => {
       const code = await Agent.get("code")
       expect(code).toBeDefined()
-      expect(code?.mode).toBe("primary")
+      expect(code?.mode).toBe("all")
       expect(code?.native).toBe(true)
       expect(evalPerm(code, "edit")).toBe("allow")
       expect(evalPerm(code, "bash")).toBe("ask")
@@ -61,7 +59,7 @@ test("ask agent has correct default properties", async () => {
     fn: async () => {
       const ask = await Agent.get("ask")
       expect(ask).toBeDefined()
-      expect(ask?.mode).toBe("primary")
+      expect(ask?.mode).toBe("all")
       expect(ask?.native).toBe(true)
       // ask agent should allow read-only tools
       expect(evalPerm(ask, "read")).toBe("allow")
@@ -134,22 +132,22 @@ test("plan agent asks before edits except .kilo/plans/* and .opencode/plans/*", 
 })
 // kilocode_change end
 
-test("explore agent denies edit and write", async () => {
+test("explore alias resolves to ask agent permissions", async () => {
   await using tmp = await tmpdir()
   await Instance.provide({
     directory: tmp.path,
     fn: async () => {
       const explore = await Agent.get("explore")
       expect(explore).toBeDefined()
-      expect(explore?.mode).toBe("subagent")
+      expect(explore?.name).toBe("ask")
+      expect(explore?.mode).toBe("all")
       expect(evalPerm(explore, "edit")).toBe("deny")
       expect(evalPerm(explore, "write")).toBe("deny")
-      expect(evalPerm(explore, "todowrite")).toBe("deny")
     },
   })
 })
 
-test("explore agent asks for external directories and allows Truncate.GLOB", async () => {
+test("explore alias asks for env files and allows Truncate.GLOB access", async () => {
   const { Truncate } = await import("../../src/tool/truncate")
   await using tmp = await tmpdir()
   await Instance.provide({
@@ -157,22 +155,22 @@ test("explore agent asks for external directories and allows Truncate.GLOB", asy
     fn: async () => {
       const explore = await Agent.get("explore")
       expect(explore).toBeDefined()
-      expect(Permission.evaluate("external_directory", "/some/other/path", explore!.permission).action).toBe("ask")
+      expect(Permission.evaluate("read", ".env", explore!.permission).action).toBe("ask")
       expect(Permission.evaluate("external_directory", Truncate.GLOB, explore!.permission).action).toBe("allow")
     },
   })
 })
 
-test("general agent denies todo tools", async () => {
+test("general alias resolves to code agent", async () => {
   await using tmp = await tmpdir()
   await Instance.provide({
     directory: tmp.path,
     fn: async () => {
       const general = await Agent.get("general")
       expect(general).toBeDefined()
-      expect(general?.mode).toBe("subagent")
-      expect(general?.hidden).toBeUndefined()
-      expect(evalPerm(general, "todowrite")).toBe("deny")
+      expect(general?.name).toBe("code")
+      expect(general?.mode).toBe("all")
+      expect(evalPerm(general, "edit")).toBe("allow")
     },
   })
 })
@@ -268,7 +266,7 @@ test("agent disable removes agent from list", async () => {
       expect(explore).toBeUndefined()
       const agents = await Agent.list()
       const names = agents.map((a) => a.name)
-      expect(names).not.toContain("explore")
+      expect(names).not.toContain("ask")
     },
   })
 })
@@ -359,6 +357,7 @@ test("agent mode can be overridden", async () => {
     fn: async () => {
       const explore = await Agent.get("explore")
       expect(explore?.mode).toBe("primary")
+      expect(explore?.name).toBe("ask")
     },
   })
 })
@@ -751,7 +750,7 @@ test("defaultAgent respects default_agent config set to custom agent with mode a
   })
 })
 
-test("defaultAgent throws when default_agent points to subagent", async () => {
+test("defaultAgent maps deprecated explore alias to ask", async () => {
   await using tmp = await tmpdir({
     config: {
       default_agent: "explore",
@@ -760,7 +759,7 @@ test("defaultAgent throws when default_agent points to subagent", async () => {
   await Instance.provide({
     directory: tmp.path,
     fn: async () => {
-      await expect(Agent.defaultAgent()).rejects.toThrow('default agent "explore" is a subagent')
+      await expect(Agent.defaultAgent()).resolves.toBe("ask")
     },
   })
 })
@@ -906,6 +905,72 @@ test("agent.build disable removes code agent for backward compatibility", async 
       const agents = await Agent.list()
       const names = agents.map((a) => a.name)
       expect(names).not.toContain("code")
+    },
+  })
+})
+
+test("Agent.get('general') returns code agent for backward compatibility", async () => {
+  await using tmp = await tmpdir()
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const general = await Agent.get("general")
+      const code = await Agent.get("code")
+      expect(general).toBeDefined()
+      expect(general).toBe(code)
+      expect(general?.name).toBe("code")
+    },
+  })
+})
+
+test("Agent.get('explore') returns ask agent for backward compatibility", async () => {
+  await using tmp = await tmpdir()
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const explore = await Agent.get("explore")
+      const ask = await Agent.get("ask")
+      expect(explore).toBeDefined()
+      expect(explore).toBe(ask)
+      expect(explore?.name).toBe("ask")
+    },
+  })
+})
+
+test("agent.general config applies to code agent for backward compatibility", async () => {
+  await using tmp = await tmpdir({
+    config: {
+      agent: {
+        general: {
+          temperature: 0.3,
+        },
+      },
+    },
+  })
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const code = await Agent.get("code")
+      expect(code?.temperature).toBe(0.3)
+    },
+  })
+})
+
+test("agent.explore config applies to ask agent for backward compatibility", async () => {
+  await using tmp = await tmpdir({
+    config: {
+      agent: {
+        explore: {
+          color: "#0000FF",
+        },
+      },
+    },
+  })
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const ask = await Agent.get("ask")
+      expect(ask?.color).toBe("#0000FF")
     },
   })
 })

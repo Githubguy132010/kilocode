@@ -13,7 +13,7 @@ export namespace KiloTask {
   /**
    * Build inherited permission rules from the calling agent.
    * Merges the static agent definition with the session's accumulated permissions
-   * so restrictions survive multi-hop chains (plan → general → explore).
+   * so restrictions survive multi-hop chains (plan → code → ask).
    *
    * The caller must resolve `caller` (Agent.Info) and `session` (Session.Info)
    * before calling — this function is pure/synchronous.

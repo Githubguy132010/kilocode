@@ -298,7 +298,7 @@ const addSubtask = (sessionID: SessionID, messageID: MessageID, model = ref) =>
       type: "subtask",
       prompt: "look into the cache key path",
       description: "inspect bug",
-      agent: "general",
+      agent: "code",
       model,
     })
   })
@@ -504,7 +504,7 @@ it.live("failed subtask preserves metadata on error tool state", () =>
       yield* llm.tool("task", {
         description: "inspect bug",
         prompt: "look into the cache key path",
-        subagent_type: "general",
+        subagent_type: "code",
       })
       yield* llm.text("done")
       const msg = yield* user(chat.id, "hello")
@@ -515,7 +515,7 @@ it.live("failed subtask preserves metadata on error tool state", () =>
       expect(yield* llm.calls).toBe(2)
 
       const msgs = yield* MessageV2.filterCompactedEffect(chat.id)
-      const taskMsg = msgs.find((item) => item.info.role === "assistant" && item.info.agent === "general")
+      const taskMsg = msgs.find((item) => item.info.role === "assistant" && item.info.agent === "code")
       expect(taskMsg?.info.role).toBe("assistant")
       if (!taskMsg || taskMsg.info.role !== "assistant") return
 
@@ -535,7 +535,7 @@ it.live("failed subtask preserves metadata on error tool state", () =>
       config: (url) => ({
         ...providerCfg(url),
         agent: {
-          general: {
+          code: {
             model: "test/missing-model",
           },
         },
@@ -562,7 +562,7 @@ it.live(
           const end = Date.now() + 5_000
           while (Date.now() < end) {
             const msgs = await Effect.runPromise(MessageV2.filterCompactedEffect(chat.id))
-            const taskMsg = msgs.find((item) => item.info.role === "assistant" && item.info.agent === "general")
+            const taskMsg = msgs.find((item) => item.info.role === "assistant" && item.info.agent === "code")
             const tool = taskMsg?.parts.find((part): part is MessageV2.ToolPart => part.type === "tool")
             if (tool?.state.status === "running" && tool.state.metadata?.sessionId) return tool
             await new Promise((done) => setTimeout(done, 20))
@@ -597,7 +597,7 @@ it.live(
         yield* llm.tool("task", {
           description: "inspect bug",
           prompt: "look into the cache key path",
-          subagent_type: "general",
+          subagent_type: "code",
         })
         yield* llm.hang
         yield* user(chat.id, "hello")
@@ -754,7 +754,7 @@ it.live(
           expect(Exit.isSuccess(exit)).toBe(true)
 
           const msgs = yield* MessageV2.filterCompactedEffect(chat.id)
-          const taskMsg = msgs.find((item) => item.info.role === "assistant" && item.info.agent === "general")
+          const taskMsg = msgs.find((item) => item.info.role === "assistant" && item.info.agent === "code")
           expect(taskMsg?.info.role).toBe("assistant")
           if (!taskMsg || taskMsg.info.role !== "assistant") return
 

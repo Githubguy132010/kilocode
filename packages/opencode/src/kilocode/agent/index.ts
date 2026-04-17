@@ -13,7 +13,6 @@ import path from "path"
 import PROMPT_DEBUG from "../../agent/prompt/debug.txt"
 import PROMPT_ORCHESTRATOR from "../../agent/prompt/orchestrator.txt"
 import PROMPT_ASK from "../../agent/prompt/ask.txt"
-import PROMPT_EXPLORE from "../../agent/prompt/explore.txt"
 
 // Safe bash commands that don't need user approval.
 // Only commands that cannot execute arbitrary code or subprocesses.
@@ -146,16 +145,18 @@ export function prepare(cfg: Config.Info): KiloData {
   return { mcpRules, defaultsPatch }
 }
 
-// Map "build" config key to "code" for backward compatibility.
+// Map legacy agent names to their canonical equivalents for backward compatibility.
 export function resolveKey(name: string): string {
-  return name === "build" ? "code" : name
+  if (name === "build" || name === "general") return "code"
+  if (name === "explore") return "ask"
+  return name
 }
 
-// Remap "build" → "code" in agent config entries for backward compat in the config loop.
+// Remap legacy agent config entries to canonical names in the config loop.
 export function preprocessConfig<T>(agentConfig: Record<string, T>): Record<string, T> {
   const result: Record<string, T> = {}
   for (const [key, value] of Object.entries(agentConfig)) {
-    result[key === "build" ? "code" : key] = value
+    result[resolveKey(key)] = value
   }
   return result
 }
@@ -186,8 +187,7 @@ export function telemetryOptions(cfg: Config.Info) {
 
 // Patch the base agents map in-place with all kilo-specific changes:
 // - Rename build → code
-// - Patch plan with readOnlyBash, mcpRules, .kilo paths
-// - Patch explore with codebase_search and conditional prompt
+// - Patch code/plan/ask for Kilo-specific behavior
 // - Add debug, orchestrator, ask agents
 export function patchAgents(
   agents: Record<
@@ -218,8 +218,25 @@ export function patchAgents(
 ) {
   // Rename "build" → "code" for backward compatibility
   if (agents.build) {
-    agents.code = { ...agents.build, name: "code" }
+    agents.code = { ...agents.build, name: "code", mode: "all" }
     delete agents.build
+  }
+
+  if (agents.code) {
+    agents.code = {
+      ...agents.code,
+      mode: "all",
+      description: "The default agent. Writes code, runs tools, and can also be used as a subagent.",
+      permission: Permission.merge(
+        defaults,
+        Permission.fromConfig({
+          question: "allow",
+          suggest: "allow", // kilocode_change
+          plan_enter: "allow",
+        }),
+        user,
+      ),
+    }
   }
 
   // Patch plan mode
@@ -250,36 +267,6 @@ export function patchAgents(
     }
   }
 
-  // Patch explore with codebase_search and conditional prompt
-  if (agents.explore) {
-    agents.explore = {
-      ...agents.explore,
-      permission: Permission.merge(
-        defaults,
-        Permission.fromConfig({
-          "*": "deny",
-          grep: "allow",
-          glob: "allow",
-          list: "allow",
-          bash: "allow",
-          webfetch: "allow",
-          websearch: "allow",
-          codesearch: "allow",
-          codebase_search: "allow",
-          read: "allow",
-          external_directory: {
-            "*": "ask",
-            [Truncate.GLOB]: "allow",
-          },
-        }),
-        user,
-      ),
-      prompt: cfg.experimental?.codebase_search
-        ? `Prefer using the codebase_search tool for codebase searches — it performs intelligent multi-step code search and returns the most relevant code spans.\n\n${PROMPT_EXPLORE}`
-        : PROMPT_EXPLORE,
-    }
-  }
-
   // Add debug agent
   agents.debug = {
     name: "debug",
@@ -295,7 +282,7 @@ export function patchAgents(
       }),
       user,
     ),
-    mode: "primary",
+    mode: "all",
     native: true,
   }
 
@@ -340,7 +327,7 @@ export function patchAgents(
   // Add ask agent
   agents.ask = {
     name: "ask",
-    description: "Get answers and explanations without making changes to the codebase.",
+    description: "Get answers, explanations, and read-only codebase research without making changes.",
     prompt: PROMPT_ASK,
     options: {},
     permission: Permission.merge(
@@ -370,7 +357,7 @@ export function patchAgents(
       }),
       user.filter((r: Permission.Rule) => r.action === "deny"), // re-apply user denies so explicit MCP blocks win over mcpRules
     ),
-    mode: "primary",
+    mode: "all",
     native: true,
   }
 }

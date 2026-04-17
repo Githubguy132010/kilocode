@@ -63,8 +63,8 @@ function reply(input: Parameters<typeof SessionPrompt.prompt>[0], text: string):
       role: "assistant",
       parentID: input.messageID ?? MessageID.ascending(),
       sessionID: input.sessionID,
-      mode: input.agent ?? "general",
-      agent: input.agent ?? "general",
+      mode: input.agent ?? "code",
+      agent: input.agent ?? "code",
       cost: 0,
       path: { cwd: "/tmp", root: "/tmp" },
       tokens: { input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } },
@@ -98,14 +98,16 @@ describe("tool.task", () => {
           expect(first).toBe(second)
 
           const alpha = first.indexOf("- alpha: Alpha agent")
-          const explore = first.indexOf("- explore:")
-          const general = first.indexOf("- general:")
+          const ask = first.indexOf("- ask:")
+          const code = first.indexOf("- code:")
+          const debug = first.indexOf("- debug:")
           const zebra = first.indexOf("- zebra: Zebra agent")
 
           expect(alpha).toBeGreaterThan(-1)
-          expect(explore).toBeGreaterThan(alpha)
-          expect(general).toBeGreaterThan(explore)
-          expect(zebra).toBeGreaterThan(general)
+          expect(ask).toBeGreaterThan(alpha)
+          expect(code).toBeGreaterThan(ask)
+          expect(debug).toBeGreaterThan(code)
+          expect(zebra).toBeGreaterThan(debug)
         }),
       {
         config: {
@@ -187,7 +189,7 @@ describe("tool.task", () => {
             {
               description: "inspect bug",
               prompt: "look into the cache key path",
-              subagent_type: "general",
+              subagent_type: "code",
               task_id: child.id,
             },
             {
@@ -237,7 +239,7 @@ describe("tool.task", () => {
               {
                 description: "inspect bug",
                 prompt: "look into the cache key path",
-                subagent_type: "general",
+                subagent_type: "code",
               },
               {
                 sessionID: chat.id,
@@ -260,14 +262,93 @@ describe("tool.task", () => {
         expect(calls).toHaveLength(1)
         expect(calls[0]).toEqual({
           permission: "task",
-          patterns: ["general"],
+          patterns: ["code"],
           always: ["*"],
           metadata: {
             description: "inspect bug",
-            subagent_type: "general",
+            subagent_type: "code",
           },
         })
       }),
+    ),
+  )
+
+  it.live("execute uses configured model for mode-all subagents", () =>
+    provideTmpdirInstance(
+      () =>
+        Effect.gen(function* () {
+          const { chat, assistant } = yield* seed()
+          const tool = yield* TaskTool
+          const def = yield* Effect.promise(() => tool.init())
+          const resolve = SessionPrompt.resolvePromptParts
+          const prompt = SessionPrompt.prompt
+          const seen: Parameters<typeof SessionPrompt.prompt>[0][] = []
+
+          SessionPrompt.resolvePromptParts = async (template) => [{ type: "text", text: template }]
+          SessionPrompt.prompt = async (input) => {
+            seen.push(input)
+            return reply(input, input.agent ?? "done")
+          }
+          yield* Effect.addFinalizer(() =>
+            Effect.sync(() => {
+              SessionPrompt.resolvePromptParts = resolve
+              SessionPrompt.prompt = prompt
+            }),
+          )
+
+          const exec = (subagent_type: "code" | "ask") =>
+            Effect.promise(() =>
+              def.execute(
+                {
+                  description: `inspect ${subagent_type}`,
+                  prompt: "look into the cache key path",
+                  subagent_type,
+                },
+                {
+                  sessionID: chat.id,
+                  messageID: assistant.id,
+                  agent: "build",
+                  abort: new AbortController().signal,
+                  messages: [],
+                  metadata() {},
+                  ask: async () => {},
+                },
+              ),
+            )
+
+          const [code, ask] = yield* Effect.all([exec("code"), exec("ask")])
+
+          expect(code.metadata.model).toEqual({
+            providerID: ProviderID.make("test"),
+            modelID: ModelID.make("code-model"),
+          })
+          expect(ask.metadata.model).toEqual({
+            providerID: ProviderID.make("test"),
+            modelID: ModelID.make("ask-model"),
+          })
+          expect(seen.map((item) => item.model)).toEqual([
+            {
+              providerID: ProviderID.make("test"),
+              modelID: ModelID.make("code-model"),
+            },
+            {
+              providerID: ProviderID.make("test"),
+              modelID: ModelID.make("ask-model"),
+            },
+          ])
+        }),
+      {
+        config: {
+          agent: {
+            code: {
+              model: "test/code-model",
+            },
+            ask: {
+              model: "test/ask-model",
+            },
+          },
+        },
+      },
     ),
   )
 
@@ -299,7 +380,7 @@ describe("tool.task", () => {
             {
               description: "inspect bug",
               prompt: "look into the cache key path",
-              subagent_type: "general",
+              subagent_type: "code",
               task_id: "ses_missing",
             },
             {

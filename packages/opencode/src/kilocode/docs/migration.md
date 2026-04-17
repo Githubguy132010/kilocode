@@ -103,10 +103,10 @@ The following Kilocode default modes are **skipped** during migration because Op
 
 | Kilocode Mode  | Reason                                                   |
 | -------------- | -------------------------------------------------------- |
-| `code`         | Maps to Opencode's `build` agent                         |
+| `code`         | Maps to Opencode's `code` agent                          |
 | `architect`    | Maps to Opencode's `plan` agent                          |
-| `ask`          | Read-only exploration (use `explore` subagent)           |
-| `debug`        | Debugging workflow (use `build` with debug instructions) |
+| `ask`          | Maps to Opencode's `ask` agent                           |
+| `debug`        | Maps to Opencode's `debug` agent                         |
 | `orchestrator` | Redundant - all Opencode agents can spawn subagents      |
 
 ## Example Conversion
