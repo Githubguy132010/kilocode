@@ -7,6 +7,7 @@ import { Config } from "../../config/config"
 import { Instance } from "../../project/instance"
 import { Global } from "@/global"
 import { Telemetry } from "@kilocode/kilo-telemetry"
+import { mergeDeep } from "remeda"
 import z from "zod"
 import path from "path"
 
@@ -175,7 +176,7 @@ export function preprocessConfig<T extends Record<string, unknown>>(agentConfig:
     if (!next) continue
     const name = resolveKey(key)
     const prev = result[name]
-    result[name] = prev ? ({ ...prev, ...next } as T) : next
+    result[name] = prev ? (mergeDeep(prev, next) as T) : next
   }
   return result
 }

@@ -1080,11 +1080,16 @@ export namespace Config {
         .object({
           // primary
           plan: Agent.optional(),
-          build: Agent.optional(),
+          // kilocode_change start
+          code: Agent.optional(),
+          // kilocode_change end
           debug: Agent.optional(), // kilocode_change
           orchestrator: Agent.optional(), // kilocode_change
           ask: Agent.optional(), // kilocode_change
           // deprecated aliases
+          // kilocode_change start
+          build: Agent.optional(),
+          // kilocode_change end
           general: Agent.optional(),
           explore: Agent.optional(),
           // specialized

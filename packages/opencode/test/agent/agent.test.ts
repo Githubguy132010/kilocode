@@ -978,23 +978,60 @@ test("agent.explore config applies to ask agent for backward compatibility", asy
   })
 })
 
-test("canonical agent config wins over legacy aliases on conflicts", async () => {
+test("canonical agent config deep merges legacy aliases and wins on conflicts", async () => {
   await using tmp = await tmpdir({
     config: {
       agent: {
         general: {
           temperature: 0.1,
           color: "#00FF00",
+          options: {
+            keep: true,
+            shared: "legacy",
+          },
+          permission: {
+            bash: {
+              "legacy-cmd": "deny",
+              "shared-cmd": "deny",
+            },
+          },
         },
         code: {
           temperature: 0.9,
+          options: {
+            shared: "code",
+          },
+          permission: {
+            bash: {
+              "shared-cmd": "allow",
+              "code-cmd": "ask",
+            },
+          },
         },
         explore: {
           color: "#0000FF",
           name: "Legacy ask",
+          options: {
+            keep: true,
+            shared: "legacy",
+          },
+          permission: {
+            bash: {
+              "ask-legacy": "deny",
+              "ask-shared": "deny",
+            },
+          },
         },
         ask: {
           name: "Ask",
+          options: {
+            shared: "ask",
+          },
+          permission: {
+            bash: {
+              "ask-shared": "allow",
+            },
+          },
         },
       },
     },
@@ -1006,8 +1043,17 @@ test("canonical agent config wins over legacy aliases on conflicts", async () =>
       const ask = await Agent.get("ask")
       expect(code?.temperature).toBe(0.9)
       expect(code?.color).toBe("#00FF00")
+      expect(code?.options.keep).toBe(true)
+      expect(code?.options.shared).toBe("code")
+      expect(Permission.evaluate("bash", "legacy-cmd", code!.permission).action).toBe("deny")
+      expect(Permission.evaluate("bash", "shared-cmd", code!.permission).action).toBe("allow")
+      expect(Permission.evaluate("bash", "code-cmd", code!.permission).action).toBe("ask")
       expect(ask?.name).toBe("Ask")
       expect(ask?.color).toBe("#0000FF")
+      expect(ask?.options.keep).toBe(true)
+      expect(ask?.options.shared).toBe("ask")
+      expect(Permission.evaluate("bash", "ask-legacy", ask!.permission).action).toBe("deny")
+      expect(Permission.evaluate("bash", "ask-shared", ask!.permission).action).toBe("allow")
     },
   })
 })
