@@ -220,6 +220,25 @@ export interface QuestionRequest {
   id: string
   sessionID: string
   questions: QuestionInfo[]
+  blocking?: boolean
+  tool?: {
+    messageID: string
+    callID: string
+  }
+}
+
+export interface SuggestionAction {
+  label: string
+  description?: string
+  prompt: string
+}
+
+export interface SuggestionRequest {
+  id: string
+  sessionID: string
+  text: string
+  actions: SuggestionAction[]
+  blocking?: boolean
   tool?: {
     messageID: string
     callID: string
@@ -765,6 +784,21 @@ export interface QuestionErrorMessage {
   requestID: string
 }
 
+export interface SuggestionRequestMessage {
+  type: "suggestionRequest"
+  suggestion: SuggestionRequest
+}
+
+export interface SuggestionResolvedMessage {
+  type: "suggestionResolved"
+  requestID: string
+}
+
+export interface SuggestionErrorMessage {
+  type: "suggestionError"
+  requestID: string
+}
+
 export interface BrowserSettings {
   enabled: boolean
   useSystemChrome: boolean
@@ -784,6 +818,12 @@ export interface ConfigLoadedMessage {
 export interface ConfigUpdatedMessage {
   type: "configUpdated"
   config: Config
+}
+
+export interface ConfigUpdateFailedMessage {
+  type: "configUpdateFailed"
+  message: string
+  details?: string
 }
 
 export interface GlobalConfigLoadedMessage {
@@ -1496,10 +1536,14 @@ export type ExtensionMessage =
   | QuestionRequestMessage
   | QuestionResolvedMessage
   | QuestionErrorMessage
+  | SuggestionRequestMessage
+  | SuggestionResolvedMessage
+  | SuggestionErrorMessage
   | BrowserSettingsLoadedMessage
   | ClaudeCompatSettingLoadedMessage
   | ConfigLoadedMessage
   | ConfigUpdatedMessage
+  | ConfigUpdateFailedMessage
   | GlobalConfigLoadedMessage
   | NotificationSettingsLoadedMessage
   | TimelineSettingLoadedMessage
@@ -1806,6 +1850,19 @@ export interface QuestionRejectRequest {
   type: "questionReject"
   requestID: string
   sessionID?: string
+}
+
+export interface SuggestionAcceptRequest {
+  type: "suggestionAccept"
+  requestID: string
+  sessionID: string
+  index: number
+}
+
+export interface SuggestionDismissRequest {
+  type: "suggestionDismiss"
+  requestID: string
+  sessionID: string
 }
 
 export interface DeleteSessionRequest {
@@ -2444,6 +2501,8 @@ export type WebviewMessage =
   | SetLanguageRequest
   | QuestionReplyRequest
   | QuestionRejectRequest
+  | SuggestionAcceptRequest
+  | SuggestionDismissRequest
   | DeleteSessionRequest
   | RenameSessionRequest
   | RequestAutocompleteSettingsMessage
