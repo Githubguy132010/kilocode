@@ -1,5 +1,5 @@
 import z from "zod"
-import { Cause, Effect, Layer, ServiceMap } from "effect" // kilocode_change — Cause.hasInterrupts
+import { Effect, Layer, ServiceMap } from "effect"
 import { makeRuntime } from "@/effect/run-service"
 import { Bus } from "@/bus"
 import { Snapshot } from "@/snapshot"
@@ -7,11 +7,9 @@ import { Storage } from "@/storage/storage"
 import { Session } from "."
 import { MessageV2 } from "./message-v2"
 import { SessionID, MessageID } from "./schema"
-import { Log } from "@/util/log" // kilocode_change
+import { SummaryDispatch } from "../kilocode/session/summary-dispatch" // kilocode_change
 
 export namespace SessionSummary {
-  const log = Log.create({ service: "session.summary" }) // kilocode_change
-
   function unquoteGitPath(input: string) {
     if (!input.startsWith('"')) return input
     if (!input.endsWith('"')) return input
@@ -175,102 +173,14 @@ export namespace SessionSummary {
   const { runPromise } = makeRuntime(Service, defaultLayer)
 
   // kilocode_change start — tracked dispatcher + timeout + cancel
-  //
-  // Before: `summarize` was a naked `void runPromise(...).catch(() => {})`.
-  // A huge diff inside the underlying Snapshot call would run synchronously
-  // on the TUI worker thread for minutes, starving ESC, heartbeats, and the
-  // AI stream. Now:
-  //
-  //   - Each summary runs under a fresh AbortController tracked in `inflight`.
-  //   - A previous in-flight summary for the same sessionID is aborted when
-  //     a new one starts, preventing pileup across rapid turns.
-  //   - A wall-clock timeout (default 10s) races against the Effect fiber
-  //     so we always unwind within a bounded time even on pathological input.
-  //   - `cancel(sessionID)` fires `ac.abort()`, which is bridged into
-  //     `Effect.interrupt` via a third racer inside `Effect.raceAll`. That is
-  //     what makes the ESC path (SessionPrompt.cancel) actually stop the
-  //     running fiber rather than just dropping the map entry.
-  const SUMMARY_TIMEOUT_MS = 10_000
-  const inflight = new Map<SessionID, AbortController>()
-
-  export const summarize = (input: { sessionID: SessionID; messageID: MessageID }) => {
-    const prev = inflight.get(input.sessionID)
-    if (prev) prev.abort()
-
-    const ac = new AbortController()
-    inflight.set(input.sessionID, ac)
-    const started = Date.now()
-
-    void runPromise((svc) =>
-      // raceAllFirst with three racers: the real work, a wall-clock timeout,
-      // and an AbortSignal bridge. Whichever FINISHES FIRST wins (success,
-      // failure, or interrupt — `raceAll` would keep waiting on interrupts),
-      // and the other two are interrupted by the Effect runtime. The
-      // signal-bridge racer is what makes `cancel(sessionID)` actually stop
-      // the fiber instead of just removing the map entry.
-      Effect.raceAllFirst([
-        svc.summarize(input),
-        Effect.sleep(`${SUMMARY_TIMEOUT_MS} millis`).pipe(Effect.andThen(Effect.interrupt)),
-        Effect.callback<void>((resume) => {
-          if (ac.signal.aborted) {
-            resume(Effect.interrupt)
-            return
-          }
-          const onAbort = () => resume(Effect.interrupt)
-          ac.signal.addEventListener("abort", onAbort, { once: true })
-          return Effect.sync(() => ac.signal.removeEventListener("abort", onAbort))
-        }),
-      ]).pipe(
-        Effect.onInterrupt(() =>
-          Effect.sync(() => {
-            const elapsed = Date.now() - started
-            log.warn("summary interrupted", { sessionID: input.sessionID, elapsed })
-            Bus.publish(Session.Event.Warning, {
-              sessionID: input.sessionID,
-              kind: "summary_truncated",
-              message: `Session summary interrupted after ${elapsed}ms`,
-              details: { elapsed, timeout: SUMMARY_TIMEOUT_MS },
-            }).catch(() => {})
-          }),
-        ),
-        Effect.ensuring(
-          Effect.sync(() => {
-            // Drop the entry only if it is still ours — a newer summarize for
-            // the same session may have replaced it already.
-            if (inflight.get(input.sessionID) === ac) inflight.delete(input.sessionID)
-          }),
-        ),
-        Effect.catchCause((cause) =>
-          Effect.sync(() => {
-            // onInterrupt already emitted a warning for the interrupt path.
-            // Only emit "summary_failed" for real failures/defects.
-            if (Cause.hasInterrupts(cause)) return
-            log.warn("summary failed", { sessionID: input.sessionID, cause: String(cause) })
-            Bus.publish(Session.Event.Warning, {
-              sessionID: input.sessionID,
-              kind: "summary_failed",
-              message: "Session summary failed",
-            }).catch(() => {})
-          }),
-        ),
-      ),
-    ).catch(() => {})
-  }
-
-  export async function cancel(sessionID: SessionID) {
-    const ac = inflight.get(sessionID)
-    if (!ac) return
-    ac.abort()
-    inflight.delete(sessionID)
-    log.info("summary cancelled", { sessionID })
-  }
-
+  const dispatch = SummaryDispatch.create<Interface>({
+    runPromise,
+    summarize: (svc, input) => svc.summarize(input),
+  })
+  export const summarize = dispatch.summarize
+  export const cancel = dispatch.cancel
   /** Visible for testing — not a stable API. */
-  export const _internal = {
-    get inflight() {
-      return inflight
-    },
-  }
+  export const _internal = dispatch._internal
   // kilocode_change end
 
   export const DiffInput = z.object({
