@@ -158,10 +158,24 @@ export function resolveKey(name: string): string {
 }
 
 // Remap legacy agent config entries to canonical names in the config loop.
-export function preprocessConfig<T>(agentConfig: Record<string, T>): Record<string, T> {
+// Legacy aliases merge into the canonical key first, then the canonical key wins on conflicts.
+export function preprocessConfig<T extends Record<string, unknown>>(agentConfig: Record<string, T>): Record<string, T> {
+  const order = Object.keys(agentConfig).sort((a, b) => {
+    const aKey = resolveKey(a)
+    const bKey = resolveKey(b)
+    if (aKey !== bKey) return aKey.localeCompare(bKey)
+    if (a === aKey && b !== bKey) return 1
+    if (a !== aKey && b === bKey) return -1
+    return a.localeCompare(b)
+  })
+
   const result: Record<string, T> = {}
-  for (const [key, value] of Object.entries(agentConfig)) {
-    result[resolveKey(key)] = value
+  for (const key of order) {
+    const next = agentConfig[key]
+    if (!next) continue
+    const name = resolveKey(key)
+    const prev = result[name]
+    result[name] = prev ? ({ ...prev, ...next } as T) : next
   }
   return result
 }

@@ -977,4 +977,38 @@ test("agent.explore config applies to ask agent for backward compatibility", asy
     },
   })
 })
+
+test("canonical agent config wins over legacy aliases on conflicts", async () => {
+  await using tmp = await tmpdir({
+    config: {
+      agent: {
+        general: {
+          temperature: 0.1,
+          color: "#00FF00",
+        },
+        code: {
+          temperature: 0.9,
+        },
+        explore: {
+          color: "#0000FF",
+          name: "Legacy ask",
+        },
+        ask: {
+          name: "Ask",
+        },
+      },
+    },
+  })
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const code = await Agent.get("code")
+      const ask = await Agent.get("ask")
+      expect(code?.temperature).toBe(0.9)
+      expect(code?.color).toBe("#00FF00")
+      expect(ask?.name).toBe("Ask")
+      expect(ask?.color).toBe("#0000FF")
+    },
+  })
+})
 // kilocode_change end

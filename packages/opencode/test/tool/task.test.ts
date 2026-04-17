@@ -316,7 +316,8 @@ describe("tool.task", () => {
               ),
             )
 
-          const [code, ask] = yield* Effect.all([runTaskWithAgent("code"), runTaskWithAgent("ask")])
+          const code = yield* runTaskWithAgent("code")
+          const ask = yield* runTaskWithAgent("ask")
 
           expect(code.metadata.model).toEqual({
             providerID: ProviderID.make("test"),
