@@ -138,6 +138,7 @@ export interface KiloData {
   defaultsPatch: Permission.Ruleset
 }
 
+// Deprecated native agent names kept as aliases during the general/explore → code/ask migration.
 const LEGACY_AGENT_MAP: Record<string, string> = {
   build: "code",
   general: "code",
