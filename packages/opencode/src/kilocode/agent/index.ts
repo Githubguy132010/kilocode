@@ -218,7 +218,7 @@ export function patchAgents(
 ) {
   // Rename "build" → "code" for backward compatibility
   if (agents.build) {
-    agents.code = { ...agents.build, name: "code", mode: "all" }
+    agents.code = { ...agents.build, name: "code" }
     delete agents.build
   }
 

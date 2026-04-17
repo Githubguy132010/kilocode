@@ -138,16 +138,19 @@ test("explore alias resolves to ask agent permissions", async () => {
     directory: tmp.path,
     fn: async () => {
       const explore = await Agent.get("explore")
+      const ask = await Agent.get("ask")
       expect(explore).toBeDefined()
+      expect(explore).toBe(ask)
       expect(explore?.name).toBe("ask")
       expect(explore?.mode).toBe("all")
+      expect(explore?.permission).toEqual(ask?.permission)
       expect(evalPerm(explore, "edit")).toBe("deny")
       expect(evalPerm(explore, "write")).toBe("deny")
     },
   })
 })
 
-test("explore alias asks for env files and allows Truncate.GLOB access", async () => {
+test("explore alias asks for .env and allows Truncate.GLOB access", async () => {
   const { Truncate } = await import("../../src/tool/truncate")
   await using tmp = await tmpdir()
   await Instance.provide({
