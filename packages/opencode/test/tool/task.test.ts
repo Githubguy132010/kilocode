@@ -273,7 +273,7 @@ describe("tool.task", () => {
     ),
   )
 
-  it.live("execute uses configured model for mode-all subagents", () =>
+  it.live("TaskTool execute applies per-mode model configuration to code and ask subagents", () =>
     provideTmpdirInstance(
       () =>
         Effect.gen(function* () {
@@ -296,7 +296,7 @@ describe("tool.task", () => {
             }),
           )
 
-          const exec = (subagent_type: "code" | "ask") =>
+          const runTaskWithAgent = (subagent_type: "code" | "ask") =>
             Effect.promise(() =>
               def.execute(
                 {
@@ -316,7 +316,7 @@ describe("tool.task", () => {
               ),
             )
 
-          const [code, ask] = yield* Effect.all([exec("code"), exec("ask")])
+          const [code, ask] = yield* Effect.all([runTaskWithAgent("code"), runTaskWithAgent("ask")])
 
           expect(code.metadata.model).toEqual({
             providerID: ProviderID.make("test"),

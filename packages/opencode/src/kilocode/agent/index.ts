@@ -138,6 +138,12 @@ export interface KiloData {
   defaultsPatch: Permission.Ruleset
 }
 
+const LEGACY_AGENT_MAP: Record<string, string> = {
+  build: "code",
+  general: "code",
+  explore: "ask",
+}
+
 // Prepare kilo-specific data derived from config. Call once per state initialization.
 export function prepare(cfg: Config.Info): KiloData {
   const mcpRules = getMcpRules(cfg)
@@ -147,9 +153,7 @@ export function prepare(cfg: Config.Info): KiloData {
 
 // Map legacy agent names to their canonical equivalents for backward compatibility.
 export function resolveKey(name: string): string {
-  if (name === "build" || name === "general") return "code"
-  if (name === "explore") return "ask"
-  return name
+  return LEGACY_AGENT_MAP[name] ?? name
 }
 
 // Remap legacy agent config entries to canonical names in the config loop.
