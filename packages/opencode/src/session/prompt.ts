@@ -1670,7 +1670,7 @@ NOTE: At any point in time through this workflow you should feel free to ask the
         }
 
         const templateParts = yield* resolvePromptParts(template)
-        const isSubtask = (agent.mode !== "primary" && cmd.subtask !== false) || cmd.subtask === true
+        const isSubtask = (agent.mode === "subagent" && cmd.subtask !== false) || cmd.subtask === true
         const parts = isSubtask
           ? [
               {
