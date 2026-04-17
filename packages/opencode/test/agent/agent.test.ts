@@ -767,6 +767,28 @@ test("defaultAgent maps deprecated explore alias to ask", async () => {
   })
 })
 
+// kilocode_change start - keep rejecting subagent-only defaults while covering explore alias
+test("defaultAgent throws when default_agent points to custom subagent", async () => {
+  await using tmp = await tmpdir({
+    config: {
+      default_agent: "my_sub",
+      agent: {
+        my_sub: {
+          description: "My subagent",
+          mode: "subagent",
+        },
+      },
+    },
+  })
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      await expect(Agent.defaultAgent()).rejects.toThrow('default agent "my_sub" is a subagent')
+    },
+  })
+})
+// kilocode_change end
+
 test("defaultAgent throws when default_agent points to hidden agent", async () => {
   await using tmp = await tmpdir({
     config: {
