@@ -10,7 +10,10 @@ import DESCRIPTION from "./read.txt"
 import { Instance } from "../project/instance"
 import { assertExternalDirectoryEffect } from "./external-directory"
 import { Instruction } from "../session/instruction"
-import { Encoding } from "../kilocode/encoding" // kilocode_change
+// kilocode_change start
+import { Encoding } from "../kilocode/encoding"
+import { readDirectoryFiles } from "../kilocode/tool/read-directory"
+// kilocode_change end
 
 const DEFAULT_READ_LIMIT = 2000
 const MAX_LINE_LENGTH = 2000
@@ -123,6 +126,11 @@ export const ReadTool = Tool.defineEffect(
         const start = offset - 1
         const sliced = items.slice(start, start + limit)
         const truncated = start + sliced.length < items.length
+        // kilocode_change start
+        const expand = Boolean(ctx.extra?.["includeDirectoryFiles"])
+        const loaded = expand ? yield* readDirectoryFiles(fs, filepath, sliced) : []
+        const content = loaded.map((item) => item.content).join("\n\n")
+        // kilocode_change end
 
         return {
           title,
@@ -135,11 +143,16 @@ export const ReadTool = Tool.defineEffect(
               ? `\n(Showing ${sliced.length} of ${items.length} entries. Use 'offset' parameter to read beyond entry ${offset + sliced.length})`
               : `\n(${items.length} entries)`,
             `</entries>`,
+            // kilocode_change start
+            ...(content ? [`\n${content}`] : []),
+            // kilocode_change end
           ].join("\n"),
           metadata: {
             preview: sliced.slice(0, 20).join("\n"),
             truncated,
-            loaded: [] as string[],
+            // kilocode_change start
+            loaded: loaded.map((item) => item.filepath),
+            // kilocode_change end
           },
         }
       }
@@ -225,7 +238,7 @@ export const ReadTool = Tool.defineEffect(
 )
 
 // kilocode_change start - encoding-aware file reading
-async function lines(filepath: string, opts: { limit: number; offset: number }) {
+export async function lines(filepath: string, opts: { limit: number; offset: number }) {
   const encoded = await Encoding.read(filepath)
   const all = encoded.text.split(/\r\n|\r|\n/)
   // Remove trailing empty element from split when file ends with newline
@@ -260,7 +273,9 @@ async function lines(filepath: string, opts: { limit: number; offset: number }) 
 }
 // kilocode_change end
 
-async function isBinaryFile(filepath: string, fileSize: number): Promise<boolean> {
+// kilocode_change start
+export async function isBinaryFile(filepath: string, fileSize: number): Promise<boolean> {
+  // kilocode_change end
   const ext = path.extname(filepath).toLowerCase()
   // binary check for common non-text extensions
   switch (ext) {
