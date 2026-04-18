@@ -265,6 +265,30 @@ function providerCfg(url: string) {
   }
 }
 
+// kilocode_change start — provider config with variants for subtask variant threading test
+function variantProviderCfg(url: string) {
+  return {
+    ...providerCfg(url),
+    provider: {
+      ...providerCfg(url).provider,
+      test: {
+        ...providerCfg(url).provider.test,
+        models: {
+          "test-model": {
+            ...cfg.provider.test.models["test-model"],
+            reasoning: true,
+            variants: {
+              low: { reasoningEffort: "low" },
+              high: { reasoningEffort: "high" },
+            },
+          },
+        },
+      },
+    },
+  }
+}
+// kilocode_change end
+
 const user = Effect.fn("test.user")(function* (sessionID: SessionID, text: string) {
   const session = yield* Session.Service
   const msg = yield* session.updateMessage({
@@ -314,7 +338,7 @@ const seed = Effect.fn("test.seed")(function* (sessionID: SessionID, opts?: { fi
   return { user: msg, assistant }
 })
 
-const addSubtask = (sessionID: SessionID, messageID: MessageID, model = ref) =>
+const addSubtask = (sessionID: SessionID, messageID: MessageID, model = ref, variant?: string) => // kilocode_change — added optional variant param
   Effect.gen(function* () {
     const session = yield* Session.Service
     yield* session.updatePart({
@@ -326,6 +350,7 @@ const addSubtask = (sessionID: SessionID, messageID: MessageID, model = ref) =>
       description: "inspect bug",
       agent: "general",
       model,
+      variant, // kilocode_change — forward variant to subtask part
     })
   })
 
@@ -692,6 +717,50 @@ it.live(
     ),
   10_000,
 )
+
+// kilocode_change start — assert SubtaskPart.variant reaches tool-call input
+// Note: this observes the persisted tool-part `state.input` only. `handleSubtask` writes
+// `task.variant` to both `state.input` and the separate `taskArgs` object passed to
+// TaskTool.execute — see handleSubtask in prompt.ts. A one-sided revert of only the
+// taskArgs write would pass this test but silently break forwarding. Both writes read
+// the same `task.variant` expression on adjacent lines, so the practical risk is low.
+it.live(
+  "subtask variant is threaded into tool-part state.input",
+  () =>
+    provideTmpdirServer(
+      Effect.fnUntraced(function* ({ llm }) {
+        const prompt = yield* SessionPrompt.Service
+        const sessions = yield* Session.Service
+        const chat = yield* sessions.create({ title: "Pinned" })
+        yield* llm.hang
+        const msg = yield* user(chat.id, "hello")
+        yield* addSubtask(chat.id, msg.id, ref, "high")
+
+        const fiber = yield* prompt.loop({ sessionID: chat.id }).pipe(Effect.forkChild)
+
+        const tool = yield* Effect.promise(async () => {
+          const end = Date.now() + 5_000
+          while (Date.now() < end) {
+            const msgs = await Effect.runPromise(MessageV2.filterCompactedEffect(chat.id))
+            const taskMsg = msgs.find((item) => item.info.role === "assistant" && item.info.agent === "general")
+            const tool = taskMsg?.parts.find((part): part is MessageV2.ToolPart => part.type === "tool")
+            if (tool?.state.status === "running" && tool.state.metadata?.sessionId) return tool
+            await new Promise((done) => setTimeout(done, 20))
+          }
+          throw new Error("timed out waiting for subtask tool part with sessionId metadata")
+        })
+
+        if (tool.state.status !== "running") return
+        expect(tool.state.input?.variant).toBe("high")
+
+        yield* prompt.cancel(chat.id)
+        yield* Fiber.await(fiber)
+      }),
+      { git: true, config: variantProviderCfg },
+    ),
+  5_000,
+)
+// kilocode_change end
 
 it.live(
   "loop sets status to busy then idle",
