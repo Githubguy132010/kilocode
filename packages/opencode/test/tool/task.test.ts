@@ -669,4 +669,59 @@ describe("tool.task", () => {
     ),
   )
   // kilocode_change end
+
+  // kilocode_change start — resume + variant
+  it.live("execute forwards variant when resuming an existing task_id", () =>
+    provideTmpdirInstance(
+      () =>
+        Effect.gen(function* () {
+          const sessions = yield* Session.Service
+          const { chat, assistant } = yield* seed()
+          const child = yield* sessions.create({ parentID: chat.id, title: "Existing child" })
+          const tool = yield* TaskTool
+          const def = yield* Effect.promise(() => tool.init())
+          const resolve = SessionPrompt.resolvePromptParts
+          const prompt = SessionPrompt.prompt
+          let seen: Parameters<typeof SessionPrompt.prompt>[0] | undefined
+
+          SessionPrompt.resolvePromptParts = async (template) => [{ type: "text", text: template }]
+          SessionPrompt.prompt = async (input) => {
+            seen = input
+            return reply(input, "resumed")
+          }
+          yield* Effect.addFinalizer(() =>
+            Effect.sync(() => {
+              SessionPrompt.resolvePromptParts = resolve
+              SessionPrompt.prompt = prompt
+            }),
+          )
+
+          yield* Effect.promise(() =>
+            def.execute(
+              {
+                description: "keep going",
+                prompt: "continue but think lighter",
+                subagent_type: "general",
+                task_id: child.id,
+                variant: "low",
+              },
+              {
+                sessionID: chat.id,
+                messageID: assistant.id,
+                agent: "build",
+                abort: new AbortController().signal,
+                messages: [],
+                metadata() {},
+                ask: async () => {},
+              },
+            ),
+          )
+
+          expect(seen?.sessionID).toBe(child.id)
+          expect(seen?.variant).toBe("low")
+        }),
+      { config: variantProviderConfig },
+    ),
+  )
+  // kilocode_change end
 })
