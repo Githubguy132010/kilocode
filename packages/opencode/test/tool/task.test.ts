@@ -621,4 +621,52 @@ describe("tool.task", () => {
     ),
   )
   // kilocode_change end
+
+  // kilocode_change start — regression guard for omitted variant
+  it.live("execute does not inject variant when omitted", () =>
+    provideTmpdirInstance(() =>
+      Effect.gen(function* () {
+        const { chat, assistant } = yield* seed()
+        const tool = yield* TaskTool
+        const def = yield* Effect.promise(() => tool.init())
+        const resolve = SessionPrompt.resolvePromptParts
+        const prompt = SessionPrompt.prompt
+        let seen: Parameters<typeof SessionPrompt.prompt>[0] | undefined
+
+        SessionPrompt.resolvePromptParts = async (template) => [{ type: "text", text: template }]
+        SessionPrompt.prompt = async (input) => {
+          seen = input
+          return reply(input, "done")
+        }
+        yield* Effect.addFinalizer(() =>
+          Effect.sync(() => {
+            SessionPrompt.resolvePromptParts = resolve
+            SessionPrompt.prompt = prompt
+          }),
+        )
+
+        yield* Effect.promise(() =>
+          def.execute(
+            {
+              description: "default",
+              prompt: "default prompt",
+              subagent_type: "general",
+            },
+            {
+              sessionID: chat.id,
+              messageID: assistant.id,
+              agent: "build",
+              abort: new AbortController().signal,
+              messages: [],
+              metadata() {},
+              ask: async () => {},
+            },
+          ),
+        )
+
+        expect(seen?.variant).toBeUndefined()
+      }),
+    ),
+  )
+  // kilocode_change end
 })
