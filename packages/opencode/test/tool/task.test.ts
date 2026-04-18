@@ -1,5 +1,5 @@
 import { afterEach, describe, expect } from "bun:test"
-import { Effect, Layer } from "effect"
+import { Cause, Effect, Exit, Layer } from "effect"
 import { Agent } from "../../src/agent/agent"
 import { Config } from "../../src/config/config"
 import * as CrossSpawnSpawner from "../../src/effect/cross-spawn-spawner"
@@ -475,6 +475,62 @@ describe("tool.task", () => {
           )
 
           expect(seen?.variant).toBe("high")
+        }),
+      { config: variantProviderConfig },
+    ),
+  )
+  // kilocode_change end
+
+  // kilocode_change start — invalid variant rejection
+  it.live("execute rejects an unknown variant with a helpful error", () =>
+    provideTmpdirInstance(
+      () =>
+        Effect.gen(function* () {
+          const { chat, assistant } = yield* seed()
+          const tool = yield* TaskTool
+          const def = yield* Effect.promise(() => tool.init())
+          const resolve = SessionPrompt.resolvePromptParts
+          const prompt = SessionPrompt.prompt
+
+          SessionPrompt.resolvePromptParts = async (template) => [{ type: "text", text: template }]
+          SessionPrompt.prompt = async (input) => reply(input, "should not be reached")
+          yield* Effect.addFinalizer(() =>
+            Effect.sync(() => {
+              SessionPrompt.resolvePromptParts = resolve
+              SessionPrompt.prompt = prompt
+            }),
+          )
+
+          const exit = yield* Effect.tryPromise({
+            try: () =>
+              def.execute(
+                {
+                  description: "bad variant",
+                  prompt: "doesn't matter",
+                  subagent_type: "general",
+                  variant: "turbo",
+                },
+                {
+                  sessionID: chat.id,
+                  messageID: assistant.id,
+                  agent: "build",
+                  abort: new AbortController().signal,
+                  messages: [],
+                  metadata() {},
+                  ask: async () => {},
+                },
+              ),
+            catch: (e) => (e instanceof Error ? e : new Error(String(e))),
+          }).pipe(Effect.exit)
+
+          const cause = Exit.isFailure(exit) ? Cause.squash(exit.cause) : undefined
+          const message = cause instanceof Error ? cause.message : undefined
+
+          expect(Exit.isFailure(exit)).toBe(true)
+          expect(message).toBeDefined()
+          expect(message).toContain("turbo")
+          expect(message).toContain("Available variants:")
+          expect(message).toMatch(/\b(low|high)\b/)
         }),
       { config: variantProviderConfig },
     ),
