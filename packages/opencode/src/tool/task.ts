@@ -159,6 +159,7 @@ export const TaskTool = Tool.define(
                 modelID: model.modelID,
                 providerID: model.providerID,
               },
+              variant: params.variant, // kilocode_change — per-subtask variant override
               agent: next.name,
               tools: {
                 ...(canTodo ? {} : { todowrite: false }),
