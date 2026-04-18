@@ -35,7 +35,7 @@ const parameters = z.object({
     .string()
     .describe(
       "Optional reasoning level / variant to run this subtask at (e.g. 'low', 'medium', 'high', 'xhigh', 'max'). " +
-        "Valid values depend on the subagent's model (Claude Opus 4.7 exposes all five; OpenAI reasoning models swap 'max' for 'minimal'). " +
+        "Valid values depend on the subagent's model (Claude Opus 4.7 exposes 'low' / 'medium' / 'high' / 'xhigh' / 'max'; OpenAI reasoning models expose 'none' / 'minimal' / 'low' / 'medium' / 'high' / 'xhigh'). " +
         "Omit to use the subagent's configured variant or default reasoning. " +
         "Invalid values return an error listing the available variants for the target model.",
     )
