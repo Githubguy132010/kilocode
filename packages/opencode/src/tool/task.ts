@@ -29,6 +29,17 @@ const parameters = z.object({
     )
     .optional(),
   command: z.string().describe("The command that triggered this task").optional(),
+  // kilocode_change start — optional per-subtask reasoning variant
+  variant: z
+    .string()
+    .describe(
+      "Optional reasoning level / variant to run this subtask at (e.g. 'low', 'medium', 'high', 'xhigh', 'max'). " +
+        "Valid values depend on the subagent's model (Claude Opus 4.7 exposes all five; OpenAI reasoning models swap 'max' for 'minimal'). " +
+        "Omit to use the subagent's configured variant or default reasoning. " +
+        "Invalid values return an error listing the available variants for the target model.",
+    )
+    .optional(),
+  // kilocode_change end
 })
 
 export const TaskTool = Tool.define(
