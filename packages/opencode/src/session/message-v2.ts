@@ -229,6 +229,7 @@ export namespace MessageV2 {
       })
       .optional(),
     command: z.string().optional(),
+    variant: z.string().optional(), // kilocode_change — optional per-subtask variant
   }).meta({
     ref: "SubtaskPart",
   })
