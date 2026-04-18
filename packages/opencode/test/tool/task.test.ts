@@ -24,6 +24,41 @@ const ref = {
   modelID: ModelID.make("test-model"),
 }
 
+// kilocode_change start — config with a test provider whose model exposes variants
+const variantProviderConfig = {
+  provider: {
+    test: {
+      name: "Test",
+      id: "test",
+      env: [],
+      npm: "@ai-sdk/openai-compatible",
+      models: {
+        "test-model": {
+          id: "test-model",
+          name: "Test Model",
+          attachment: false,
+          reasoning: true,
+          temperature: false,
+          tool_call: true,
+          release_date: "2025-01-01",
+          limit: { context: 100000, output: 10000 },
+          cost: { input: 0, output: 0 },
+          options: {},
+          variants: {
+            low: { reasoningEffort: "low" },
+            high: { reasoningEffort: "high" },
+          },
+        },
+      },
+      options: {
+        apiKey: "test-key",
+        baseURL: "http://localhost:1/v1",
+      },
+    },
+  },
+}
+// kilocode_change end
+
 const it = testEffect(
   Layer.mergeAll(
     Agent.defaultLayer,
@@ -394,4 +429,55 @@ describe("tool.task", () => {
       },
     ),
   )
+
+  // kilocode_change start — per-subtask variant override tests
+  it.live("execute forwards a valid variant to SessionPrompt.prompt", () =>
+    provideTmpdirInstance(
+      () =>
+        Effect.gen(function* () {
+          const { chat, assistant } = yield* seed()
+          const tool = yield* TaskTool
+          const def = yield* Effect.promise(() => tool.init())
+          const resolve = SessionPrompt.resolvePromptParts
+          const prompt = SessionPrompt.prompt
+          let seen: Parameters<typeof SessionPrompt.prompt>[0] | undefined
+
+          SessionPrompt.resolvePromptParts = async (template) => [{ type: "text", text: template }]
+          SessionPrompt.prompt = async (input) => {
+            seen = input
+            return reply(input, "done")
+          }
+          yield* Effect.addFinalizer(() =>
+            Effect.sync(() => {
+              SessionPrompt.resolvePromptParts = resolve
+              SessionPrompt.prompt = prompt
+            }),
+          )
+
+          yield* Effect.promise(() =>
+            def.execute(
+              {
+                description: "hard task",
+                prompt: "think hard about this",
+                subagent_type: "general",
+                variant: "high",
+              },
+              {
+                sessionID: chat.id,
+                messageID: assistant.id,
+                agent: "build",
+                abort: new AbortController().signal,
+                messages: [],
+                metadata() {},
+                ask: async () => {},
+              },
+            ),
+          )
+
+          expect(seen?.variant).toBe("high")
+        }),
+      { config: variantProviderConfig },
+    ),
+  )
+  // kilocode_change end
 })
