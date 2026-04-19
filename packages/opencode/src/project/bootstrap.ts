@@ -35,5 +35,5 @@ export const InstanceBootstrap = Effect.gen(function* () {
     }),
   )
 
-  ToolRegistry.warmup() // kilocode_change — fire-and-forget: warm tool registry and MCP connections in background
+  ToolRegistry.warmup() // kilocode_change — fire-and-forget: warm tool registry (custom tool scan + Tool.init caches) in background
 }).pipe(Effect.withSpan("InstanceBootstrap"))

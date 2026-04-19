@@ -29,7 +29,6 @@ import { Log } from "@/util/log"
 import { LspTool } from "./lsp"
 import { Truncate } from "./truncate"
 import { ApplyPatchTool } from "./apply_patch"
-import { MCP } from "../mcp" // kilocode_change
 import { Glob } from "../util/glob"
 import path from "path"
 import { pathToFileURL } from "url"
@@ -351,7 +350,7 @@ export namespace ToolRegistry {
 
   // kilocode_change start
   export async function warmup(): Promise<void> {
-    await Promise.allSettled([runPromise((svc) => svc.all()), MCP.tools()])
+    await runPromise((svc) => svc.all())
   }
   // kilocode_change end
 }
