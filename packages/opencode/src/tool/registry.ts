@@ -349,8 +349,10 @@ export namespace ToolRegistry {
   }
 
   // kilocode_change start
-  export async function warmup(): Promise<void> {
-    await runPromise((svc) => svc.all())
+  export function warmup(): void {
+    runPromise((svc) => svc.all()).catch((err) => {
+      log.warn("warmup failed", { error: err?.message ?? String(err) })
+    })
   }
   // kilocode_change end
 }
