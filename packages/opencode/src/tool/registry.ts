@@ -351,7 +351,7 @@ export namespace ToolRegistry {
 
   // kilocode_change start
   export async function warmup(): Promise<void> {
-    await Promise.allSettled([runPromise((svc) => svc.all()), MCP.status()])
+    await Promise.allSettled([runPromise((svc) => svc.all()), MCP.tools()])
   }
   // kilocode_change end
 }
