@@ -152,36 +152,6 @@ export const TaskTool = Tool.define(
           ],
         }))
 
-      const msg = yield* Effect.sync(() => MessageV2.get({ sessionID: ctx.sessionID, messageID: ctx.messageID }))
-      if (msg.info.role !== "assistant") return yield* Effect.fail(new Error("Not an assistant message"))
-
-      const model = next.model ?? {
-        modelID: msg.info.modelID,
-        providerID: msg.info.providerID,
-      }
-
-      // kilocode_change start — validate variant against the resolved target model
-      if (params.variant !== undefined) {
-        const full = yield* Effect.tryPromise({
-          try: () => Provider.getModel(model.providerID, model.modelID),
-          catch: (e) =>
-            new Error(
-              `Could not resolve model ${model.providerID}/${model.modelID} to validate variant: ${e instanceof Error ? e.message : String(e)}`,
-            ),
-        })
-        const available = full.variants ? Object.keys(full.variants) : []
-        if (!full.variants || !full.variants[params.variant]) {
-          return yield* Effect.fail(
-            new Error(
-              available.length === 0
-                ? `Model ${model.providerID}/${model.modelID} does not support variants; omit the \`variant\` parameter.`
-                : `Unknown variant "${params.variant}" for model ${model.providerID}/${model.modelID}. Available variants: ${available.join(", ")}.`,
-            ),
-          )
-        }
-      }
-      // kilocode_change end
-
       yield* ctx.metadata({
         title: params.description,
         metadata: {

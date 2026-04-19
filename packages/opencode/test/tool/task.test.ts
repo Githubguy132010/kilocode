@@ -1,5 +1,5 @@
 import { afterEach, describe, expect } from "bun:test"
-import { Cause, Effect, Exit, Layer } from "effect"
+import { Cause, Effect, Exit, Layer } from "effect" // kilocode_change — added Cause, Exit for variant error tests
 import { Agent } from "../../src/agent/agent"
 import { Config } from "../../src/config/config"
 import * as CrossSpawnSpawner from "../../src/effect/cross-spawn-spawner"
@@ -468,41 +468,27 @@ describe("tool.task", () => {
         Effect.gen(function* () {
           const { chat, assistant } = yield* seed()
           const tool = yield* TaskTool
-          const def = yield* Effect.promise(() => tool.init())
-          const resolve = SessionPrompt.resolvePromptParts
-          const prompt = SessionPrompt.prompt
-          let seen: Parameters<typeof SessionPrompt.prompt>[0] | undefined
+          const def = yield* tool.init()
+          let seen: SessionPrompt.PromptInput | undefined
+          const promptOps = stubOps({ onPrompt: (input) => (seen = input) })
 
-          SessionPrompt.resolvePromptParts = async (template) => [{ type: "text", text: template }]
-          SessionPrompt.prompt = async (input) => {
-            seen = input
-            return reply(input, "done")
-          }
-          yield* Effect.addFinalizer(() =>
-            Effect.sync(() => {
-              SessionPrompt.resolvePromptParts = resolve
-              SessionPrompt.prompt = prompt
-            }),
-          )
-
-          yield* Effect.promise(() =>
-            def.execute(
-              {
-                description: "hard task",
-                prompt: "think hard about this",
-                subagent_type: "general",
-                variant: "high",
-              },
-              {
-                sessionID: chat.id,
-                messageID: assistant.id,
-                agent: "build",
-                abort: new AbortController().signal,
-                messages: [],
-                metadata() {},
-                ask: async () => {},
-              },
-            ),
+          yield* def.execute(
+            {
+              description: "hard task",
+              prompt: "think hard about this",
+              subagent_type: "general",
+              variant: "high",
+            },
+            {
+              sessionID: chat.id,
+              messageID: assistant.id,
+              agent: "build",
+              abort: new AbortController().signal,
+              extra: { promptOps },
+              messages: [],
+              metadata: () => Effect.void,
+              ask: () => Effect.void,
+            },
           )
 
           expect(seen?.variant).toBe("high")
@@ -519,40 +505,29 @@ describe("tool.task", () => {
         Effect.gen(function* () {
           const { chat, assistant } = yield* seed()
           const tool = yield* TaskTool
-          const def = yield* Effect.promise(() => tool.init())
-          const resolve = SessionPrompt.resolvePromptParts
-          const prompt = SessionPrompt.prompt
+          const def = yield* tool.init()
+          const promptOps = stubOps()
 
-          SessionPrompt.resolvePromptParts = async (template) => [{ type: "text", text: template }]
-          SessionPrompt.prompt = async (input) => reply(input, "should not be reached")
-          yield* Effect.addFinalizer(() =>
-            Effect.sync(() => {
-              SessionPrompt.resolvePromptParts = resolve
-              SessionPrompt.prompt = prompt
-            }),
-          )
-
-          const exit = yield* Effect.tryPromise({
-            try: () =>
-              def.execute(
-                {
-                  description: "bad variant",
-                  prompt: "doesn't matter",
-                  subagent_type: "general",
-                  variant: "turbo",
-                },
-                {
-                  sessionID: chat.id,
-                  messageID: assistant.id,
-                  agent: "build",
-                  abort: new AbortController().signal,
-                  messages: [],
-                  metadata() {},
-                  ask: async () => {},
-                },
-              ),
-            catch: (e) => (e instanceof Error ? e : new Error(String(e))),
-          }).pipe(Effect.exit)
+          const exit = yield* def
+            .execute(
+              {
+                description: "bad variant",
+                prompt: "doesn't matter",
+                subagent_type: "general",
+                variant: "turbo",
+              },
+              {
+                sessionID: chat.id,
+                messageID: assistant.id,
+                agent: "build",
+                abort: new AbortController().signal,
+                extra: { promptOps },
+                messages: [],
+                metadata: () => Effect.void,
+                ask: () => Effect.void,
+              },
+            )
+            .pipe(Effect.exit)
 
           const cause = Exit.isFailure(exit) ? Cause.squash(exit.cause) : undefined
           const message = cause instanceof Error ? cause.message : undefined
@@ -575,40 +550,29 @@ describe("tool.task", () => {
         Effect.gen(function* () {
           const { chat, assistant } = yield* seed()
           const tool = yield* TaskTool
-          const def = yield* Effect.promise(() => tool.init())
-          const resolve = SessionPrompt.resolvePromptParts
-          const prompt = SessionPrompt.prompt
+          const def = yield* tool.init()
+          const promptOps = stubOps()
 
-          SessionPrompt.resolvePromptParts = async (template) => [{ type: "text", text: template }]
-          SessionPrompt.prompt = async (input) => reply(input, "should not be reached")
-          yield* Effect.addFinalizer(() =>
-            Effect.sync(() => {
-              SessionPrompt.resolvePromptParts = resolve
-              SessionPrompt.prompt = prompt
-            }),
-          )
-
-          const exit = yield* Effect.tryPromise({
-            try: () =>
-              def.execute(
-                {
-                  description: "no variants",
-                  prompt: "anything",
-                  subagent_type: "general",
-                  variant: "high",
-                },
-                {
-                  sessionID: chat.id,
-                  messageID: assistant.id,
-                  agent: "build",
-                  abort: new AbortController().signal,
-                  messages: [],
-                  metadata() {},
-                  ask: async () => {},
-                },
-              ),
-            catch: (e) => (e instanceof Error ? e : new Error(String(e))),
-          }).pipe(Effect.exit)
+          const exit = yield* def
+            .execute(
+              {
+                description: "no variants",
+                prompt: "anything",
+                subagent_type: "general",
+                variant: "high",
+              },
+              {
+                sessionID: chat.id,
+                messageID: assistant.id,
+                agent: "build",
+                abort: new AbortController().signal,
+                extra: { promptOps },
+                messages: [],
+                metadata: () => Effect.void,
+                ask: () => Effect.void,
+              },
+            )
+            .pipe(Effect.exit)
 
           const cause = Exit.isFailure(exit) ? Cause.squash(exit.cause) : undefined
           const message = cause instanceof Error ? cause.message : undefined
@@ -628,40 +592,26 @@ describe("tool.task", () => {
       Effect.gen(function* () {
         const { chat, assistant } = yield* seed()
         const tool = yield* TaskTool
-        const def = yield* Effect.promise(() => tool.init())
-        const resolve = SessionPrompt.resolvePromptParts
-        const prompt = SessionPrompt.prompt
-        let seen: Parameters<typeof SessionPrompt.prompt>[0] | undefined
+        const def = yield* tool.init()
+        let seen: SessionPrompt.PromptInput | undefined
+        const promptOps = stubOps({ onPrompt: (input) => (seen = input) })
 
-        SessionPrompt.resolvePromptParts = async (template) => [{ type: "text", text: template }]
-        SessionPrompt.prompt = async (input) => {
-          seen = input
-          return reply(input, "done")
-        }
-        yield* Effect.addFinalizer(() =>
-          Effect.sync(() => {
-            SessionPrompt.resolvePromptParts = resolve
-            SessionPrompt.prompt = prompt
-          }),
-        )
-
-        yield* Effect.promise(() =>
-          def.execute(
-            {
-              description: "default",
-              prompt: "default prompt",
-              subagent_type: "general",
-            },
-            {
-              sessionID: chat.id,
-              messageID: assistant.id,
-              agent: "build",
-              abort: new AbortController().signal,
-              messages: [],
-              metadata() {},
-              ask: async () => {},
-            },
-          ),
+        yield* def.execute(
+          {
+            description: "default",
+            prompt: "default prompt",
+            subagent_type: "general",
+          },
+          {
+            sessionID: chat.id,
+            messageID: assistant.id,
+            agent: "build",
+            abort: new AbortController().signal,
+            extra: { promptOps },
+            messages: [],
+            metadata: () => Effect.void,
+            ask: () => Effect.void,
+          },
         )
 
         expect(seen?.variant).toBeUndefined()
@@ -679,42 +629,28 @@ describe("tool.task", () => {
           const { chat, assistant } = yield* seed()
           const child = yield* sessions.create({ parentID: chat.id, title: "Existing child" })
           const tool = yield* TaskTool
-          const def = yield* Effect.promise(() => tool.init())
-          const resolve = SessionPrompt.resolvePromptParts
-          const prompt = SessionPrompt.prompt
-          let seen: Parameters<typeof SessionPrompt.prompt>[0] | undefined
+          const def = yield* tool.init()
+          let seen: SessionPrompt.PromptInput | undefined
+          const promptOps = stubOps({ text: "resumed", onPrompt: (input) => (seen = input) })
 
-          SessionPrompt.resolvePromptParts = async (template) => [{ type: "text", text: template }]
-          SessionPrompt.prompt = async (input) => {
-            seen = input
-            return reply(input, "resumed")
-          }
-          yield* Effect.addFinalizer(() =>
-            Effect.sync(() => {
-              SessionPrompt.resolvePromptParts = resolve
-              SessionPrompt.prompt = prompt
-            }),
-          )
-
-          yield* Effect.promise(() =>
-            def.execute(
-              {
-                description: "keep going",
-                prompt: "continue but think lighter",
-                subagent_type: "general",
-                task_id: child.id,
-                variant: "low",
-              },
-              {
-                sessionID: chat.id,
-                messageID: assistant.id,
-                agent: "build",
-                abort: new AbortController().signal,
-                messages: [],
-                metadata() {},
-                ask: async () => {},
-              },
-            ),
+          yield* def.execute(
+            {
+              description: "keep going",
+              prompt: "continue but think lighter",
+              subagent_type: "general",
+              task_id: child.id,
+              variant: "low",
+            },
+            {
+              sessionID: chat.id,
+              messageID: assistant.id,
+              agent: "build",
+              abort: new AbortController().signal,
+              extra: { promptOps },
+              messages: [],
+              metadata: () => Effect.void,
+              ask: () => Effect.void,
+            },
           )
 
           expect(seen?.sessionID).toBe(child.id)
