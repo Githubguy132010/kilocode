@@ -7,9 +7,11 @@ import { makeRuntime } from "@/effect/run-service" // kilocode_change
 import * as CrossSpawnSpawner from "@/effect/cross-spawn-spawner"
 import { InstanceState } from "@/effect/instance-state"
 import { AppFileSystem } from "@/filesystem"
+import { Flag } from "@/flag/flag" // kilocode_change
 import { Config } from "../config/config"
+import { Global } from "../global"
+import { Hash } from "../util/hash"
 import { Log } from "../util/log"
-import * as KiloSnapshot from "../kilocode/snapshot" // kilocode_change
 
 export namespace Snapshot {
   export const Patch = z.object({
@@ -40,6 +42,8 @@ export namespace Snapshot {
 
   // kilocode_change start
   export const MAX_DIFF_SIZE = 256 * 1024
+  const cache = new Map<string, Promise<Snapshot.FileDiff[]>>()
+  const max = 100
   // kilocode_change end
 
   interface GitResult {
@@ -86,14 +90,10 @@ export namespace Snapshot {
 
       const state = yield* InstanceState.make<State>(
         Effect.fn("Snapshot.state")(function* (ctx) {
-          // kilocode_change start — use KiloSnapshot for worktree-scoped gitdir
-          const kiloGitdir = yield* Effect.promise(() => KiloSnapshot.prepare())
-          // kilocode_change end
-
           const state = {
             directory: ctx.directory,
             worktree: ctx.worktree,
-            gitdir: kiloGitdir, // kilocode_change
+            gitdir: path.join(Global.Path.data, "snapshot", ctx.project.id, Hash.fast(ctx.worktree)),
             vcs: ctx.project.vcs,
           }
 
@@ -192,7 +192,7 @@ export namespace Snapshot {
           const enabled = Effect.fnUntraced(function* () {
             if (state.vcs !== "git") return false
             // kilocode_change start - ACP guard: disable snapshots for ACP clients
-            if (KiloSnapshot.acpDisabled()) return false
+            if (Flag.KILO_CLIENT === "acp") return false
             // kilocode_change end
             return (yield* config.get()).snapshot !== false
           })
@@ -778,14 +778,23 @@ export namespace Snapshot {
         }),
         diffFull: Effect.fn("Snapshot.diffFull")(function* (from: string, to: string) {
           // kilocode_change start - cache full diffs at the service boundary
+          if (from === to) return []
+          const key = `${from}:${to}`
+          const hit = cache.get(key)
+          if (hit) return yield* Effect.promise(() => hit)
+          if (cache.size >= max) {
+            const first = cache.keys().next().value
+            if (first) cache.delete(first)
+          }
           const ctx = yield* Effect.context()
-          return yield* Effect.promise(() =>
-            KiloSnapshot.diffFullCached(
-              (f, t) => Effect.runPromiseWith(ctx)(InstanceState.useEffect(state, (s) => s.diffFull(f, t))),
-              from,
-              to,
-            ),
+          const pending = Effect.runPromiseWith(ctx)(InstanceState.useEffect(state, (s) => s.diffFull(from, to))).catch(
+            (err) => {
+              cache.delete(key)
+              throw err
+            },
           )
+          cache.set(key, pending)
+          return yield* Effect.promise(() => pending)
           // kilocode_change end
         }),
       })
