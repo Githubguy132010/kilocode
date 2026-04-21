@@ -16,7 +16,7 @@ import ai.kilocode.rpc.dto.QuestionRequestDto
 import ai.kilocode.rpc.dto.SessionDto
 import ai.kilocode.rpc.dto.SessionStatusDto
 import com.intellij.openapi.components.Service
-import com.intellij.openapi.diagnostic.Logger
+import ai.kilocode.log.KiloLog
 import com.intellij.openapi.project.Project
 import fleet.rpc.client.durable
 import kotlinx.coroutines.CoroutineScope
@@ -46,7 +46,7 @@ class KiloSessionService internal constructor(
     constructor(project: Project, cs: CoroutineScope) : this(project, cs, null)
 
     companion object {
-        private val LOG = Logger.getInstance(KiloSessionService::class.java)
+        private val LOG = KiloLog.create(KiloSessionService::class.java)
     }
 
     private val _sessions = MutableStateFlow<List<SessionDto>>(emptyList())

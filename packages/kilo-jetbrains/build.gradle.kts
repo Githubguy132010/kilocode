@@ -1,5 +1,6 @@
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import org.jetbrains.intellij.platform.gradle.tasks.RunIdeTask
 import org.jetbrains.intellij.platform.gradle.tasks.aware.SplitModeAware.SplitModeTarget
 
 group = "ai.kilocode.jetbrains"
@@ -69,6 +70,12 @@ tasks.named<JavaExec>("runIde") {
     dependsOn(":backend:processResources")
     jvmArgumentProviders += CommandLineArgumentProvider {
         listOf("-Dnosplash=true")
+    }
+}
+
+tasks.withType<RunIdeTask> {
+    providers.gradleProperty("kilo.dev.log.level").orNull?.let {
+        systemProperty("kilo.dev.log.level", it)
     }
 }
 

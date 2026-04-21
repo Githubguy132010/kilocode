@@ -3,8 +3,7 @@ package ai.kilocode.backend.app
 import ai.kilocode.backend.cli.KiloBackendHttpClients
 import ai.kilocode.backend.cli.KiloCliDataParser
 import ai.kilocode.backend.cli.CliServer
-import ai.kilocode.backend.util.IntellijLog
-import ai.kilocode.backend.util.KiloLog
+import ai.kilocode.log.KiloLog
 import ai.kilocode.jetbrains.api.client.DefaultApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -59,7 +58,7 @@ class KiloConnectionService(
   private val cs: CoroutineScope,
   private val server: CliServer,
   private val onReconnect: () -> Unit,
-  private val log: KiloLog = IntellijLog(KiloConnectionService::class.java),
+  private val log: KiloLog = KiloLog.create(KiloConnectionService::class.java),
 ) {
 
     companion object {

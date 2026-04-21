@@ -28,7 +28,7 @@ import ai.kilocode.rpc.dto.QuestionRequestDto
 import ai.kilocode.rpc.dto.SessionStatusDto
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.diagnostic.Logger
+import ai.kilocode.log.KiloLog
 import com.intellij.openapi.util.Disposer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -57,7 +57,7 @@ class SessionController(
 ) : Disposable {
 
     companion object {
-        private val LOG = Logger.getInstance(SessionController::class.java)
+        private val LOG = KiloLog.create(SessionController::class.java)
     }
 
     init {

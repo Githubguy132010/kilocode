@@ -1,7 +1,7 @@
 package ai.kilocode.backend.app
 
 import ai.kilocode.backend.cli.KiloCliDataParser
-import ai.kilocode.backend.util.KiloLog
+import ai.kilocode.log.KiloLog
 import ai.kilocode.rpc.dto.ChatEventDto
 import ai.kilocode.rpc.dto.ConfigUpdateDto
 import ai.kilocode.rpc.dto.MessageWithPartsDto

@@ -1,6 +1,6 @@
 package ai.kilocode.backend.testing
 
-import ai.kilocode.backend.util.KiloLog
+import ai.kilocode.log.KiloLog
 
 /**
  * Test logger that captures messages for assertions and prints to stdout.

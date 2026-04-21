@@ -20,7 +20,7 @@ import ai.kilocode.rpc.dto.SessionDto
 import ai.kilocode.rpc.dto.SessionListDto
 import ai.kilocode.rpc.dto.SessionStatusDto
 import com.intellij.openapi.components.service
-import com.intellij.openapi.diagnostic.Logger
+import ai.kilocode.log.KiloLog
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
 
@@ -35,7 +35,7 @@ import kotlinx.coroutines.flow.filter
  */
 class KiloSessionRpcApiImpl : KiloSessionRpcApi {
     companion object {
-        private val LOG = Logger.getInstance(KiloSessionRpcApiImpl::class.java)
+        private val LOG = KiloLog.create(KiloSessionRpcApiImpl::class.java)
     }
 
     private val workspaces: KiloBackendWorkspaceManager
