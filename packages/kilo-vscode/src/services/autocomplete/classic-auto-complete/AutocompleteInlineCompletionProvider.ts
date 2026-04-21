@@ -127,6 +127,7 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
   private recentlyVisitedRangesService: RecentlyVisitedRangesService
   private recentlyEditedTracker: RecentlyEditedTracker
   private debounceTimer: NodeJS.Timeout | null = null
+  private debounceResolve: (() => void) | null = null
   /** The pending request associated with the current debounce timer (if any) */
   private debouncedPendingRequest: PendingRequest | null = null
   private isFirstCall: boolean = true
@@ -194,9 +195,28 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
       return
     }
 
+    this.clearWorkspaceState()
     this.workspacePath = dir
     this.ignoreController = this.createIgnore(dir)
     this.contextProvider.ignoreController = this.ignoreController
+  }
+
+  private clearWorkspaceState(): void {
+    this.suggestionsHistory = []
+    if (this.debounceTimer !== null) {
+      clearTimeout(this.debounceTimer)
+      this.debounceTimer = null
+    }
+    this.debounceResolve?.()
+    this.debounceResolve = null
+    this.debouncedPendingRequest = null
+    this.pendingRequests.length = 0
+    this.fimAbortController?.abort()
+    this.fimAbortController = null
+    this.isFirstCall = true
+    this.lastSuggestion = null
+    this.telemetry?.cancelVisibilityTracking()
+    void vscode.commands.executeCommand("setContext", "kilo-code.new.autocomplete.hasSuggestions", false)
   }
 
   public updateSuggestions(fillInAtCursor: FillInAtCursorSuggestion): void {
@@ -313,6 +333,8 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
       clearTimeout(this.debounceTimer)
       this.debounceTimer = null
     }
+    this.debounceResolve?.()
+    this.debounceResolve = null
     this.debouncedPendingRequest = null
     this.pendingRequests.length = 0
     this.fimAbortController?.abort()
@@ -533,6 +555,8 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
     // otherwise linger with a never-resolving promise.
     if (this.debounceTimer !== null) {
       clearTimeout(this.debounceTimer)
+      this.debounceResolve?.()
+      this.debounceResolve = null
       if (this.debouncedPendingRequest) {
         this.removePendingRequest(this.debouncedPendingRequest)
         this.debouncedPendingRequest = null
@@ -547,8 +571,10 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
     }
 
     const requestPromise = new Promise<void>((resolve) => {
+      this.debounceResolve = resolve
       this.debounceTimer = setTimeout(async () => {
         this.debounceTimer = null
+        this.debounceResolve = null
         this.debouncedPendingRequest = null
         this.isFirstCall = true // Reset for next sequence
         await this.fetchAndCacheSuggestion(prompt, prefix, suffix, languageId)
