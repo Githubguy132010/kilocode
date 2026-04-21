@@ -5,8 +5,6 @@ import { AppFileSystem } from "@/filesystem"
 import { Git } from "@/git"
 import { Effect, Layer, Context } from "effect"
 import * as Stream from "effect/Stream"
-import { formatPatch, structuredPatch } from "diff"
-import { DiffEngine } from "@/kilocode/snapshot/diff-engine" // kilocode_change
 import { DiffFull } from "@/kilocode/snapshot/diff-full" // kilocode_change
 import fuzzysort from "fuzzysort"
 import ignore from "ignore"
@@ -561,20 +559,10 @@ export namespace File {
             diff = yield* gitText(["-c", "core.fsmonitor=false", "diff", "--staged", "--", file])
           }
           if (diff.trim()) {
-            // kilocode_change start — generate the full-context patch via git,
-            // never through the JS Myers implementation
+            // kilocode_change start — patch via git, never the JS Myers implementation
             const got = yield* DiffFull.file(gitText, file)
             if (got) return { type: "text" as const, content, patch: got.patch, diff: got.text }
             // kilocode_change end
-            const original = yield* git.show(Instance.directory, "HEAD", file)
-            // kilocode_change start — cap the Myers fallback so a git regression can't freeze the loop
-            if (DiffEngine.shouldSkip(original, content)) return { type: "text" as const, content }
-            // kilocode_change end
-            const patch = structuredPatch(file, file, original, content, "old", "new", {
-              context: Infinity,
-              ignoreWhitespace: true,
-            })
-            return { type: "text" as const, content, patch, diff: formatPatch(patch) }
           }
           return { type: "text" as const, content }
         }

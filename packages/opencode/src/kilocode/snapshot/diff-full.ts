@@ -1,13 +1,14 @@
 // kilocode_change - new file
 //
-// Primary patch generation. Runs `git diff --unified=INT_MAX` to produce
+// Patch generation. Runs `git diff --unified=INT_MAX` to produce
 // unified-diff text for a set of files, instead of the npm `diff` package's
 // JS Myers implementation. Myers is O(N*M) with full context, so on
 // huge-file diffs it can block the event loop for minutes (the TUI freeze
 // where ESC stopped working after a turn).
 //
 // Both helpers fail soft: on any git error they return an empty value so
-// callers can fall back to the JS Myers path (guarded by `DiffEngine`).
+// callers emit an empty patch string. Additions/deletions come from
+// `git --numstat` and stay accurate.
 
 import { Effect } from "effect"
 import { parsePatch } from "diff"
@@ -35,8 +36,9 @@ export namespace DiffFull {
    * `files` entries must use forward slashes (git's output uses `/` even on
    * Windows); paths with backslashes will silently miss the suffix match.
    *
-   * Returns an empty map if `files` is empty or git fails. Callers fall back
-   * to the JS Myers path for any file that is missing from the map.
+   * Returns an empty map if `files` is empty or git fails. Callers emit an
+   * empty patch string for any file missing from the map; numstat-derived
+   * additions/deletions stay accurate.
    */
   export const batch = Effect.fn("DiffFull.batch")(function* (
     git: (cmd: string[]) => Effect.Effect<GitResult>,
@@ -72,7 +74,7 @@ export namespace DiffFull {
       parseBatch(result.text, chunk, map)
     }
     if (failed) {
-      log.info("git diff failed, falling back to JS Myers", {
+      log.info("git diff failed, emitting empty patches for affected files", {
         chunksFailed: failed,
         filesTotal: files.length,
         stderr,
@@ -84,7 +86,8 @@ export namespace DiffFull {
   /**
    * Generate a structured + unified diff for a single file in the working
    * tree vs HEAD using `git diff --ignore-all-space --unified=INT_MAX`.
-   * Returns `null` if git produces no output (caller falls back to Myers).
+   * Returns `null` if git produces no output (caller emits a content-only
+   * response with no patch).
    */
   export const file = Effect.fn("DiffFull.file")(function* (
     gitText: (args: string[]) => Effect.Effect<string>,

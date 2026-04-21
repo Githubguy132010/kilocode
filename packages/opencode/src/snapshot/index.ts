@@ -1,6 +1,5 @@
 import { Cause, Duration, Effect, Layer, Schedule, Semaphore, Context, Stream } from "effect"
 import { ChildProcess, ChildProcessSpawner } from "effect/unstable/process"
-import { formatPatch, structuredPatch } from "diff"
 import path from "path"
 import z from "zod"
 import { makeRuntime } from "@/effect/run-service" // kilocode_change
@@ -12,7 +11,6 @@ import { Config } from "../config/config"
 import { Global } from "../global"
 import { Hash } from "../util/hash"
 import { Log } from "../util/log"
-import { DiffEngine } from "../kilocode/snapshot/diff-engine" // kilocode_change
 import { DiffFull } from "../kilocode/snapshot/diff-full" // kilocode_change
 
 export namespace Snapshot {
@@ -527,144 +525,6 @@ export namespace Snapshot {
           const diffFull = Effect.fnUntraced(function* (from: string, to: string) {
             return yield* locked(
               Effect.gen(function* () {
-                type Row = {
-                  file: string
-                  status: "added" | "deleted" | "modified"
-                  binary: boolean
-                  additions: number
-                  deletions: number
-                }
-
-                type Ref = {
-                  file: string
-                  side: "before" | "after"
-                  ref: string
-                }
-
-                const show = Effect.fnUntraced(function* (row: Row) {
-                  if (row.binary) return ["", ""]
-                  if (row.status === "added") {
-                    return [
-                      "",
-                      yield* git([...cfg, ...args(["show", `${to}:${row.file}`])]).pipe(
-                        Effect.map((item) => item.text),
-                      ),
-                    ]
-                  }
-                  if (row.status === "deleted") {
-                    return [
-                      yield* git([...cfg, ...args(["show", `${from}:${row.file}`])]).pipe(
-                        Effect.map((item) => item.text),
-                      ),
-                      "",
-                    ]
-                  }
-                  return yield* Effect.all(
-                    [
-                      git([...cfg, ...args(["show", `${from}:${row.file}`])]).pipe(Effect.map((item) => item.text)),
-                      git([...cfg, ...args(["show", `${to}:${row.file}`])]).pipe(Effect.map((item) => item.text)),
-                    ],
-                    { concurrency: 2 },
-                  )
-                })
-
-                const load = Effect.fnUntraced(
-                  function* (rows: Row[]) {
-                    const refs = rows.flatMap((row) => {
-                      if (row.binary) return []
-                      if (row.status === "added")
-                        return [{ file: row.file, side: "after", ref: `${to}:${row.file}` } satisfies Ref]
-                      if (row.status === "deleted") {
-                        return [{ file: row.file, side: "before", ref: `${from}:${row.file}` } satisfies Ref]
-                      }
-                      return [
-                        { file: row.file, side: "before", ref: `${from}:${row.file}` } satisfies Ref,
-                        { file: row.file, side: "after", ref: `${to}:${row.file}` } satisfies Ref,
-                      ]
-                    })
-                    if (!refs.length) return new Map<string, { before: string; after: string }>()
-
-                    const proc = ChildProcess.make("git", [...cfg, ...args(["cat-file", "--batch"])], {
-                      cwd: state.directory,
-                      extendEnv: true,
-                      stdin: Stream.make(new TextEncoder().encode(refs.map((item) => item.ref).join("\n") + "\n")),
-                    })
-                    const handle = yield* spawner.spawn(proc)
-                    const [out, err] = yield* Effect.all(
-                      [Stream.mkUint8Array(handle.stdout), Stream.mkString(Stream.decodeText(handle.stderr))],
-                      { concurrency: 2 },
-                    )
-                    const code = yield* handle.exitCode
-                    if (code !== 0) {
-                      log.info("git cat-file --batch failed during snapshot diff, falling back to per-file git show", {
-                        stderr: err,
-                        refs: refs.length,
-                      })
-                      return
-                    }
-
-                    const fail = (msg: string, extra?: Record<string, string>) => {
-                      log.info(msg, { ...extra, refs: refs.length })
-                      return undefined
-                    }
-
-                    const map = new Map<string, { before: string; after: string }>()
-                    const dec = new TextDecoder()
-                    let i = 0
-                    for (const ref of refs) {
-                      let end = i
-                      while (end < out.length && out[end] !== 10) end += 1
-                      if (end >= out.length) {
-                        return fail(
-                          "git cat-file --batch returned a truncated header during snapshot diff, falling back to per-file git show",
-                        )
-                      }
-
-                      const head = dec.decode(out.slice(i, end))
-                      i = end + 1
-                      const hit = map.get(ref.file) ?? { before: "", after: "" }
-                      if (head.endsWith(" missing")) {
-                        map.set(ref.file, hit)
-                        continue
-                      }
-
-                      const match = head.match(/^[0-9a-f]+ blob (\d+)$/)
-                      if (!match) {
-                        return fail(
-                          "git cat-file --batch returned an unexpected header during snapshot diff, falling back to per-file git show",
-                          { head },
-                        )
-                      }
-
-                      const size = Number(match[1])
-                      if (!Number.isInteger(size) || size < 0 || i + size >= out.length || out[i + size] !== 10) {
-                        return fail(
-                          "git cat-file --batch returned truncated content during snapshot diff, falling back to per-file git show",
-                          { head },
-                        )
-                      }
-
-                      const text = dec.decode(out.slice(i, i + size))
-                      if (ref.side === "before") hit.before = text
-                      if (ref.side === "after") hit.after = text
-                      map.set(ref.file, hit)
-                      i += size + 1
-                    }
-
-                    if (i !== out.length) {
-                      return fail(
-                        "git cat-file --batch returned trailing data during snapshot diff, falling back to per-file git show",
-                      )
-                    }
-
-                    return map
-                  },
-                  Effect.scoped,
-                  Effect.catch(() =>
-                    Effect.succeed<Map<string, { before: string; after: string }> | undefined>(undefined),
-                  ),
-                )
-
                 const result: Snapshot.FileDiff[] = []
                 const status = new Map<string, "added" | "deleted" | "modified">()
 
@@ -704,7 +564,7 @@ export namespace Snapshot {
                         binary,
                         additions: Number.isFinite(additions) ? additions : 0,
                         deletions: Number.isFinite(deletions) ? deletions : 0,
-                      } satisfies Row,
+                      },
                     ]
                   })
 
@@ -717,37 +577,25 @@ export namespace Snapshot {
                 }
 
                 const step = 100
-                const patch = (file: string, before: string, after: string) =>
-                  formatPatch(structuredPatch(file, file, before, after, "", "", { context: Number.MAX_SAFE_INTEGER }))
-
                 for (let i = 0; i < rows.length; i += step) {
                   const run = rows.slice(i, i + step)
-                  // kilocode_change start — bulk-load patches from `git diff` so Myers never runs on the main thread
+                  // kilocode_change start — bulk-load patches from `git diff`; no JS Myers fallback
                   const patches = yield* DiffFull.batch(
                     (cmd) => git([...quote, ...args(cmd)], { cwd: state.directory }),
                     from,
                     to,
                     run.filter((r) => !r.binary).map((r) => r.file),
                   )
-                  // kilocode_change end
-                  const text = yield* load(run)
-
                   for (const row of run) {
-                    const hit = text?.get(row.file) ?? { before: "", after: "" }
-                    const [before, after] = row.binary ? ["", ""] : text ? [hit.before, hit.after] : yield* show(row)
-                    // kilocode_change start — prefer the git-diff output; if we have to fall back to Myers,
-                    // cap it so a future git regression can't reintroduce the event-loop freeze
-                    const got = patches.get(row.file)
-                    const capped = !got && !row.binary && DiffEngine.shouldSkip(before, after)
                     result.push({
                       file: row.file,
-                      patch: row.binary ? "" : (got ?? (capped ? "" : patch(row.file, before, after))),
+                      patch: row.binary ? "" : (patches.get(row.file) ?? ""),
                       additions: row.additions,
                       deletions: row.deletions,
                       status: row.status,
                     })
-                    // kilocode_change end
                   }
+                  // kilocode_change end
                 }
 
                 return result
