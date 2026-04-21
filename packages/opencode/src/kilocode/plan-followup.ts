@@ -332,35 +332,64 @@ export namespace PlanFollowup {
         await Bus.publish(TuiEvent.SessionSelect, { sessionID: next.id })
 
         const file = Session.plan(session)
-        const [handover, todos] = await Promise.all([
-          generateHandover({ messages: input.messages, model: input.model, abort: input.abort }),
-          PlanFollowupRuntime.todo.get(input.sessionID),
-        ])
-
-        const sections = [
-          `Plan file: ${file}\nRead this file first and treat it as the source of truth for implementation.`,
-          `Implement the following plan:\n\n${input.plan}`,
-        ]
-
-        if (handover) {
-          sections.push(`## Handover from Planning Session\n\n${handover}`)
-        }
-
+        const todos = await PlanFollowupRuntime.todo.get(input.sessionID)
         const todoList = formatTodos(todos)
-        if (todoList) {
-          sections.push(`## Todo List\n\n${todoList}`)
+
+        // Assemble the user message text with or without a handover section.
+        // The section order is fixed so the initial and final renders stay
+        // aligned — only the handover block grows in between.
+        const compose = (handover: string) => {
+          const sections = [
+            `Plan file: ${file}\nRead this file first and treat it as the source of truth for implementation.`,
+            `Implement the following plan:\n\n${input.plan}`,
+          ]
+          if (handover) sections.push(`## Handover from Planning Session\n\n${handover}`)
+          if (todoList) sections.push(`## Todo List\n\n${todoList}`)
+          return sections.join("\n\n")
         }
 
-        await inject({
+        // Inject the plan and todos immediately so the new session tab shows
+        // real content right away. The handover section is appended to this
+        // same part in-place once the slow LLM call resolves below.
+        const msg: MessageV2.User = {
+          id: MessageID.ascending(),
           sessionID: next.id,
+          role: "user",
+          time: { created: Date.now() },
           agent: "code",
           model: code.model,
-          text: sections.join("\n\n"),
+        }
+        await Session.updateMessage(msg)
+        const pid = PartID.ascending()
+        await Session.updatePart({
+          id: pid,
+          messageID: msg.id,
+          sessionID: next.id,
+          type: "text",
+          text: compose(""),
           synthetic: false,
-        })
+        } satisfies MessageV2.TextPart)
+
         if (todos.length) {
           await PlanFollowupRuntime.todo.update({ sessionID: next.id, todos })
         }
+
+        const handover = await generateHandover({
+          messages: input.messages,
+          model: input.model,
+          abort: input.abort,
+        })
+        if (handover) {
+          await Session.updatePart({
+            id: pid,
+            messageID: msg.id,
+            sessionID: next.id,
+            type: "text",
+            text: compose(handover),
+            synthetic: false,
+          } satisfies MessageV2.TextPart)
+        }
+
         void Instance.provide({
           directory: next.directory,
           fn: () => PlanFollowupRuntime.loop(next.id),

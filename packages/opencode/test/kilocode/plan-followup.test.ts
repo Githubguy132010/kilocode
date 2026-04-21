@@ -1025,6 +1025,104 @@ describe("plan follow-up", () => {
       expect(createdAt!).toBeLessThan(handoverResolvedAt!)
     }))
 
+  test("ask - injects plan message before generateHandover resolves on Start new session", () =>
+    withInstance(async () => {
+      // Regression guard: the plan text must appear in the new session tab
+      // immediately after the tab switch — without waiting for the slow handover
+      // LLM call. The handover is then appended to the same part in-place.
+      const seeded = await seed({ text: "1. Build" })
+
+      let followup: SessionID | undefined
+      const unsub = Bus.subscribe(Session.Event.Created, (event) => {
+        if (event.properties.info.id === seeded.sessionID) return
+        if (!followup) followup = event.properties.info.id
+      })
+
+      const deferred = Promise.withResolvers<string>()
+      const agentSpy = spyOn(PlanFollowupRuntime, "agent").mockResolvedValue(fakeAgent as any)
+      const modelSpy = spyOn(PlanFollowupRuntime, "model").mockResolvedValue(fakeModel)
+      const llmSpy = spyOn(LLM, "stream").mockResolvedValue({
+        text: deferred.promise,
+      } as any)
+      const loop = spyOn(PlanFollowupRuntime, "loop").mockResolvedValue({
+        info: {
+          id: MessageID.make("msg_test"),
+          role: "assistant",
+          sessionID: SessionID.make("ses_test"),
+          time: { created: Date.now() },
+          parentID: MessageID.make("msg_parent"),
+          modelID: ModelID.make("test"),
+          providerID: ProviderID.make("test"),
+          mode: "code",
+          agent: "code",
+          path: { cwd: "/tmp", root: "/tmp" },
+          cost: 0,
+          tokens: { total: 0, input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } },
+        },
+        parts: [],
+      } as MessageV2.WithParts)
+      using _ = {
+        [Symbol.dispose]() {
+          agentSpy.mockRestore()
+          modelSpy.mockRestore()
+          llmSpy.mockRestore()
+          loop.mockRestore()
+          unsub()
+        },
+      }
+
+      const pending = PlanFollowup.ask({
+        sessionID: seeded.sessionID,
+        messages: seeded.messages,
+        abort: AbortSignal.any([]),
+      })
+
+      const item = await waitQuestion(seeded.sessionID)
+      expect(item).toBeDefined()
+      if (!item) return
+      await question.reply({
+        requestID: item.id,
+        answers: [[PlanFollowup.ANSWER_NEW_SESSION]],
+      })
+
+      // Poll until the plan text lands. Handover is still pending because
+      // deferred has not resolved yet.
+      for (let i = 0; i < 100; i++) {
+        if (followup) {
+          const msgs = await Session.messages({ sessionID: followup })
+          const user = msgs.find((m) => m.info.role === "user")
+          const part = user?.parts.find((p) => p.type === "text")
+          if (part?.type === "text" && part.text.includes("Implement the following plan:")) break
+        }
+        await Bun.sleep(10)
+      }
+
+      expect(followup).toBeDefined()
+      if (!followup) return
+      const initial = await Session.messages({ sessionID: followup })
+      const initialUser = initial.find((m) => m.info.role === "user")
+      const initialPart = initialUser?.parts.find((p) => p.type === "text")
+      expect(initialPart?.type).toBe("text")
+      if (initialPart?.type !== "text") return
+      expect(initialPart.text).toContain("Implement the following plan:")
+      expect(initialPart.text).toContain("1. Build")
+      // Handover is still deferred — must not be present yet.
+      expect(initialPart.text).not.toContain("## Handover from Planning Session")
+
+      deferred.resolve("## Discoveries\n\nexample")
+      await expect(pending).resolves.toBe("break")
+
+      // Same part ID updated in-place — handover section now present.
+      const final = await Session.messages({ sessionID: followup })
+      const finalUser = final.find((m) => m.info.role === "user")
+      const finalPart = finalUser?.parts.find((p) => p.type === "text")
+      if (finalPart?.type !== "text") return
+      expect(finalPart.id).toBe(initialPart.id)
+      expect(finalPart.text).toContain("Implement the following plan:")
+      expect(finalPart.text).toContain("## Handover from Planning Session")
+      expect(finalPart.text).toContain("example")
+    }))
+
   test("ask - returns break when assistant text is empty", () =>
     withInstance(async () => {
       const seeded = await seed({ text: "   " })
