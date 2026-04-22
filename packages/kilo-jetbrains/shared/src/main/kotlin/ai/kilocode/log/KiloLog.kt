@@ -15,6 +15,29 @@ import java.util.logging.Formatter
 import java.util.logging.Level
 import java.util.logging.LogRecord
 
+/**
+ * Logging interface for the Kilo JetBrains plugin.
+ *
+ * In normal (non-sandbox) mode, all output goes through IntelliJ's own [com.intellij.openapi.diagnostic.Logger],
+ * which writes to the standard IDE log file.
+ *
+ * In sandbox mode (i.e. when running via `./gradlew runIde`, detected via the `idea.plugin.in.sandbox.mode`
+ * system property), output is additionally written to a `kilo-dev.log` file inside the sandbox log directory.
+ * This makes it easy to tail frontend and backend logs side-by-side during development without opening the
+ * IDE's own log viewer.
+ *
+ * Usage:
+ * ```kotlin
+ * private val log = KiloLog.create(this::class.java)
+ *
+ * log.info("session started")
+ * log.debug { "expensive: ${computeSomething()}" }  // lambda is only evaluated when debug is enabled
+ * log.warn("unexpected state", exception)
+ * ```
+ *
+ * The log level for the sandbox file can be controlled via the `kilo.dev.log.level` system property
+ * (DEBUG, INFO, WARN, ERROR, OFF). Defaults to INFO.
+ */
 interface KiloLog {
     val isDebugEnabled: Boolean
     fun debug(block: () -> String)
@@ -50,17 +73,18 @@ internal class IntellijLog(cls: Class<*>) : KiloLog {
 }
 
 internal class FileLog(cls: Class<*>) : KiloLog {
-    private val logger: java.util.logging.Logger
-
-    init {
-        logger = java.util.logging.Logger.getLogger(cls.name)
-        logger.addHandler(handler)
-        logger.useParentHandlers = false
-        logger.level = level
-    }
+    private val name = cls.name
 
     companion object {
         private val level: Level by lazy { resolveLevel() }
+
+        private val root: java.util.logging.Logger by lazy {
+            val logger = java.util.logging.Logger.getLogger("ai.kilocode")
+            logger.addHandler(handler)
+            logger.useParentHandlers = false
+            logger.level = level
+            logger
+        }
 
         private val handler: FileHandler by lazy {
             val dir = resolveLogDir()
@@ -103,17 +127,17 @@ internal class FileLog(cls: Class<*>) : KiloLog {
     }
 
     override val isDebugEnabled: Boolean
-        get() = logger.isLoggable(Level.FINE)
+        get() = root.isLoggable(Level.FINE)
 
     override fun debug(block: () -> String) {
-        if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, block())
+        if (root.isLoggable(Level.FINE)) root.logp(Level.FINE, name, null, block())
     }
-    override fun info(msg: String) = logger.log(Level.INFO, msg)
+    override fun info(msg: String) = root.logp(Level.INFO, name, null, msg)
     override fun warn(msg: String, t: Throwable?) {
-        if (t != null) logger.log(Level.WARNING, msg, t) else logger.log(Level.WARNING, msg)
+        if (t != null) root.logp(Level.WARNING, name, null, msg, t) else root.logp(Level.WARNING, name, null, msg)
     }
     override fun error(msg: String, t: Throwable?) {
-        if (t != null) logger.log(Level.SEVERE, msg, t) else logger.log(Level.SEVERE, msg)
+        if (t != null) root.logp(Level.SEVERE, name, null, msg, t) else root.logp(Level.SEVERE, name, null, msg)
     }
 }
 
@@ -131,7 +155,7 @@ internal class KiloFormatter : Formatter() {
             Level.SEVERE -> "ERROR"
             else -> record.level.name
         }
-        val category = record.loggerName ?: "kilo.dev"
+        val category = record.sourceClassName ?: record.loggerName ?: "kilo.dev"
         val sb = StringBuilder()
         sb.append(fmt.format(time))
         sb.append(" [")
