@@ -38,6 +38,7 @@ import { useKV } from "../../context/kv"
 import { useTextareaKeybindings } from "../textarea-keybindings"
 import { DialogSkill } from "../dialog-skill"
 import { useArgs } from "@tui/context/args"
+import { Permission } from "@/permission"
 
 export type PromptProps = {
   sessionID?: string
@@ -619,7 +620,10 @@ export function Prompt(props: PromptProps) {
 
     let sessionID = props.sessionID
     if (sessionID == null) {
-      const res = await sdk.client.session.create({ workspace: props.workspaceID })
+      const res = await sdk.client.session.create({
+        workspace: props.workspaceID,
+        permission: args.yolo ? [{ permission: "*", pattern: "*", action: "allow" } satisfies Permission.Rule] : undefined,
+      })
 
       if (res.error) {
         console.log("Creating a session failed:", res.error)
