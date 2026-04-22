@@ -21,19 +21,19 @@ import type {
   VcsInfo,
 } from "@kilocode/sdk/v2"
 import { createStore, produce, reconcile } from "solid-js/store"
+import { useProject } from "@tui/context/project"
+import { useEvent } from "@tui/context/event"
 import { useSDK } from "@tui/context/sdk"
-import { Binary } from "@opencode-ai/util/binary"
+import { Binary } from "@opencode-ai/shared/util/binary"
 import { createSimpleContext } from "./helper"
 import type { Snapshot } from "@/snapshot"
 import { useExit } from "./exit"
 import { useArgs } from "./args"
-import { batch, onMount } from "solid-js"
+import { batch, createEffect, on } from "solid-js"
 import { handleSuggestionEvent } from "@/kilocode/suggestion/tui/sync" // kilocode_change
-import { Log } from "@/util/log"
 import { useToast } from "@tui/ui/toast" // kilocode_change
-import type { Path } from "@kilocode/sdk"
-import type { Workspace } from "@kilocode/sdk/v2"
-import { ConsoleState, emptyConsoleState, type ConsoleState as ConsoleStateType } from "@/config/console-state"
+import { Log } from "@/util"
+import { emptyConsoleState, type ConsoleState } from "@/config/console-state"
 
 export const { use: useSync, provider: SyncProvider } = createSimpleContext({
   name: "Sync",
@@ -43,7 +43,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
       provider: Provider[]
       provider_default: Record<string, string>
       provider_next: ProviderListResponse
-      console_state: ConsoleStateType
+      console_state: ConsoleState
       provider_auth: Record<string, ProviderAuthMethod[]>
       agent: Agent[]
       command: Command[]
@@ -87,8 +87,6 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
       }
       formatter: FormatterStatus[]
       vcs: VcsInfo | undefined
-      path: Path
-      workspaceList: Workspace[]
     }>({
       provider_next: {
         all: [],
@@ -120,20 +118,14 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
       mcp_resource: {},
       formatter: [],
       vcs: undefined,
-      path: { state: "", config: "", worktree: "", directory: "" },
-      workspaceList: [],
     })
 
+    const event = useEvent()
+    const project = useProject()
     const sdk = useSDK()
     const toast = useToast() // kilocode_change
 
     const fullSyncedSessions = new Set<string>() // kilocode_change
-
-    async function syncWorkspaces() {
-      const result = await sdk.client.experimental.workspace.list().catch(() => undefined)
-      if (!result?.data) return
-      setStore("workspaceList", reconcile(result.data))
-    }
 
     // kilocode_change start
     function evict(sessionID: string) {
@@ -167,11 +159,10 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
     }
     // kilocode_change end
 
-    sdk.event.listen((e) => {
-      const event = e.details
+    event.subscribe((event) => {
       switch (event.type) {
         case "server.instance.disposed":
-          bootstrap()
+          void bootstrap()
           break
         case "permission.replied": {
           const requests = store.permission[event.properties.sessionID]
@@ -460,7 +451,8 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
         }
 
         case "lsp.updated": {
-          sdk.client.lsp.status().then((x) => setStore("lsp", x.data!))
+          const workspace = project.workspace.current()
+          void sdk.client.lsp.status({ workspace }).then((x) => setStore("lsp", x.data ?? []))
           break
         }
 
@@ -485,30 +477,33 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
 
     async function bootstrap() {
       console.log("bootstrapping")
+      const workspace = project.workspace.current()
       const start = Date.now() - 30 * 24 * 60 * 60 * 1000
       const sessionListPromise = sdk.client.session
         .list({ start: start })
         .then((x) => (x.data ?? []).toSorted((a, b) => a.id.localeCompare(b.id)))
 
       // blocking - include session.list when continuing a session
-      const providersPromise = sdk.client.config.providers({}, { throwOnError: true })
-      const providerListPromise = sdk.client.provider.list({}, { throwOnError: true })
+      const providersPromise = sdk.client.config.providers({ workspace }, { throwOnError: true })
+      const providerListPromise = sdk.client.provider.list({ workspace }, { throwOnError: true })
       const consoleStatePromise = sdk.client.experimental.console
-        .get({}, { throwOnError: true })
-        .then((x) => ConsoleState.parse(x.data))
+        .get({ workspace }, { throwOnError: true })
+        .then((x) => x.data)
         .catch(() => emptyConsoleState)
-      const agentsPromise = sdk.client.app.agents({}, { throwOnError: true })
-      const configPromise = sdk.client.config.get({}, { throwOnError: true })
+      const agentsPromise = sdk.client.app.agents({ workspace }, { throwOnError: true })
+      const configPromise = sdk.client.config.get({ workspace }, { throwOnError: true })
+      const projectPromise = project.sync()
       const blockingRequests: Promise<unknown>[] = [
         providersPromise,
         providerListPromise,
         agentsPromise,
         configPromise,
+        projectPromise,
         ...(args.continue ? [sessionListPromise] : []),
       ]
 
       await Promise.all(blockingRequests)
-        .then(() => {
+        .then(async () => {
           const providersResponse = providersPromise.then((x) => x.data!)
           const providerListResponse = providerListPromise.then((x) => x.data!)
           const consoleStateResponse = consoleStatePromise
@@ -545,14 +540,16 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
         .then(() => {
           if (store.status !== "complete") setStore("status", "partial")
           // non-blocking
-          Promise.all([
+          void Promise.all([
             ...(args.continue ? [] : [sessionListPromise.then((sessions) => setStore("session", reconcile(sessions)))]),
             consoleStatePromise.then((consoleState) => setStore("console_state", reconcile(consoleState))),
-            sdk.client.command.list().then((x) => setStore("command", reconcile(x.data ?? []))),
-            sdk.client.lsp.status().then((x) => setStore("lsp", reconcile(x.data!))),
-            sdk.client.mcp.status().then((x) => setStore("mcp", reconcile(x.data!))),
-            sdk.client.experimental.resource.list().then((x) => setStore("mcp_resource", reconcile(x.data ?? {}))),
-            sdk.client.formatter.status().then((x) => setStore("formatter", reconcile(x.data!))), // kilocode_change
+            sdk.client.command.list({ workspace }).then((x) => setStore("command", reconcile(x.data ?? []))),
+            sdk.client.lsp.status({ workspace }).then((x) => setStore("lsp", reconcile(x.data ?? []))),
+            sdk.client.mcp.status({ workspace }).then((x) => setStore("mcp", reconcile(x.data ?? {}))),
+            sdk.client.experimental.resource
+              .list({ workspace })
+              .then((x) => setStore("mcp_resource", reconcile(x.data ?? {}))),
+            sdk.client.formatter.status({ workspace }).then((x) => setStore("formatter", reconcile(x.data!))), // kilocode_change
             // kilocode_change start
             sdk.client.network.list().then((x) => {
               const next: Record<string, SessionNetworkWait[]> = {}
@@ -563,13 +560,12 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
               setStore("network", reconcile(next))
             }),
             // kilocode_change end
-            sdk.client.session.status().then((x) => {
-              setStore("session_status", reconcile(x.data!))
+            sdk.client.session.status({ workspace }).then((x) => {
+              setStore("session_status", reconcile(x.data ?? {}))
             }),
-            sdk.client.provider.auth().then((x) => setStore("provider_auth", reconcile(x.data ?? {}))),
-            sdk.client.vcs.get().then((x) => setStore("vcs", reconcile(x.data))),
-            sdk.client.path.get().then((x) => setStore("path", reconcile(x.data!))),
-            syncWorkspaces(),
+            sdk.client.provider.auth({ workspace }).then((x) => setStore("provider_auth", reconcile(x.data ?? {}))),
+            sdk.client.vcs.get({ workspace }).then((x) => setStore("vcs", reconcile(x.data))),
+            project.workspace.sync(),
             // kilocode_change start - show config warnings as persistent toast
             sdk.client.config
               .warnings()
@@ -601,9 +597,15 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
         })
     }
 
-    onMount(() => {
-      bootstrap()
-    })
+    createEffect(
+      on(
+        () => project.workspace.current(),
+        () => {
+          fullSyncedSessions.clear()
+          void bootstrap()
+        },
+      ),
+    )
 
     const result = {
       data: store,
@@ -614,11 +616,21 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
       get ready() {
         return store.status !== "loading"
       },
+      get path() {
+        return project.instance.path()
+      },
       session: {
         get(sessionID: string) {
           const match = Binary.search(store.session, sessionID, (s) => s.id)
           if (match.found) return store.session[match.index]
           return undefined
+        },
+        async refresh() {
+          const start = Date.now() - 30 * 24 * 60 * 60 * 1000
+          const list = await sdk.client.session
+            .list({ start })
+            .then((x) => (x.data ?? []).toSorted((a, b) => a.id.localeCompare(b.id)))
+          setStore("session", reconcile(list))
         },
         status(sessionID: string) {
           const session = result.session.get(sessionID)
@@ -654,12 +666,6 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
           fullSyncedSessions.add(sessionID)
         },
         evict, // kilocode_change
-      },
-      workspace: {
-        get(workspaceID: string) {
-          return store.workspaceList.find((workspace) => workspace.id === workspaceID)
-        },
-        sync: syncWorkspaces,
       },
       bootstrap,
     }

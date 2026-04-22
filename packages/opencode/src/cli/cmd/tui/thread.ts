@@ -1,24 +1,23 @@
 import { cmd } from "@/cli/cmd/cmd"
 import { tui } from "./app"
-import { Rpc } from "@/util/rpc"
+import { Rpc } from "@/util"
 import { type rpc } from "./worker"
 import path from "path"
 import { text as streamText } from "node:stream/consumers"
 import { fileURLToPath } from "url"
 import { UI } from "@/cli/ui"
-import { Log } from "@/util/log"
+import { Log } from "@/util"
 import { errorMessage } from "@/util/error"
 import { withTimeout } from "@/util/timeout"
-import { withNetworkOptions, resolveNetworkOptions } from "@/cli/network"
-import { Filesystem } from "@/util/filesystem"
-import type { Event } from "@kilocode/sdk/v2"
-import { createKiloClient } from "@kilocode/sdk/v2" // kilocode_change
+import { withNetworkOptions, resolveNetworkOptionsNoConfig } from "@/cli/network"
+import { Filesystem } from "@/util"
+import type { GlobalEvent } from "@kilocode/sdk/v2"
 import type { EventSource } from "./context/sdk"
 import { win32DisableProcessedInput, win32InstallCtrlCGuard } from "./win32"
-import { TuiConfig } from "@/config/tui"
-import { Instance } from "@/project/instance"
 import { importCloudSession, validateCloudFork } from "@/kilocode/cloud-session" // kilocode_change
+import { createKiloClient } from "@kilocode/sdk/v2" // kilocode_change
 import { writeHeapSnapshot } from "v8"
+import { TuiConfig } from "./config/tui"
 
 declare global {
   const KILO_WORKER_PATH: string
@@ -46,18 +45,10 @@ function createWorkerFetch(client: RpcClient): typeof fetch {
 
 function createEventSource(client: RpcClient): EventSource {
   return {
-    subscribe: async (directory, handler) => {
-      const id = await client.call("subscribe", { directory })
-      const unsub = client.on<{ id: string; event: Event }>("event", (e) => {
-        if (e.id === id) {
-          handler(e.event)
-        }
+    subscribe: async (handler) => {
+      return client.on<GlobalEvent>("global.event", (e) => {
+        handler(e)
       })
-
-      return () => {
-        unsub()
-        client.call("unsubscribe", { id })
-      }
     },
   }
 }
@@ -164,12 +155,18 @@ export const TuiThreadCommand = cmd({
         ),
       })
       worker.onerror = (e) => {
-        Log.Default.error(e)
+        Log.Default.error("thread error", {
+          message: e.message,
+          filename: e.filename,
+          lineno: e.lineno,
+          colno: e.colno,
+          error: e.error,
+        })
       }
 
       const client = Rpc.client<typeof rpc>(worker)
       const error = (e: unknown) => {
-        Log.Default.error(e)
+        Log.Default.error("process error", { error: errorMessage(e) })
       }
       const reload = () => {
         client.call("reload", undefined).catch((err) => {
@@ -262,12 +259,9 @@ export const TuiThreadCommand = cmd({
       // kilocode_change end
 
       const prompt = await input(args.prompt)
-      const config = await Instance.provide({
-        directory: cwd,
-        fn: () => TuiConfig.get(),
-      })
+      const config = await TuiConfig.get()
 
-      const network = await resolveNetworkOptions(args)
+      const network = resolveNetworkOptionsNoConfig(args)
       const external =
         process.argv.includes("--port") ||
         process.argv.includes("--hostname") ||
@@ -342,3 +336,4 @@ export const TuiThreadCommand = cmd({
     process.exit(0)
   },
 })
+// scratch

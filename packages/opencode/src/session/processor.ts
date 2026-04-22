@@ -1,13 +1,12 @@
-import { Cause, Deferred, Effect, Layer, ServiceMap } from "effect"
+import { Cause, Deferred, Effect, Layer, Context, Scope } from "effect"
 import * as Stream from "effect/Stream"
 import { Agent } from "@/agent/agent"
 import { Bus } from "@/bus"
-import { Config } from "@/config/config"
+import { Config } from "@/config"
 import { Permission } from "@/permission"
 import { Plugin } from "@/plugin"
 import { Snapshot } from "@/snapshot"
-import { Log } from "@/util/log"
-import { Session } from "."
+import * as Session from "./session"
 import { LLM } from "./llm"
 import { MessageV2 } from "./message-v2"
 import { isOverflow } from "./overflow"
@@ -16,11 +15,12 @@ import type { SessionID } from "./schema"
 import { SessionRetry } from "./retry"
 import { SessionStatus } from "./status"
 import { SessionSummary } from "./summary"
-import type { Provider } from "@/provider/provider"
+import type { Provider } from "@/provider"
 import { Question } from "@/question"
 import { KiloSessionProcessor } from "@/kilocode/session/processor" // kilocode_change
 import { Suggestion } from "@/kilocode/suggestion" // kilocode_change
 import { errorMessage } from "@/util/error"
+import { Log } from "@/util"
 import { isRecord } from "@/util/record"
 
 export namespace SessionProcessor {
@@ -79,7 +79,7 @@ export namespace SessionProcessor {
 
   type StreamEvent = Event
 
-  export class Service extends ServiceMap.Service<Service, Interface>()("@opencode/SessionProcessor") {}
+  export class Service extends Context.Service<Service, Interface>()("@opencode/SessionProcessor") {}
 
   export const layer: Layer.Layer<
     Service,
@@ -92,6 +92,7 @@ export namespace SessionProcessor {
     | LLM.Service
     | Permission.Service
     | Plugin.Service
+    | SessionSummary.Service
     | SessionStatus.Service
   > = Layer.effect(
     Service,
@@ -104,6 +105,8 @@ export namespace SessionProcessor {
       const llm = yield* LLM.Service
       const permission = yield* Permission.Service
       const plugin = yield* Plugin.Service
+      const summary = yield* SessionSummary.Service
+      const scope = yield* Scope.Scope
       const status = yield* SessionStatus.Service
 
       const create = Effect.fn("SessionProcessor.create")(function* (input: Input) {
@@ -126,6 +129,7 @@ export namespace SessionProcessor {
         }
         let aborted = false
         const ac = new AbortController() // kilocode_change — abort controller for offline handler
+        const slog = log.clone().tag("sessionID", input.sessionID).tag("messageID", input.assistantMessage.id)
 
         const parse = (e: unknown) =>
           MessageV2.fromError(e, {
@@ -256,7 +260,8 @@ export namespace SessionProcessor {
 
             case "reasoning-end":
               if (!(value.id in ctx.reasoningMap)) return
-              ctx.reasoningMap[value.id].text = ctx.reasoningMap[value.id].text.trimEnd()
+              // oxlint-disable-next-line no-self-assign -- reactivity trigger
+              ctx.reasoningMap[value.id].text = ctx.reasoningMap[value.id].text
               ctx.reasoningMap[value.id].time = { ...ctx.reasoningMap[value.id].time, end: Date.now() }
               if (value.providerMetadata) ctx.reasoningMap[value.id].metadata = value.providerMetadata
               yield* session.updatePart(ctx.reasoningMap[value.id])
@@ -433,10 +438,12 @@ export namespace SessionProcessor {
                 }
                 ctx.snapshot = undefined
               }
-              SessionSummary.summarize({
-                sessionID: ctx.sessionID,
-                messageID: ctx.assistantMessage.parentID,
-              })
+              yield* summary
+                .summarize({
+                  sessionID: ctx.sessionID,
+                  messageID: ctx.assistantMessage.parentID,
+                })
+                .pipe(Effect.ignore, Effect.forkIn(scope))
               if (
                 !ctx.assistantMessage.summary &&
                 isOverflow({ cfg: yield* config.get(), tokens: usage.tokens, model: ctx.model })
@@ -474,7 +481,8 @@ export namespace SessionProcessor {
 
             case "text-end":
               if (!ctx.currentText) return
-              ctx.currentText.text = ctx.currentText.text.trimEnd()
+              // oxlint-disable-next-line no-self-assign -- reactivity trigger
+              ctx.currentText.text = ctx.currentText.text
               ctx.currentText.text = (yield* plugin.trigger(
                 "experimental.text.complete",
                 {
@@ -497,7 +505,7 @@ export namespace SessionProcessor {
               return
 
             default:
-              log.info("unhandled", { ...value })
+              slog.info("unhandled", { event: value.type, value })
               return
           }
         })
@@ -564,7 +572,7 @@ export namespace SessionProcessor {
         })
 
         const halt = Effect.fn("SessionProcessor.halt")(function* (e: unknown) {
-          log.error("process", { error: e, stack: e instanceof Error ? e.stack : undefined })
+          slog.error("process", { error: errorMessage(e), stack: e instanceof Error ? e.stack : undefined })
           const error = parse(e)
           if (MessageV2.ContextOverflowError.isInstance(error)) {
             ctx.needsCompaction = true
@@ -580,7 +588,7 @@ export namespace SessionProcessor {
         })
 
         const process = Effect.fn("SessionProcessor.process")(function* (streamInput: LLM.StreamInput) {
-          log.info("process")
+          slog.info("process")
           ctx.needsCompaction = false
           ctx.shouldBreak = (yield* config.get()).experimental?.continue_loop_on_deny !== true
 
@@ -648,19 +656,18 @@ export namespace SessionProcessor {
     }),
   )
 
-  export const defaultLayer = Layer.unwrap(
-    Effect.sync(() =>
-      layer.pipe(
-        Layer.provide(Session.defaultLayer),
-        Layer.provide(Snapshot.defaultLayer),
-        Layer.provide(Agent.defaultLayer),
-        Layer.provide(LLM.defaultLayer),
-        Layer.provide(Permission.defaultLayer),
-        Layer.provide(Plugin.defaultLayer),
-        Layer.provide(SessionStatus.layer.pipe(Layer.provide(Bus.layer))),
-        Layer.provide(Bus.layer),
-        Layer.provide(Config.defaultLayer),
-      ),
+  export const defaultLayer = Layer.suspend(() =>
+    layer.pipe(
+      Layer.provide(Session.defaultLayer),
+      Layer.provide(Snapshot.defaultLayer),
+      Layer.provide(Agent.defaultLayer),
+      Layer.provide(LLM.defaultLayer),
+      Layer.provide(Permission.defaultLayer),
+      Layer.provide(Plugin.defaultLayer),
+      Layer.provide(SessionSummary.defaultLayer),
+      Layer.provide(SessionStatus.defaultLayer),
+      Layer.provide(Bus.layer),
+      Layer.provide(Config.defaultLayer),
     ),
   )
 }
