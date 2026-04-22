@@ -7,6 +7,9 @@ import markedKatex from "marked-katex-extension"
 // This import was re-added by an upstream merge; removing it restores the
 // two-pass rendering design.
 import katex from "katex"
+// kilocode_change start: import to override single-dollar inline math
+import type { MarkedExtension, TokenizerAndRendererExtension } from "marked"
+// kilocode_change end
 import { bundledLanguages, type BundledLanguage } from "shiki"
 import { parseFilePath } from "../file-path" // kilocode_change
 import { createSimpleContext } from "./helper"
@@ -398,18 +401,9 @@ function renderMathInText(text: string): string {
     }
   })
 
-  // Inline math: $...$
-  const inlineMathRegex = /(?<!\$)\$(?!\$)((?:[^$\\]|\\.)+?)\$(?!\$)/g
-  result = result.replace(inlineMathRegex, (_, math) => {
-    try {
-      return katex.renderToString(math, {
-        displayMode: false,
-        throwOnError: false,
-      })
-    } catch {
-      return `$${math}$`
-    }
-  })
+  // kilocode_change: removed single-dollar inline math ($...$) rendering.
+  // Single $ is far more common as a currency symbol in agent responses
+  // (e.g. $93K, $307K) than as a LaTeX delimiter. Only $$...$$ is supported.
 
   return result
 }
@@ -675,6 +669,27 @@ export const { use: useMarked, provider: MarkedProvider } = createSimpleContext(
         throwOnError: false,
         nonStandard: true,
       }),
+      // kilocode_change start: disable single-dollar inline math ($...$).
+      // Single $ is far more common as a currency symbol in agent responses
+      // (e.g. $93K, $307K) than as a LaTeX delimiter. The inlineKatex
+      // extension from marked-katex-extension matches $...$ which garbles
+      // dollar amounts. We override it to never match, preserving only
+      // $$...$$ block/display math.
+      {
+        extensions: [
+          {
+            name: "inlineKatex",
+            level: "inline" as const,
+            start() {
+              return undefined
+            },
+            tokenizer() {
+              return undefined
+            },
+          } satisfies TokenizerAndRendererExtension,
+        ],
+      } satisfies MarkedExtension,
+      // kilocode_change end
       // kilocode_change: markedShiki removed — the custom `code` renderer
       // above returns plain <pre><code data-lang="..."> and markdown.tsx
       // calls deferredHighlight() after paint. Running Shiki inside parse
