@@ -38,7 +38,7 @@ import { useKV } from "../../context/kv"
 import { useTextareaKeybindings } from "../textarea-keybindings"
 import { DialogSkill } from "../dialog-skill"
 import { useArgs } from "@tui/context/args"
-import { TuiYolo } from "@/kilocode/cli/cmd/tui/yolo"
+import { TuiYolo } from "@/kilocode/cli/cmd/tui/yolo" // kilocode_change
 
 export type PromptProps = {
   sessionID?: string
