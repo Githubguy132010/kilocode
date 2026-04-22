@@ -3,8 +3,10 @@ import { Telemetry } from "@kilocode/kilo-telemetry"
 import { SessionNetwork } from "@/session/network"
 import type { SessionID } from "@/session/schema"
 import type { SessionStatus } from "@/session/status"
-import { Log } from "@/util/log"
+import type { MessageV2 } from "@/session/message-v2"
+import { Log } from "@/util"
 import { Effect } from "effect"
+import { Flag } from "@/flag/flag"
 
 export namespace KiloSessionProcessor {
   const log = Log.create({ service: "session.processor.kilo" })
@@ -84,5 +86,40 @@ export namespace KiloSessionProcessor {
           }),
       )
     })
+  }
+
+  /**
+   * Returns the Kilo-specific retry policy options (limit + offline handler).
+   * Designed to be spread into SessionRetry.policy() opts.
+   *
+   * The `abort` signal is used by the offline handler to cancel the network
+   * reconnection wait when the session is interrupted.
+   */
+  export function retryOpts(input: {
+    sessionID: SessionID
+    abort: AbortSignal
+    set: (sessionID: SessionID, status: SessionStatus.Info) => Effect.Effect<void>
+  }) {
+    return {
+      limit: Flag.KILO_SESSION_RETRY_LIMIT,
+      offline: (info: { error: unknown; message: string }) =>
+        handleOffline({
+          error: info.error,
+          sessionID: input.sessionID,
+          abort: input.abort,
+          set: input.set,
+        }),
+    }
+  }
+
+  /**
+   * Guard: if finish reason is "tool-calls" but no tool parts exist,
+   * downgrade to "stop" to prevent an infinite loop (#7756).
+   */
+  export function guardEmptyToolCalls(msg: MessageV2.Assistant, parts: MessageV2.Part[]) {
+    if (msg.finish === "tool-calls" && !parts.some((p) => p.type === "tool")) {
+      log.warn("empty tool-calls", { messageID: msg.id })
+      msg.finish = "stop"
+    }
   }
 }

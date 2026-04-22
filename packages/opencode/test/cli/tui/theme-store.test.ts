@@ -1,4 +1,7 @@
 import { expect, test } from "bun:test"
+import { Log } from "../../../src/util"
+
+Log.init({ print: false })
 
 const { DEFAULT_THEMES, allThemes, addTheme, hasTheme, resolveTheme } = await import(
   "../../../src/cli/cmd/tui/context/theme"
@@ -41,7 +44,7 @@ test("hasTheme checks theme presence", () => {
 test("resolveTheme rejects circular color refs", () => {
   const item = structuredClone(DEFAULT_THEMES.opencode)
   item.defs = {
-    ...(item.defs ?? {}),
+    ...item.defs,
     one: "two",
     two: "one",
   }

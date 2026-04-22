@@ -24,7 +24,7 @@ function rewrite(request: Request, directory?: string) {
     url.searchParams.set("directory", value)
   }
 
-  const next = new Request(url.href, request)
+  const next = new Request(url.href, request) // kilocode_change
   next.headers.delete("x-kilo-directory")
   return next
 }

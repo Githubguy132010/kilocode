@@ -2,15 +2,18 @@
 import path from "path"
 import fs from "fs/promises"
 import { StringDecoder } from "string_decoder"
+import { Cause, Exit } from "effect"
 import { SessionID, PartID } from "@/session/schema"
 import { MessageV2 } from "@/session/message-v2"
 import { Session } from "@/session"
 import { Flag } from "@/flag/flag"
 import { PlanFollowup } from "@/kilocode/plan-followup"
+import { KiloSession } from "@/kilocode/session"
 import { environmentDetails, type EditorContext } from "@/kilocode/editor-context"
 import { Identifier } from "@/id/id"
-import { Filesystem } from "@/util/filesystem"
+import { Filesystem } from "@/util"
 import PROMPT_PLAN from "@/session/prompt/plan.txt"
+import CODE_SWITCH from "@/session/prompt/code-switch.txt"
 
 export namespace KiloSessionPrompt {
   /**
@@ -45,6 +48,10 @@ export namespace KiloSessionPrompt {
       abort: input.abort,
     })
     return action === "continue" ? "continue" : "break"
+  }
+
+  export function abortPlanFollowup(sessionID: SessionID) {
+    return PlanFollowup.abort(sessionID)
   }
 
   /**
@@ -135,22 +142,60 @@ export namespace KiloSessionPrompt {
   }
 
   /**
-   * End-of-loop handler: returns the most recent assistant message from the stream,
-   * resolves any queued callbacks, and handles abort.
+   * Returns the CODE_SWITCH prompt text (plan-to-code transition).
+   * Used when switching from plan agent to code agent.
    */
-  export async function resolveFinishedMessages(input: {
-    sessionID: SessionID
-    callbacks: { resolve(input: MessageV2.WithParts): void; reject(reason?: any): void }[]
-    abort: AbortSignal
-  }): Promise<MessageV2.WithParts> {
-    for await (const item of MessageV2.stream(input.sessionID)) {
-      if (item.info.role === "user") continue
-      for (const q of input.callbacks) {
-        q.resolve(item)
-      }
-      return item
+  export const CODE_SWITCH_TEXT = CODE_SWITCH
+
+  /**
+   * Determines the close reason for a session turn.
+   * Checks for an explicit reason first (e.g. set on error during runLoop),
+   * then falls back to inspecting the Effect exit value.
+   */
+  export function resolveCloseReason(input: {
+    sessionID: string
+    closeReasons: Map<string, KiloSession.CloseReason>
+    exit: Exit.Exit<any, any>
+  }): KiloSession.CloseReason {
+    const explicit = input.closeReasons.get(input.sessionID)
+    input.closeReasons.delete(input.sessionID)
+    if (explicit) return explicit
+    if (Exit.isFailure(input.exit)) {
+      return Cause.hasInterruptsOnly(input.exit.cause) ? "interrupted" : "error"
     }
-    if (input.abort.aborted) input.abort.throwIfAborted()
-    throw new Error("Impossible")
+    return "completed"
+  }
+
+  /**
+   * Maximum number of compactions attempted within a single turn before we
+   * surface an exhaustion error. Three is enough to cover a normal overflow
+   * compaction plus a summary-self-overflow retry without spinning forever.
+   */
+  export const MAX_COMPACTION_ATTEMPTS = 3
+
+  /**
+   * Guards a compaction attempt. When the attempt count has already reached
+   * `MAX_COMPACTION_ATTEMPTS`, marks the close reason as `"error"`, attaches a
+   * `ContextOverflowError` to the assistant message (if provided), and returns
+   * `{ exhausted: true }` so callers can break out of the loop. Otherwise
+   * returns `{ exhausted: false }`.
+   */
+  export function guardCompactionAttempt(input: {
+    sessionID: string
+    attempts: number
+    closeReasons: Map<string, KiloSession.CloseReason>
+    message?: MessageV2.Assistant
+  }) {
+    if (input.attempts < MAX_COMPACTION_ATTEMPTS) return { exhausted: false as const }
+    const error = new MessageV2.ContextOverflowError({
+      message: `Compaction exhausted: context still exceeds model limits after ${MAX_COMPACTION_ATTEMPTS} attempts`,
+    }).toObject()
+    input.closeReasons.set(input.sessionID, "error")
+    if (input.message) {
+      // Preserve any pre-existing error/finish the caller already set; only fill in blanks.
+      input.message.error ??= error
+      input.message.finish ??= "error"
+    }
+    return { exhausted: true as const, error }
   }
 }

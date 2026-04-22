@@ -1,4 +1,4 @@
-import type { NamedError } from "@opencode-ai/util/error"
+import type { NamedError } from "@opencode-ai/shared/util/error"
 import { Cause, Clock, Duration, Effect, Schedule } from "effect"
 import { MessageV2 } from "./message-v2"
 import { isKiloError } from "@/kilocode/kilo-errors" // kilocode_change
@@ -7,6 +7,10 @@ import { iife } from "@/util/iife"
 
 export namespace SessionRetry {
   export type Err = ReturnType<NamedError["toObject"]>
+
+  // This exported message is shared with the TUI upsell detector. Matching on a
+  // literal error string kind of sucks, but it is the simplest for now.
+  export const GO_UPSELL_MESSAGE = "Free usage exceeded, subscribe to Go https://opencode.ai/go"
 
   export const RETRY_INITIAL_DELAY = 2000
   export const RETRY_BACKOFF_FACTOR = 2
@@ -54,16 +58,34 @@ export namespace SessionRetry {
     // context overflow errors should not be retried
     if (MessageV2.ContextOverflowError.isInstance(error)) return undefined
     if (MessageV2.APIError.isInstance(error)) {
+      const status = error.data.statusCode
       // kilocode_change start - Current Kilo errors require user action (login/signup), don't retry
       if (isKiloError(error)) return undefined
       // kilocode_change end
-      if (!error.data.isRetryable) return undefined
+
+      // 5xx errors are transient server failures and should always be retried,
+      // even when the provider SDK doesn't explicitly mark them as retryable.
+      if (!error.data.isRetryable && !(status !== undefined && status >= 500)) return undefined
+
       // kilocode_change start - FreeUsageLimitError is not retryable: retrying the same
       // capped model is futile and the backoff loop cannot be broken by switching
       // models in the chat selector (the retry loop holds a stale model ref).
       if (error.data.responseBody?.includes("FreeUsageLimitError")) return undefined
       // kilocode_change end
       return error.data.message.includes("Overloaded") ? "Provider is overloaded" : error.data.message
+    }
+
+    // Check for rate limit patterns in plain text error messages
+    const msg = error.data?.message
+    if (typeof msg === "string") {
+      const lower = msg.toLowerCase()
+      if (
+        lower.includes("rate increased too quickly") ||
+        lower.includes("rate limit") ||
+        lower.includes("too many requests")
+      ) {
+        return msg
+      }
     }
 
     const json = iife(() => {

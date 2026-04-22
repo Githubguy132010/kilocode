@@ -2,11 +2,12 @@ import yargs from "yargs"
 import { hideBin } from "yargs/helpers"
 import { RunCommand } from "./cli/cmd/run"
 import { GenerateCommand } from "./cli/cmd/generate"
-import { Log } from "./util/log"
+import { Log } from "./util"
 // kilocode_change start
 // import { LoginCommand, LogoutCommand, SwitchCommand, OrgsCommand } from "./cli/cmd/account"
 // import { ConsoleCommand } from "./cli/cmd/account"
 // kilocode_change end
+import { ConsoleCommand } from "./cli/cmd/account"
 import { ProvidersCommand } from "./cli/cmd/providers"
 import { AgentCommand } from "./cli/cmd/agent"
 import { UpgradeCommand } from "./cli/cmd/upgrade"
@@ -14,10 +15,11 @@ import { UninstallCommand } from "./cli/cmd/uninstall"
 import { ModelsCommand } from "./cli/cmd/models"
 import { UI } from "./cli/ui"
 import { Installation } from "./installation"
-import { NamedError } from "@opencode-ai/util/error"
+import { InstallationVersion } from "./installation/version"
+import { NamedError } from "@opencode-ai/shared/util/error"
 import { FormatError } from "./cli/error"
 import { ServeCommand } from "./cli/cmd/serve"
-import { Filesystem } from "./util/filesystem"
+import { Filesystem } from "./util"
 import { ConfigCommand as ConfigCLICommand } from "./cli/cmd/config" // kilocode_change
 import { DebugCommand } from "./cli/cmd/debug"
 import { StatsCommand } from "./cli/cmd/stats"
@@ -49,19 +51,21 @@ if (!process.env[ENV_FEATURE]) {
 
 // kilocode_change - set version so kilo-gateway can include it in the editor name header
 if (!process.env[ENV_VERSION]) {
-  process.env[ENV_VERSION] = Installation.VERSION
+  process.env[ENV_VERSION] = InstallationVersion
 }
-import { Config } from "./config/config"
+import { Config } from "./config"
 import { Auth } from "./auth"
 // kilocode_change end
 import { DbCommand } from "./cli/cmd/db"
 import path from "path"
 import { Global } from "./global"
 import { createHelpCommand } from "./kilocode/help-command" // kilocode_change
-import { JsonMigration } from "./storage/json-migration"
-import { Database } from "./storage/db"
+import { JsonMigration } from "./storage"
+import { Database } from "./storage"
 import { errorMessage } from "./util/error"
 import { PluginCommand } from "./cli/cmd/plug"
+import { Heap } from "./cli/heap"
+import { drizzle } from "drizzle-orm/bun-sqlite"
 
 process.on("unhandledRejection", (e) => {
   Log.Default.error("rejection", {
@@ -75,13 +79,25 @@ process.on("uncaughtException", (e) => {
   })
 })
 
-let cli = yargs(hideBin(process.argv)) // kilocode_change
+const args = hideBin(process.argv)
+
+function show(out: string) {
+  const text = out.trimStart()
+  if (!text.startsWith("opencode ")) {
+    process.stderr.write(UI.logo() + EOL + EOL)
+    process.stderr.write(text)
+    return
+  }
+  process.stderr.write(out)
+}
+
+let cli = yargs(args) // kilocode_change
   .parserConfiguration({ "populate--": true })
   .scriptName("kilo") // kilocode_change
   .wrap(100)
   .help("help", "show help")
   .alias("help", "h")
-  .version("version", "show version number", Installation.VERSION)
+  .version("version", "show version number", InstallationVersion)
   .alias("version", "v")
   .option("print-logs", {
     describe: "print logs to stderr",
@@ -111,12 +127,14 @@ let cli = yargs(hideBin(process.argv)) // kilocode_change
       })(),
     })
 
+    Heap.start()
+
     process.env.AGENT = "1"
-    process.env.KILO = "1"
+    process.env.OPENCODE = "1"
     process.env.KILO_PID = String(process.pid)
 
     Log.Default.info("opencode", {
-      version: Installation.VERSION,
+      version: InstallationVersion,
       args: process.argv.slice(2),
     })
 
@@ -124,7 +142,7 @@ let cli = yargs(hideBin(process.argv)) // kilocode_change
     const globalCfg = await Config.getGlobal()
     await Telemetry.init({
       dataPath: Global.Path.data,
-      version: Installation.VERSION,
+      version: InstallationVersion,
       enabled: globalCfg.experimental?.openTelemetry !== false,
     })
 
@@ -155,7 +173,7 @@ let cli = yargs(hideBin(process.argv)) // kilocode_change
       let last = -1
       if (tty) process.stderr.write("\x1b[?25l")
       try {
-        await JsonMigration.run(Database.Client().$client, {
+        await JsonMigration.run(drizzle({ client: Database.Client().$client }), {
           progress: (event) => {
             const percent = Math.floor((event.current / event.total) * 100)
             if (percent === last && event.current !== event.total) return
@@ -181,7 +199,7 @@ let cli = yargs(hideBin(process.argv)) // kilocode_change
       process.stderr.write("Database migration complete." + EOL)
     }
   })
-  .usage("\n" + UI.logo())
+  .usage("")
   .completion("completion", "generate shell completion script")
   .command(AcpCommand)
   .command(McpCommand)
@@ -227,7 +245,7 @@ cli = cli
       msg?.startsWith("Invalid values:")
     ) {
       if (err) throw err
-      cli.showHelp("log")
+      cli.showHelp(show)
     }
     if (err) throw err
     process.exit(1)
@@ -235,7 +253,15 @@ cli = cli
   .strict()
 
 try {
-  await cli.parse()
+  if (args.includes("-h") || args.includes("--help")) {
+    await cli.parse(args, (err: Error | undefined, _argv: unknown, out: string) => {
+      if (err) throw err
+      if (!out) return
+      show(out)
+    })
+  } else {
+    await cli.parse()
+  }
 } catch (e) {
   let data: Record<string, any> = {}
   if (e instanceof NamedError) {
