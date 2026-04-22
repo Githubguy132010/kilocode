@@ -154,9 +154,10 @@ export function Session() {
   const nonBlockingQuestions = createMemo(() => questions().filter((q) => q.blocking === false))
   const question = createMemo(() => blockingQuestions()[0] ?? nonBlockingQuestions()[0])
   const blockingSuggestions = createMemo(() => suggestions().filter((s) => s.blocking !== false))
-  // Footer overlay only hosts blocking suggestions now; non-blocking ones
-  // render inline at the tool-part slot via `SuggestBar`.
+  // kilocode_change start - footer overlay only hosts blocking suggestions now;
+  // non-blocking ones render inline at the tool-part slot via `SuggestBar`.
   const blockingSuggestion = createMemo(() => blockingSuggestions()[0])
+  // kilocode_change end
   const visible = createMemo(
     () =>
       !session()?.parentID &&
