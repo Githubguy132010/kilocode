@@ -38,6 +38,7 @@ import { useKV } from "../../context/kv"
 import { useTextareaKeybindings } from "../textarea-keybindings"
 import { DialogSkill } from "../dialog-skill"
 import { useArgs } from "@tui/context/args"
+import { TuiYolo } from "@/kilocode/cli/cmd/tui/yolo"
 
 export type PromptProps = {
   sessionID?: string
@@ -617,8 +618,8 @@ export function Prompt(props: PromptProps) {
       return
     }
 
-    let sessionID = props.sessionID
     // kilocode_change start
+    let sessionID = props.sessionID
     if (sessionID == null) {
       const res = await sdk.client.session.create({ workspace: props.workspaceID })
 
@@ -634,6 +635,9 @@ export function Prompt(props: PromptProps) {
       }
 
       sessionID = res.data.id
+      if (args.yolo && !args.sessionID && !args.continue && TuiYolo.consume()) {
+        TuiYolo.set(sessionID, true)
+      }
     }
     // kilocode_change end
 
