@@ -1,4 +1,4 @@
-import { createSignal, onCleanup, onMount } from "solid-js"
+import { createSignal, onCleanup } from "solid-js"
 import type { Accessor } from "solid-js"
 import type { SlashCommandInfo, WebviewMessage, ExtensionMessage } from "../types/messages"
 
@@ -41,6 +41,7 @@ export function useSlashCommand(vscode: VSCodeContext, exclude?: Set<string>): S
   const [query, setQuery] = createSignal<string | null>(null)
   const [index, setIndex] = createSignal(0)
   const [slashStart, setSlashStart] = createSignal(0)
+  const [requested, setRequested] = createSignal(false)
 
   const all: SlashCommandEntry[] = [
     {
@@ -100,6 +101,14 @@ export function useSlashCommand(vscode: VSCodeContext, exclude?: Set<string>): S
         vscode.postMessage({ type: "openSettingsPanel" })
       },
     },
+    {
+      name: "remote",
+      description: "Toggle remote control",
+      hints: [],
+      action: () => {
+        vscode.postMessage({ type: "toggleRemote" })
+      },
+    },
   ]
 
   const client = exclude ? all.filter((c) => !exclude.has(c.name)) : all
@@ -111,6 +120,12 @@ export function useSlashCommand(vscode: VSCodeContext, exclude?: Set<string>): S
   }
 
   const show = () => query() !== null
+
+  const request = () => {
+    if (requested()) return
+    setRequested(true)
+    vscode.postMessage({ type: "requestCommands" })
+  }
 
   const results = () => {
     const q = query()
@@ -131,10 +146,6 @@ export function useSlashCommand(vscode: VSCodeContext, exclude?: Set<string>): S
     setServer(message.commands)
   })
 
-  onMount(() => {
-    vscode.postMessage({ type: "requestCommands" })
-  })
-
   onCleanup(() => {
     unsubscribe()
   })
@@ -148,6 +159,7 @@ export function useSlashCommand(vscode: VSCodeContext, exclude?: Set<string>): S
     const match = before.match(SLASH_PATTERN)
     if (match) {
       setSlashStart(match.index! + match[1].length)
+      request()
       setQuery(match[2])
       setIndex(0)
     } else {
