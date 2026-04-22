@@ -38,7 +38,6 @@ import { useKV } from "../../context/kv"
 import { useTextareaKeybindings } from "../textarea-keybindings"
 import { DialogSkill } from "../dialog-skill"
 import { useArgs } from "@tui/context/args"
-import { Permission } from "@/permission" // kilocode_change
 
 export type PromptProps = {
   sessionID?: string
@@ -619,13 +618,9 @@ export function Prompt(props: PromptProps) {
     }
 
     let sessionID = props.sessionID
+    // kilocode_change start
     if (sessionID == null) {
-      // kilocode_change start
-      const res = await sdk.client.session.create({
-        workspace: props.workspaceID,
-        permission: args.yolo ? [{ permission: "*", pattern: "*", action: "allow" } satisfies Permission.Rule] : undefined,
-      })
-      // kilocode_change end
+      const res = await sdk.client.session.create({ workspace: props.workspaceID })
 
       if (res.error) {
         console.log("Creating a session failed:", res.error)
@@ -640,6 +635,7 @@ export function Prompt(props: PromptProps) {
 
       sessionID = res.data.id
     }
+    // kilocode_change end
 
     const messageID = MessageID.ascending()
     let inputText = store.prompt.input
