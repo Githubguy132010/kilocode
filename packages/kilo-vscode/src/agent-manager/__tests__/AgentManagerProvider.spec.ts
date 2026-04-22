@@ -107,6 +107,8 @@ function createHarness() {
   const manager = Object.create(AgentManagerProvider.prototype) as {
     host: Host
     panel: { sessions: { registerSession: ReturnType<typeof vi.fn> } } | undefined
+    prBridge: { handleMessage: ReturnType<typeof vi.fn> }
+    activeSessionId: string | undefined
     stateReady: Promise<void> | undefined
     createWorktreeOnDisk: ReturnType<typeof vi.fn>
     runSetupScriptForWorktree: ReturnType<typeof vi.fn>
@@ -118,6 +120,7 @@ function createHarness() {
     log: ReturnType<typeof vi.fn>
     onCreateWorktree: () => Promise<null>
     onCreateMultiVersion: (msg: Record<string, unknown>) => Promise<null>
+    onMessage: (msg: Record<string, unknown>) => Promise<Record<string, unknown> | null>
   }
 
   manager.host = host
@@ -126,6 +129,8 @@ function createHarness() {
       registerSession: vi.fn(),
     },
   }
+  manager.prBridge = { handleMessage: vi.fn().mockReturnValue(false) }
+  manager.activeSessionId = undefined
   manager.stateReady = Promise.resolve()
   manager.createWorktreeOnDisk = vi.fn()
   manager.runSetupScriptForWorktree = vi.fn().mockResolvedValue(undefined)
@@ -157,6 +162,25 @@ describe("AgentManagerProvider worktree creation", () => {
 
     expect(state.addSession).toHaveBeenCalledWith("session-1", "wt-1")
     expect(manager.panel!.sessions.registerSession).toHaveBeenCalledWith(session)
+  })
+
+  // Regression for #8983: notifyWorktreeReady must push agentManager.state before
+  // registerSession posts sessionCreated. Reverse order makes the webview route the
+  // new worktree session into the Local tab.
+  it("pushes worktree state before registering the session", async () => {
+    const manager = createHarness()
+    manager.createWorktreeOnDisk.mockResolvedValue({
+      worktree: { id: "wt-1" },
+      result: { path: "/repo/.kilo/worktrees/wt-1", branch: "feature/wt-1", parentBranch: "main" },
+    })
+    manager.createSessionInWorktree.mockResolvedValue({ id: "session-1" })
+    manager.getStateManager.mockReturnValue({ addSession: vi.fn() })
+
+    await manager.onCreateWorktree()
+
+    const notify = manager.notifyWorktreeReady.mock.invocationCallOrder[0]!
+    const register = manager.panel!.sessions.registerSession.mock.invocationCallOrder[0]!
+    expect(notify).toBeLessThan(register)
   })
 
   it("waits for state initialization before creating a worktree", async () => {
@@ -204,5 +228,14 @@ describe("AgentManagerProvider worktree creation", () => {
         prompt: "Fix login flow",
       }),
     )
+  })
+
+  it("routes file search through the active worktree session", async () => {
+    const manager = createHarness()
+    manager.activeSessionId = "session-wt"
+
+    const result = await manager.onMessage({ type: "requestFileSearch", query: "src", requestId: "r1" })
+
+    expect(result).toEqual({ type: "requestFileSearch", query: "src", requestId: "r1", sessionID: "session-wt" })
   })
 })
