@@ -1,3 +1,8 @@
+---
+title: "File Encoding"
+description: "How Kilo detects and preserves file encodings when reading and editing files"
+---
+
 # File Encoding Preservation
 
 Kilo detects the text encoding of files before reading or editing them, so non-UTF-8 files are displayed correctly to the model and written back in their original encoding.
@@ -13,7 +18,7 @@ Previously every tool assumed UTF-8. Reading a Shift_JIS or Windows-1251 file wo
 5. On write, [iconv-lite](https://github.com/ashtuchkin/iconv-lite) re-encodes to the original encoding and restores the BOM if one was present.
 6. New files are created as UTF-8 without BOM. Detection only applies when reading or overwriting an existing file.
 
-Binary detection now consults the detected encoding first, so UTF-16 files (which contain null bytes) and CJK-encoded files are no longer incorrectly rejected as binary.
+The binary-file heuristic also skips UTF-16 BOM files, so files containing legitimate null bytes are no longer rejected as binary.
 
 ## Supported Encodings
 
