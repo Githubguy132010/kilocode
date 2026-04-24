@@ -12,7 +12,7 @@ import { Log } from "@/util"
 import { FileWatcher } from "@/file/watcher"
 import { KiloSessions } from "@/kilo-sessions/kilo-sessions" // kilocode_change
 import * as Effect from "effect/Effect"
-import { ToolRegistry } from "../tool/registry" // kilocode_change — warm up tool registry on bootstrap
+import * as ToolRegistry from "../tool/registry" // kilocode_change — warm up tool registry on bootstrap
 import { Config } from "@/config"
 
 export const InstanceBootstrap = Effect.gen(function* () {
