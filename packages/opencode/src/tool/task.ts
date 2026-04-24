@@ -9,7 +9,7 @@ import type { SessionPrompt } from "../session/prompt"
 import { Config } from "../config"
 import { Effect } from "effect"
 import { KiloTask } from "../kilocode/tool/task" // kilocode_change
-import { Provider } from "../provider/provider" // kilocode_change — needed for variant validation
+import { Provider } from "../provider" // kilocode_change — needed for variant validation
 
 export interface TaskPromptOps {
   cancel(sessionID: SessionID): void
