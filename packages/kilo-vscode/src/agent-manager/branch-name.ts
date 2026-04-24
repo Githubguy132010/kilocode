@@ -5,6 +5,38 @@ const MAX_ATTEMPTS = 10
 const FALLBACK_MAX_SUFFIX = 100
 const AUTO_PREFIX = "kilo-worktree"
 
+function hasCollision(name: string, existing: Set<string>) {
+  const lower = name.toLowerCase()
+  if (existing.has(lower)) return true
+  for (const item of existing) {
+    if (item.startsWith(`${lower}/`)) return true
+    if (lower.startsWith(`${item}/`)) return true
+  }
+  return false
+}
+
+function flatten(name: string, existing: Set<string>) {
+  const lower = name.toLowerCase()
+  const block = [...existing]
+    .filter((item) => lower.startsWith(`${item}/`))
+    .sort((a, b) => b.length - a.length)[0]
+  if (!block) return name
+  return flatten(name.replace(`${block}/`, `${block}-`), existing)
+}
+
+export function resolveBranchName(name: string, existingBranches: string[] = []): string {
+  const existing = new Set(existingBranches.map((item) => item.toLowerCase()))
+  const base = flatten(name, existing)
+  if (!hasCollision(base, existing)) return base
+
+  for (let n = 2; n < FALLBACK_MAX_SUFFIX + 2; n++) {
+    const candidate = `${base}-${n}`
+    if (!hasCollision(candidate, existing)) return candidate
+  }
+
+  return `${base}-${Date.now()}`
+}
+
 /**
  * Sanitize a string into a valid git branch name.
  * Keeps lowercase alphanumeric chars, hyphens, and forward slashes (namespace
@@ -29,7 +61,6 @@ export function sanitizeBranchName(name: string, maxLength = 50): string {
 export function generateBranchName(prompt?: string, existingBranches: string[] = []): string {
   const predicates = friendlyWords.predicates as string[]
   const objects = friendlyWords.objects as string[]
-  const existing = new Set(existingBranches.map((b) => b.toLowerCase()))
 
   const random = () => {
     const predicate = predicates[Math.floor(Math.random() * predicates.length)]
@@ -37,26 +68,15 @@ export function generateBranchName(prompt?: string, existingBranches: string[] =
     return `${AUTO_PREFIX}/${predicate}-${object}`
   }
 
-  const unique = (base: string) => {
-    if (!existing.has(base.toLowerCase())) return base
-
-    for (let n = 2; n < FALLBACK_MAX_SUFFIX + 2; n++) {
-      const candidate = `${base}-${n}`
-      if (!existing.has(candidate.toLowerCase())) return candidate
-    }
-
-    return `${base}-${Date.now()}`
-  }
-
   const slug = prompt ? sanitizeBranchName(prompt) : ""
-  if (slug) return unique(`${AUTO_PREFIX}/${slug}`)
+  if (slug) return resolveBranchName(`${AUTO_PREFIX}/${slug}`, existingBranches)
 
   for (let i = 0; i < MAX_ATTEMPTS; i++) {
     const candidate = random()
-    if (!existing.has(candidate.toLowerCase())) return candidate
+    if (candidate === resolveBranchName(candidate, existingBranches)) return candidate
   }
 
-  return unique(random())
+  return resolveBranchName(random(), existingBranches)
 }
 
 /**

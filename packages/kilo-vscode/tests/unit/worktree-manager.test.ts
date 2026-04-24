@@ -3,7 +3,7 @@ import os from "node:os"
 import path from "node:path"
 import fs from "node:fs/promises"
 import { WorktreeManager } from "../../src/agent-manager/WorktreeManager"
-import { generateBranchName, sanitizeBranchName, versionedName } from "../../src/agent-manager/branch-name"
+import { generateBranchName, resolveBranchName, sanitizeBranchName, versionedName } from "../../src/agent-manager/branch-name"
 import { WorktreeStateManager } from "../../src/agent-manager/WorktreeStateManager"
 import simpleGit from "simple-git"
 
@@ -89,6 +89,23 @@ describe("generateBranchName", () => {
   it("falls back to prefixed friendly words when no prompt is available", () => {
     const name = generateBranchName(undefined, [])
     expect(name).toMatch(/^kilo-worktree\/[a-z]+-[a-z]+$/)
+  })
+
+  it("avoids ref namespace collisions with existing parent refs", () => {
+    const existing = ["kilo-worktree"]
+    expect(generateBranchName("Fix login bug", existing)).toBe("kilo-worktree-fix-login-bug")
+  })
+})
+
+describe("resolveBranchName", () => {
+  it("flattens generated names that would collide with parent refs", () => {
+    expect(resolveBranchName("kilo-worktree/fix-login", ["kilo-worktree"]))
+      .toBe("kilo-worktree-fix-login")
+  })
+
+  it("adds a suffix after flattening when the flattened name exists", () => {
+    expect(resolveBranchName("kilo-worktree/fix-login", ["kilo-worktree", "kilo-worktree-fix-login"]))
+      .toBe("kilo-worktree-fix-login-2")
   })
 })
 
