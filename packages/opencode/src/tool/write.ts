@@ -60,7 +60,7 @@ export const WriteTool = Tool.define(
             },
           })
 
-          yield* EncodedIO.write(filepath, params.content, encoding) // kilocode_change
+          yield* EncodedIO.write(filepath, params.content, encoding) // kilocode_change - preserve encoding; replaces fs.writeWithDirs
           yield* format.file(filepath)
           yield* bus.publish(File.Event.Edited, { file: filepath })
           yield* bus.publish(FileWatcher.Event.Updated, {

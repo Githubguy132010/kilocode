@@ -115,7 +115,7 @@ export const EditTool = Tool.define(
                   filediff: cachedFilediff, // kilocode_change
                 },
               })
-              yield* EncodedIO.write(filePath, params.newString, encoding) // kilocode_change
+              yield* EncodedIO.write(filePath, params.newString, encoding) // kilocode_change - preserve encoding; replaces afs.writeWithDirs
               yield* format.file(filePath)
               yield* bus.publish(File.Event.Edited, { file: filePath })
               yield* bus.publish(FileWatcher.Event.Updated, {
@@ -160,14 +160,14 @@ export const EditTool = Tool.define(
               },
             })
 
-            yield* EncodedIO.write(filePath, contentNew, encoding) // kilocode_change
+            yield* EncodedIO.write(filePath, contentNew, encoding) // kilocode_change - preserve encoding; replaces afs.writeWithDirs
             yield* format.file(filePath)
             yield* bus.publish(File.Event.Edited, { file: filePath })
             yield* bus.publish(FileWatcher.Event.Updated, {
               file: filePath,
               event: "change",
             })
-            contentNew = (yield* EncodedIO.read(filePath)).text // kilocode_change
+            contentNew = (yield* EncodedIO.read(filePath)).text // kilocode_change - re-read via encoding-aware helper; replaces afs.readFileString
             diff = trimDiff(
               createTwoFilesPatch(
                 filePath,

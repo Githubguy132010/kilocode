@@ -311,11 +311,13 @@ interface ApplyPatchFileUpdate {
 export function deriveNewContentsFromChunks(filePath: string, chunks: UpdateFileChunk[]): ApplyPatchFileUpdate {
   // Read original file content
   let originalContent: string
-  let encoding: string // kilocode_change
+  let encoding: string // kilocode_change - track detected encoding for round-trip write
   try {
-    const result = Encoding.readSync(filePath) // kilocode_change - encoding-aware read
-    originalContent = result.text // kilocode_change
-    encoding = result.encoding // kilocode_change
+    // kilocode_change start - encoding-aware read replaces readFileSync(filePath, "utf-8")
+    const result = Encoding.readSync(filePath)
+    originalContent = result.text
+    encoding = result.encoding
+    // kilocode_change end
   } catch (error) {
     throw new Error(`Failed to read file ${filePath}: ${error}`, { cause: error })
   }
@@ -547,13 +549,13 @@ export async function applyHunksToFiles(hunks: Hunk[]): Promise<AffectedPaths> {
 
         if (hunk.move_path) {
           // Handle file move
-          await Encoding.write(hunk.move_path, fileUpdate.content, fileUpdate.encoding) // kilocode_change
+          await Encoding.write(hunk.move_path, fileUpdate.content, fileUpdate.encoding) // kilocode_change - encoding-aware write (mkdirs) replaces fs.mkdir + fs.writeFile
           await fs.unlink(hunk.path)
           modified.push(hunk.move_path)
           log.info(`Moved file: ${hunk.path} -> ${hunk.move_path}`)
         } else {
           // Regular update
-          await Encoding.write(hunk.path, fileUpdate.content, fileUpdate.encoding) // kilocode_change
+          await Encoding.write(hunk.path, fileUpdate.content, fileUpdate.encoding) // kilocode_change - encoding-aware write replaces fs.writeFile
           modified.push(hunk.path)
           log.info(`Updated file: ${hunk.path}`)
         }

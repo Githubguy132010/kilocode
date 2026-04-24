@@ -211,25 +211,24 @@ export const ApplyPatchTool = Tool.define(
       // Apply the changes
       const updates: Array<{ file: string; event: "add" | "change" | "unlink" }> = []
 
-      // kilocode_change start - encoding-aware writes (EncodedIO.write mkdirs recursively)
       for (const change of fileChanges) {
         const edited = change.type === "delete" ? undefined : (change.movePath ?? change.filePath)
         switch (change.type) {
           case "add":
             // Create parent directories (recursive: true is safe on existing/root dirs)
-            yield* EncodedIO.write(change.filePath, change.newContent, change.encoding)
+            yield* EncodedIO.write(change.filePath, change.newContent, change.encoding) // kilocode_change - encoding-aware write (mkdirs) replaces afs.writeWithDirs
             updates.push({ file: change.filePath, event: "add" })
             break
 
           case "update":
-            yield* EncodedIO.write(change.filePath, change.newContent, change.encoding)
+            yield* EncodedIO.write(change.filePath, change.newContent, change.encoding) // kilocode_change - encoding-aware write replaces afs.writeWithDirs
             updates.push({ file: change.filePath, event: "change" })
             break
 
           case "move":
             if (change.movePath) {
               // Create parent directories (recursive: true is safe on existing/root dirs)
-              yield* EncodedIO.write(change.movePath!, change.newContent, change.encoding)
+              yield* EncodedIO.write(change.movePath!, change.newContent, change.encoding) // kilocode_change - encoding-aware write (mkdirs) replaces afs.writeWithDirs
               yield* afs.remove(change.filePath)
               updates.push({ file: change.filePath, event: "unlink" })
               updates.push({ file: change.movePath, event: "add" })
@@ -241,7 +240,6 @@ export const ApplyPatchTool = Tool.define(
             updates.push({ file: change.filePath, event: "unlink" })
             break
         }
-        // kilocode_change end
 
         if (edited) {
           yield* format.file(edited)

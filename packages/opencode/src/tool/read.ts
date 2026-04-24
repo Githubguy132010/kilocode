@@ -235,8 +235,10 @@ export const ReadTool = Tool.define(
 // kilocode_change start
 export async function lines(filepath: string, opts: { limit: number; offset: number }) {
   // kilocode_change end
-  const encoded = await Encoding.read(filepath) // kilocode_change - decode with detected encoding
-  const stream = Readable.from([encoded.text]) // kilocode_change - replaces createReadStream
+  // kilocode_change start - decode with detected encoding; replaces createReadStream(filepath, { encoding: "utf8" })
+  const encoded = await Encoding.read(filepath)
+  const stream = Readable.from([encoded.text])
+  // kilocode_change end
   const rl = createInterface({
     input: stream,
     // Note: we use the crlfDelay option to recognize all instances of CR LF
