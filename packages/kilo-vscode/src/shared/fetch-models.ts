@@ -127,7 +127,10 @@ export async function fetchOpenAIModels(opts: Options): Promise<ModelEntry[]> {
     }
 
     if (attempt > MAX_RETRIES) {
-      throw new FetchModelsError("Rate limit reached after multiple retries. Please try again shortly.", response.status)
+      throw new FetchModelsError(
+        "Rate limit reached after multiple retries. Please try again shortly.",
+        response.status,
+      )
     }
 
     const nextDelayMs = backoff(attempt, response.headers.get("Retry-After"))
