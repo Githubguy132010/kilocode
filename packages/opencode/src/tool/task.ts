@@ -1,15 +1,15 @@
 import * as Tool from "./tool"
 import DESCRIPTION from "./task.txt"
-import z from "zod"
 import { Session } from "../session"
 import { SessionID, MessageID } from "../session/schema"
 import { MessageV2 } from "../session/message-v2"
 import { Agent } from "../agent/agent"
 import type { SessionPrompt } from "../session/prompt"
 import { Config } from "../config"
-import { Effect } from "effect"
 import { KiloTask } from "../kilocode/tool/task" // kilocode_change
-import { Provider } from "../provider" // kilocode_change — needed for variant validation
+import { Provider } from "../provider" // kilocode_change - needed for variant validation
+import { KiloCostPropagation } from "../kilocode/session/cost-propagation" // kilocode_change
+import { Effect, Schema } from "effect"
 
 export interface TaskPromptOps {
   cancel(sessionID: SessionID): void
@@ -19,27 +19,20 @@ export interface TaskPromptOps {
 
 const id = "task"
 
-const parameters = z.object({
-  description: z.string().describe("A short (3-5 words) description of the task"),
-  prompt: z.string().describe("The task for the agent to perform"),
-  subagent_type: z.string().describe("The type of specialized agent to use for this task"),
-  task_id: z
-    .string()
-    .describe(
+export const Parameters = Schema.Struct({
+  description: Schema.String.annotate({ description: "A short (3-5 words) description of the task" }),
+  prompt: Schema.String.annotate({ description: "The task for the agent to perform" }),
+  subagent_type: Schema.String.annotate({ description: "The type of specialized agent to use for this task" }),
+  task_id: Schema.optional(Schema.String).annotate({
+    description:
       "This should only be set if you mean to resume a previous task (you can pass a prior task_id and the task will continue the same subagent session as before instead of creating a fresh one)",
-    )
-    .optional(),
-  command: z.string().describe("The command that triggered this task").optional(),
-  // kilocode_change start — optional per-subtask reasoning variant
-  variant: z
-    .string()
-    .describe(
-      "Optional reasoning level / variant to run this subtask at (e.g. 'low', 'medium', 'high', 'xhigh', 'max'). " +
-        "Valid values depend on the subagent's model (Claude Opus 4.7 exposes 'low' / 'medium' / 'high' / 'xhigh' / 'max'; OpenAI reasoning models expose 'none' / 'minimal' / 'low' / 'medium' / 'high' / 'xhigh'). " +
-        "Omit to use the subagent's configured variant or default reasoning. " +
-        "Invalid values return an error listing the available variants for the target model.",
-    )
-    .optional(),
+  }),
+  command: Schema.optional(Schema.String).annotate({ description: "The command that triggered this task" }),
+  // kilocode_change start - optional per-subtask reasoning variant
+  variant: Schema.optional(Schema.String).annotate({
+    description:
+      "Optional reasoning level / variant to run this subtask at (e.g. 'low', 'medium', 'high', 'xhigh', 'max'). Valid values depend on the subagent's model. Omit to use the subagent's configured variant or default reasoning. Invalid values return an error listing the available variants for the target model.",
+  }),
   // kilocode_change end
 })
 
@@ -50,7 +43,10 @@ export const TaskTool = Tool.define(
     const config = yield* Config.Service
     const sessions = yield* Session.Service
 
-    const run = Effect.fn("TaskTool.execute")(function* (params: z.infer<typeof parameters>, ctx: Tool.Context) {
+    const run = Effect.fn("TaskTool.execute")(function* (
+      params: Schema.Schema.Type<typeof Parameters>,
+      ctx: Tool.Context,
+    ) {
       const cfg = yield* config.get()
 
       if (!ctx.extra?.bypassAgentCheck) {
@@ -86,13 +82,16 @@ export const TaskTool = Tool.define(
       const msg = yield* Effect.sync(() => MessageV2.get({ sessionID: ctx.sessionID, messageID: ctx.messageID }))
       if (msg.info.role !== "assistant") return yield* Effect.fail(new Error("Not an assistant message"))
 
-      const model = next.model ?? {
-        modelID: msg.info.modelID,
-        providerID: msg.info.providerID,
-      }
+      const saved = yield* KiloTask.resolveModel(next.name) // kilocode_change
+      const model = saved ??
+        next.model ?? {
+          modelID: msg.info.modelID,
+          providerID: msg.info.providerID,
+        }
+      const variant = params.variant ?? saved?.variant ?? (saved ? undefined : next.variant) // kilocode_change
 
       // validate variant against the resolved target model
-      if (params.variant !== undefined) {
+      if (variant !== undefined) {
         const full = yield* Effect.tryPromise({
           try: () => Provider.getModel(model.providerID, model.modelID),
           catch: (e) =>
@@ -101,12 +100,12 @@ export const TaskTool = Tool.define(
             ),
         })
         const available = full.variants ? Object.keys(full.variants) : []
-        if (!full.variants || !full.variants[params.variant]) {
+        if (!full.variants || !full.variants[variant]) {
           return yield* Effect.fail(
             new Error(
               available.length === 0
                 ? `Model ${model.providerID}/${model.modelID} does not support variants; omit the \`variant\` parameter.`
-                : `Unknown variant "${params.variant}" for model ${model.providerID}/${model.modelID}. Available variants: ${available.join(", ")}.`,
+                : `Unknown variant "${variant}" for model ${model.providerID}/${model.modelID}. Available variants: ${available.join(", ")}.`,
             ),
           )
         }
@@ -157,6 +156,7 @@ export const TaskTool = Tool.define(
         metadata: {
           sessionId: nextSession.id,
           model,
+          variant, // kilocode_change
         },
       })
 
@@ -170,9 +170,12 @@ export const TaskTool = Tool.define(
       }
 
       return yield* Effect.acquireUseRelease(
-        Effect.sync(() => {
+        // kilocode_change start - snapshot child cost so we propagate only the delta on resume (#6321)
+        Effect.gen(function* () {
           ctx.abort.addEventListener("abort", cancel)
+          return yield* KiloCostPropagation.childCost(sessions, nextSession.id)
         }),
+        // kilocode_change end
         () =>
           Effect.gen(function* () {
             const parts = yield* ops.resolvePromptParts(params.prompt)
@@ -183,7 +186,7 @@ export const TaskTool = Tool.define(
                 modelID: model.modelID,
                 providerID: model.providerID,
               },
-              variant: params.variant, // kilocode_change — per-subtask variant override
+              variant, // kilocode_change
               agent: next.name,
               tools: {
                 ...(canTodo ? {} : { todowrite: false }),
@@ -198,6 +201,7 @@ export const TaskTool = Tool.define(
               metadata: {
                 sessionId: nextSession.id,
                 model,
+                variant, // kilocode_change
               },
               output: [
                 `task_id: ${nextSession.id} (for resuming to continue this task if needed)`,
@@ -208,17 +212,22 @@ export const TaskTool = Tool.define(
               ].join("\n"),
             }
           }),
-        () =>
-          Effect.sync(() => {
+        // kilocode_change start - propagate subagent cost delta to parent on every exit path (#6321)
+        (costBefore) =>
+          Effect.gen(function* () {
             ctx.abort.removeEventListener("abort", cancel)
+            const costAfter = yield* KiloCostPropagation.childCost(sessions, nextSession.id)
+            yield* KiloCostPropagation.propagate(sessions, ctx.sessionID, ctx.messageID, costAfter - costBefore)
           }),
+        // kilocode_change end
       )
     })
 
     return {
       description: DESCRIPTION,
-      parameters,
-      execute: (params: z.infer<typeof parameters>, ctx: Tool.Context) => run(params, ctx).pipe(Effect.orDie),
+      parameters: Parameters,
+      execute: (params: Schema.Schema.Type<typeof Parameters>, ctx: Tool.Context) =>
+        run(params, ctx).pipe(Effect.orDie),
     }
   }),
 )

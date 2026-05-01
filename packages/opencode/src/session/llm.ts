@@ -20,7 +20,6 @@ import { Wildcard } from "@/util"
 import { SessionID } from "@/session/schema"
 import { Auth } from "@/auth"
 // kilocode_change start
-import { Telemetry } from "@kilocode/kilo-telemetry"
 import { DEFAULT_HEADERS } from "@/kilocode/const"
 import { getKiloProjectId } from "@/kilocode/project-id"
 import { HEADER_PROJECTID, HEADER_MACHINEID, HEADER_TASKID } from "@kilocode/kilo-gateway"
@@ -83,7 +82,7 @@ const live: Layer.Layer<
         .clone()
         .tag("providerID", input.model.providerID)
         .tag("modelID", input.model.id)
-        .tag("sessionID", input.sessionID)
+        .tag("session.id", input.sessionID)
         .tag("small", (input.small ?? false).toString())
         .tag("agent", input.agent.name)
         .tag("mode", input.agent.mode)
@@ -341,6 +340,18 @@ const live: Layer.Layer<
       const tracer = cfg.experimental?.openTelemetry
         ? Option.getOrUndefined(yield* Effect.serviceOption(OtelTracer.OtelTracer))
         : undefined
+      const telemetryTracer = tracer
+        ? new Proxy(tracer, {
+            get(target, prop, receiver) {
+              if (prop !== "startSpan") return Reflect.get(target, prop, receiver)
+              return (...args: Parameters<typeof target.startSpan>) => {
+                const span = target.startSpan(...args)
+                span.setAttribute("session.id", input.sessionID)
+                return span
+              }
+            },
+          })
+        : undefined
 
       return streamText({
         onError(error) {
@@ -418,14 +429,8 @@ const live: Layer.Layer<
             },
           ],
         }),
-        // kilocode_change start - enable telemetry by default with custom PostHog tracer
-        experimental_telemetry: {
-          isEnabled: cfg.experimental?.openTelemetry !== false,
-          recordInputs: false,
-          recordOutputs: false,
-          tracer: Telemetry.getTracer() ?? undefined,
-        },
-        // kilocode_change end
+        // kilocode_change - disable AI SDK span recording (ai.* / gen_ai.*)
+        experimental_telemetry: { isEnabled: false },
       })
     })
 

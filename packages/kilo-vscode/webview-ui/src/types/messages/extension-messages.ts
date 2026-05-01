@@ -9,7 +9,7 @@ import type { PermissionRequest } from "./permissions"
 import type { QuestionRequest, SuggestionRequest, TodoItem } from "./questions"
 import type { ModelSelection, Provider, ProviderAuthState } from "./providers"
 import type { AgentInfo, SkillInfo, SlashCommandInfo } from "./agents"
-import type { BrowserSettings, Config } from "./config"
+import type { BrowserSettings, Config, FeatureFlags, IndexingStatus } from "./config"
 import type { KilocodeNotification, ProfileData } from "./profile"
 import type {
   AgentManagerApplyWorktreeDiffConflict,
@@ -123,6 +123,7 @@ export interface PermissionResolvedMessage {
 export interface PermissionErrorMessage {
   type: "permissionError"
   permissionID: string
+  stale?: boolean
 }
 
 export interface TodoUpdatedMessage {
@@ -270,6 +271,11 @@ export interface NavigateMessage {
   tab?: string
 }
 
+export interface IndexingStatusLoadedMessage {
+  type: "indexingStatusLoaded"
+  status: IndexingStatus
+}
+
 export interface ProvidersLoadedMessage {
   type: "providersLoaded"
   providers: Record<string, Provider>
@@ -303,6 +309,7 @@ export interface AutocompleteSettingsLoadedMessage {
     enableAutoTrigger: boolean
     enableSmartInlineTaskKeybinding: boolean
     enableChatAutocomplete: boolean
+    model: string
   }
 }
 
@@ -334,6 +341,19 @@ export interface TerminalContextResultMessage {
 
 export interface TerminalContextErrorMessage {
   type: "terminalContextError"
+  requestId: string
+  error: string
+}
+
+export interface GitChangesContextResultMessage {
+  type: "gitChangesContextResult"
+  requestId: string
+  content: string
+  truncated?: boolean
+}
+
+export interface GitChangesContextErrorMessage {
+  type: "gitChangesContextError"
   requestId: string
   error: string
 }
@@ -381,11 +401,13 @@ export interface ClaudeCompatSettingLoadedMessage {
 export interface ConfigLoadedMessage {
   type: "configLoaded"
   config: Config
+  features: FeatureFlags
 }
 
 export interface ConfigUpdatedMessage {
   type: "configUpdated"
   config: Config
+  features: FeatureFlags
 }
 
 export interface ConfigUpdateFailedMessage {
@@ -515,6 +537,11 @@ export interface AgentManagerRunStatusMessage extends RunStatus {
 export interface AgentManagerKeybindingsMessage {
   type: "agentManager.keybindings"
   bindings: Record<string, string>
+}
+
+export interface AutoApproveStateMessage {
+  type: "autoApproveState"
+  active: boolean
 }
 
 // Multi-version creation progress (extension → webview)
@@ -814,6 +841,7 @@ export type ExtensionMessage =
   | DeviceAuthFailedMessage
   | DeviceAuthCancelledMessage
   | NavigateMessage
+  | IndexingStatusLoadedMessage
   | ProvidersLoadedMessage
   | AgentsLoadedMessage
   | SkillsLoadedMessage
@@ -823,6 +851,8 @@ export type ExtensionMessage =
   | FileSearchResultMessage
   | TerminalContextResultMessage
   | TerminalContextErrorMessage
+  | GitChangesContextResultMessage
+  | GitChangesContextErrorMessage
   | QuestionRequestMessage
   | QuestionResolvedMessage
   | QuestionErrorMessage
@@ -846,6 +876,7 @@ export type ExtensionMessage =
   | AgentManagerStateMessage
   | AgentManagerRunStatusMessage
   | AgentManagerKeybindingsMessage
+  | AutoApproveStateMessage
   | AgentManagerMultiVersionProgressMessage
   | AgentManagerSetSessionModelMessage
   | AgentManagerSendInitialMessage

@@ -108,7 +108,8 @@ const app = (upgrade: UpgradeWebSocket) =>
 const log = Log.Default.clone().tag("service", "server-proxy")
 
 export async function http(url: string | URL, extra: HeadersInit | undefined, req: Request, workspaceID: WorkspaceID) {
-  if (!(await Workspace.isSyncing(workspaceID))) { // kilocode_change missing await
+  if (!(await Workspace.isSyncing(workspaceID))) {
+    // kilocode_change missing await
     return new Response(`broken sync connection for workspace: ${workspaceID}`, {
       status: 503,
       headers: {
@@ -134,13 +135,6 @@ export async function http(url: string | URL, extra: HeadersInit | undefined, re
     const done = sync ? Fence.wait(workspaceID, sync, req.signal) : Promise.resolve()
 
     return done.then(async () => {
-      console.log("proxy http response", {
-        method: req.method,
-        request: req.url,
-        url: String(url),
-        status: res.status,
-        statusText: res.statusText,
-      })
       return new Response(res.body, {
         status: res.status,
         statusText: res.statusText,
