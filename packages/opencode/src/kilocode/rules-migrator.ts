@@ -12,7 +12,7 @@ export namespace RulesMigrator {
   const globalRulesDirs = () => [path.join(home(), ".kilo", "rules"), path.join(home(), ".kilocode", "rules")]
 
   // Known modes for mode-specific rule discovery
-  const KNOWN_MODES = ["code", "architect", "ask", "debug", "orchestrator"]
+  const KNOWN_MODES = ["code", "architect", "ask", "debug"]
 
   export interface RuleFile {
     path: string
