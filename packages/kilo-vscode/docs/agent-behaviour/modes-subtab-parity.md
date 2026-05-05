@@ -75,7 +75,6 @@ These are CLI capabilities beyond what the legacy had:
 
 ### Important (P2)
 
-- **When to Use field**: Add a text area for orchestrator routing hints (if CLI supports it)
 - **System prompt preview**: Add a button to view the full rendered system prompt — requires a CLI endpoint to return the assembled prompt for an agent
 - **Import/Export**: Add import (from file) and export (to file) for agent/mode definitions
 - **Default variant per agent**: Expose `agent[name].variant` for persistent thinking effort defaults
