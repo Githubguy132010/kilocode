@@ -212,7 +212,6 @@ export const Info = Schema.Struct({
         plan: Schema.optional(ConfigAgent.Info),
         build: Schema.optional(ConfigAgent.Info),
         debug: Schema.optional(ConfigAgent.Info), // kilocode_change
-        orchestrator: Schema.optional(ConfigAgent.Info), // kilocode_change
         ask: Schema.optional(ConfigAgent.Info), // kilocode_change
         // subagent
         general: Schema.optional(ConfigAgent.Info),

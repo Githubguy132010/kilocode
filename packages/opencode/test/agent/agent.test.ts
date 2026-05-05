@@ -30,7 +30,6 @@ test("returns default native agents when no config", async () => {
       expect(names).toContain("code") // kilocode_change
       expect(names).toContain("plan")
       expect(names).toContain("debug") // kilocode_change
-      expect(names).toContain("orchestrator") // kilocode_change
       expect(names).toContain("ask") // kilocode_change
       expect(names).toContain("general")
       expect(names).toContain("explore")
@@ -846,7 +845,6 @@ test("defaultAgent throws when all primary agents are disabled", async () => {
         code: { disable: true },
         plan: { disable: true },
         debug: { disable: true },
-        orchestrator: { disable: true },
         ask: { disable: true },
         // kilocode_change end
       },
