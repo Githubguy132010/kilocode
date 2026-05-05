@@ -1937,7 +1937,6 @@ export type Config = {
     plan?: AgentConfig
     build?: AgentConfig
     debug?: AgentConfig
-    orchestrator?: AgentConfig
     ask?: AgentConfig
     general?: AgentConfig
     explore?: AgentConfig

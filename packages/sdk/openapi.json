@@ -15859,9 +15859,6 @@
               "debug": {
                 "$ref": "#/components/schemas/AgentConfig"
               },
-              "orchestrator": {
-                "$ref": "#/components/schemas/AgentConfig"
-              },
               "ask": {
                 "$ref": "#/components/schemas/AgentConfig"
               },
