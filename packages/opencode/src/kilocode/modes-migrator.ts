@@ -25,8 +25,11 @@ export namespace ModesMigrator {
     customModes: KilocodeMode[]
   }
 
-  // Default modes to skip - these have native Opencode equivalents
-  const DEFAULT_MODE_SLUGS = new Set(["code", "build", "architect", "ask", "debug"])
+  // Default modes to skip - these have native Opencode equivalents.
+  // "orchestrator" is kept here even though the orchestrator agent is removed:
+  // legacy .kilocodemodes files may still have slug: orchestrator and we must
+  // not migrate them into result.agents, which would reintroduce the deprecated mode.
+  const DEFAULT_MODE_SLUGS = new Set(["code", "build", "architect", "ask", "debug", "orchestrator"])
 
   // Group to permission mapping
   const GROUP_TO_PERMISSION: Record<string, string> = {

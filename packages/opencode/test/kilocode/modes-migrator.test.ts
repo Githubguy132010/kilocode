@@ -10,6 +10,7 @@ describe("ModesMigrator", () => {
       expect(ModesMigrator.isDefaultMode("architect")).toBe(true)
       expect(ModesMigrator.isDefaultMode("ask")).toBe(true)
       expect(ModesMigrator.isDefaultMode("debug")).toBe(true)
+      expect(ModesMigrator.isDefaultMode("orchestrator")).toBe(true)
     })
 
     test("returns false for custom modes", () => {
@@ -286,6 +287,34 @@ describe("ModesMigrator", () => {
 
       expect(Object.keys(result.agents)).toHaveLength(0)
       expect(result.skipped).toHaveLength(0)
+    })
+
+    test("skips legacy orchestrator mode to prevent reintroducing deprecated agent", async () => {
+      await using tmp = await tmpdir({
+        init: async (dir) => {
+          await Bun.write(
+            path.join(dir, ".kilocodemodes"),
+            `customModes:
+  - slug: orchestrator
+    name: Orchestrator
+    roleDefinition: Legacy orchestrator role
+    groups:
+      - read
+      - edit
+  - slug: translate
+    name: Translate
+    roleDefinition: Custom translator
+    groups:
+      - read`,
+          )
+        },
+      })
+
+      const result = await ModesMigrator.migrate({ projectDir: tmp.path, skipGlobalPaths: true })
+
+      expect(result.agents).not.toHaveProperty("orchestrator")
+      expect(result.agents).toHaveProperty("translate")
+      expect(result.skipped.some((s) => s.slug === "orchestrator")).toBe(true)
     })
 
     test("migrates multiple custom modes", async () => {
