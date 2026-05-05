@@ -126,7 +126,6 @@ private fun agents(cfg: ConfigAgent?): Map<String, AgentConfigDto> {
         "plan" to cfg.plan,
         "build" to cfg.build,
         "debug" to cfg.debug,
-        "orchestrator" to cfg.orchestrator,
         "ask" to cfg.ask,
         "general" to cfg.general,
         "explore" to cfg.explore,
