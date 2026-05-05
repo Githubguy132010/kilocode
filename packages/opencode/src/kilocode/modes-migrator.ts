@@ -26,7 +26,9 @@ export namespace ModesMigrator {
   }
 
   // Default modes to skip - these have native Opencode equivalents
-  const DEFAULT_MODE_SLUGS = new Set(["code", "build", "architect", "ask", "debug"])
+  // "orchestrator" is also skipped because it is a deprecated mode that has been removed; // kilocode_change
+  // allowing it to migrate would recreate the deprecated agent as a custom agent.          // kilocode_change
+  const DEFAULT_MODE_SLUGS = new Set(["code", "build", "architect", "ask", "debug", "orchestrator"]) // kilocode_change
 
   // Group to permission mapping
   const GROUP_TO_PERMISSION: Record<string, string> = {
