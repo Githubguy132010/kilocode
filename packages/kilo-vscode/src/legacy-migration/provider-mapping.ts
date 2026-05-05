@@ -305,4 +305,4 @@ export const UNSUPPORTED_PROVIDERS = new Set([
 ])
 
 /** Built-in default mode slugs that should not be migrated */
-export const DEFAULT_MODE_SLUGS = new Set(["code", "build", "architect", "ask", "debug", "orchestrator", "review"])
+export const DEFAULT_MODE_SLUGS = new Set(["code", "build", "architect", "ask", "debug", "review"])
