@@ -90,9 +90,13 @@ export namespace KilocodeConfigInjector {
   ): ConfigPermission.Info {
     if (!existing) return incoming
 
-    const result: ConfigPermission.Info = { ...existing }
+    const result = { ...existing } as Record<string, unknown>
 
     for (const [key, value] of Object.entries(incoming)) {
+      if (key === "classifier") {
+        result[key] = value
+        continue
+      }
       if (key === "read" || key === "edit") {
         const existingRules = (result[key] as Record<string, ConfigPermission.Action>) ?? {}
         const incomingRules = value as Record<string, ConfigPermission.Action>
@@ -102,7 +106,7 @@ export namespace KilocodeConfigInjector {
       }
     }
 
-    return result
+    return result as ConfigPermission.Info
   }
 
   export function getEnvVars(configJson: string): Record<string, string> {

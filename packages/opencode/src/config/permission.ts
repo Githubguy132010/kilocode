@@ -2,6 +2,7 @@ export * as ConfigPermission from "./permission"
 import { Schema, SchemaGetter } from "effect"
 import { zod } from "@/util/effect-zod"
 import { withStatics } from "@/util/schema"
+import { ConfigModelID } from "./model-id" // kilocode_change
 
 export const Action = Schema.NullOr(Schema.Literals(["ask", "allow", "deny"])) // kilocode_change - nullable allows null as a delete sentinel
   .annotate({ identifier: "PermissionActionConfig" })
@@ -17,6 +18,18 @@ export const Rule = Schema.Union([Action, Object])
   .annotate({ identifier: "PermissionRuleConfig" })
   .pipe(withStatics((s) => ({ zod: zod(s) })))
 export type Rule = Schema.Schema.Type<typeof Rule>
+
+// kilocode_change start
+export const Classifier = Schema.Struct({
+  model: Schema.optional(Schema.NullOr(ConfigModelID)),
+  environment: Schema.optional(Schema.mutable(Schema.Array(Schema.String))),
+  allow: Schema.optional(Schema.mutable(Schema.Array(Schema.String))),
+  soft_deny: Schema.optional(Schema.mutable(Schema.Array(Schema.String))),
+})
+  .annotate({ identifier: "PermissionClassifierConfig" })
+  .pipe(withStatics((s) => ({ zod: zod(s) })))
+export type Classifier = Schema.Schema.Type<typeof Classifier>
+// kilocode_change end
 
 // Known permission keys get explicit types in the Effect schema for generated
 // docs/types. Runtime config parsing uses Effect's `propertyOrder: "original"`
@@ -39,6 +52,7 @@ const InputObject = Schema.StructWithRest(
     doom_loop: Schema.optional(Action),
     skill: Schema.optional(Rule),
     agent_manager: Schema.optional(Rule), // kilocode_change
+    classifier: Schema.optional(Schema.NullOr(Classifier)), // kilocode_change
   }),
   [Schema.Record(Schema.String, Rule)],
 )
