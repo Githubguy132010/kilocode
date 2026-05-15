@@ -14,6 +14,7 @@ import type { ApplyConflict } from "./GitOps"
 import type { BranchListItem, WorktreeSetupErrorCode } from "./git-import"
 import type { ExternalWorktreeItem } from "./WorktreeManager"
 import type { RunStatus } from "./run/manager"
+import type { DiffSourceDescriptor, DiffSourceCapabilities } from "../diff/sources/types"
 
 // ---------------------------------------------------------------------------
 // Shared payload types
@@ -285,6 +286,19 @@ interface RunStatusMessage extends RunStatus {
   type: "agentManager.runStatus"
 }
 
+interface SetAvailableDiffSourcesOut {
+  type: "agentManager.setAvailableDiffSources"
+  sessionId: string
+  descriptors: DiffSourceDescriptor[]
+  currentId: string
+}
+
+interface DiffSourceCapabilitiesOut {
+  type: "agentManager.diffSourceCapabilities"
+  sessionId: string
+  capabilities: DiffSourceCapabilities
+}
+
 /** All messages the Agent Manager extension sends to the webview. */
 export type AgentManagerOutMessage =
   | WorktreeStatsMessage
@@ -314,6 +328,8 @@ export type AgentManagerOutMessage =
   | TerminalCreatedMessage
   | TerminalClosedMessage
   | TerminalErrorMessage
+  | SetAvailableDiffSourcesOut
+  | DiffSourceCapabilitiesOut
 
 // ---------------------------------------------------------------------------
 // Webview → Extension messages (onMessage)
@@ -531,6 +547,12 @@ interface RevertWorktreeFileIn {
   type: "agentManager.revertWorktreeFile"
   sessionId: string
   file: string
+}
+
+interface SelectDiffSourceIn {
+  type: "agentManager.selectDiffSource"
+  sessionId: string
+  sourceId: string
 }
 
 interface RefreshPRIn {
@@ -757,6 +779,7 @@ export type AgentManagerInMessage =
   | StartDiffWatchIn
   | StopDiffWatchIn
   | RevertWorktreeFileIn
+  | SelectDiffSourceIn
   | RefreshPRIn
   | OpenPRIn
   | OpenSessionsIn
