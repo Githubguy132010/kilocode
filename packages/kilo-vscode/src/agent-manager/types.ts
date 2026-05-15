@@ -14,6 +14,7 @@ import type { ApplyConflict } from "./GitOps"
 import type { BranchListItem, WorktreeSetupErrorCode } from "./git-import"
 import type { ExternalWorktreeItem } from "./WorktreeManager"
 import type { RunStatus } from "./run/manager"
+import type { DiffSourceDescriptor } from "../diff/sources/types"
 
 // ---------------------------------------------------------------------------
 // Shared payload types
@@ -248,6 +249,16 @@ interface WorktreeDiffLoadingMessage {
   loading: boolean
 }
 
+// Sent whenever the available diff sources or the active source changes for a session
+export type AgentManagerWorktreeDiffSourcesMessage = {
+  type: "agentManager.worktreeDiffSources"
+  sessionId: string
+  /** Ordered list of selectable sources for this worktree session. */
+  descriptors: DiffSourceDescriptor[]
+  /** ID of the currently active source. */
+  currentId: string
+}
+
 interface WorktreeDiffMessage {
   type: "agentManager.worktreeDiff"
   sessionId: string
@@ -305,6 +316,7 @@ export type AgentManagerOutMessage =
   | RepoInfoMessage
   | ApplyWorktreeDiffResultMessage
   | WorktreeDiffLoadingMessage
+  | AgentManagerWorktreeDiffSourcesMessage
   | WorktreeDiffMessage
   | WorktreeDiffFileMessage
   | RevertWorktreeFileResultMessage
@@ -504,6 +516,13 @@ interface ImportAllExternalWorktreesIn {
 interface RequestWorktreeDiffIn {
   type: "agentManager.requestWorktreeDiff"
   sessionId: string
+}
+
+export type AgentManagerSelectDiffSourceMessage = {
+  type: "agentManager.selectDiffSource"
+  sessionId: string
+  /** The source id to activate, e.g. "workspace", "staged", "unstaged", "session:<id>". */
+  id: string
 }
 
 interface ApplyWorktreeDiffIn {
@@ -752,6 +771,7 @@ export type AgentManagerInMessage =
   | ImportExternalWorktreeIn
   | ImportAllExternalWorktreesIn
   | RequestWorktreeDiffIn
+  | AgentManagerSelectDiffSourceMessage
   | RequestWorktreeDiffFileIn
   | ApplyWorktreeDiffIn
   | StartDiffWatchIn
