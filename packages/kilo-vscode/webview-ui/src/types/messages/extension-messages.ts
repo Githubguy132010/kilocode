@@ -656,6 +656,13 @@ export interface AgentManagerWorktreeDiffMessage {
   diffs: WorktreeFileDiff[]
 }
 
+export interface AgentManagerAvailableSourcesMessage {
+  type: "agentManager.availableSources"
+  sessionId: string
+  descriptors: DiffSourceDescriptor[]
+  currentId: string
+}
+
 export interface AgentManagerWorktreeDiffFileMessage {
   type: "agentManager.worktreeDiffFile"
   sessionId: string
@@ -1013,6 +1020,7 @@ export type ExtensionMessage =
   | AgentManagerImportResultMessage
   | WorkspaceDirectoryChangedMessage
   | AgentManagerWorktreeDiffMessage
+  | AgentManagerAvailableSourcesMessage
   | AgentManagerWorktreeDiffFileMessage
   | AgentManagerWorktreeDiffLoadingMessage
   | AgentManagerApplyWorktreeDiffResultMessage

@@ -14,6 +14,7 @@ import type { ApplyConflict } from "./GitOps"
 import type { BranchListItem, WorktreeSetupErrorCode } from "./git-import"
 import type { ExternalWorktreeItem } from "./WorktreeManager"
 import type { RunStatus } from "./run/manager"
+import type { DiffSourceDescriptor } from "../diff/sources/types"
 
 // ---------------------------------------------------------------------------
 // Shared payload types
@@ -254,6 +255,13 @@ interface WorktreeDiffMessage {
   diffs: WorktreeDiffEntry[]
 }
 
+interface WorktreeAvailableSourcesMessage {
+  type: "agentManager.availableSources"
+  sessionId: string
+  descriptors: DiffSourceDescriptor[]
+  currentId: string
+}
+
 interface WorktreeDiffFileMessage {
   type: "agentManager.worktreeDiffFile"
   sessionId: string
@@ -306,6 +314,7 @@ export type AgentManagerOutMessage =
   | ApplyWorktreeDiffResultMessage
   | WorktreeDiffLoadingMessage
   | WorktreeDiffMessage
+  | WorktreeAvailableSourcesMessage
   | WorktreeDiffFileMessage
   | RevertWorktreeFileResultMessage
   | PRStatusOutMessage
@@ -504,6 +513,12 @@ interface ImportAllExternalWorktreesIn {
 interface RequestWorktreeDiffIn {
   type: "agentManager.requestWorktreeDiff"
   sessionId: string
+}
+
+interface SelectWorktreeDiffSourceIn {
+  type: "agentManager.selectDiffSource"
+  sessionId: string
+  id: string
 }
 
 interface ApplyWorktreeDiffIn {
@@ -752,6 +767,7 @@ export type AgentManagerInMessage =
   | ImportExternalWorktreeIn
   | ImportAllExternalWorktreesIn
   | RequestWorktreeDiffIn
+  | SelectWorktreeDiffSourceIn
   | RequestWorktreeDiffFileIn
   | ApplyWorktreeDiffIn
   | StartDiffWatchIn

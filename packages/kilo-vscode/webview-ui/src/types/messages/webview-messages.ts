@@ -715,6 +715,12 @@ export interface RequestWorktreeDiffMessage {
   sessionId: string
 }
 
+export interface SelectWorktreeDiffSourceMessage {
+  type: "agentManager.selectDiffSource"
+  sessionId: string
+  id: string
+}
+
 export interface RequestWorktreeDiffFileMessage {
   type: "agentManager.requestWorktreeDiffFile"
   sessionId: string
@@ -1167,6 +1173,7 @@ export type WebviewMessage =
   | ImportExternalWorktreeRequest
   | ImportAllExternalWorktreesRequest
   | RequestWorktreeDiffMessage
+  | SelectWorktreeDiffSourceMessage
   | RequestWorktreeDiffFileMessage
   | StartDiffWatchMessage
   | StopDiffWatchMessage
